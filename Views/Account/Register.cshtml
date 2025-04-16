@@ -29,9 +29,13 @@
 
                             <div class="col-md-6">
                                 <label asp-for="Title" class="form-label fw-bold"></label>
-                                <input asp-for="Title" class="form-control" placeholder="e.g. Mr, Ms, Dr" required />
+                                @Html.DropDownListFor(model => model.Title,
+                                         new SelectList(new[] { "Mr", "Mrs", "Ms", "Dr", "Prof" }),
+                                         "Select Title",
+                                         new { @class = "form-control", required = "required" })
                                 <span asp-validation-for="Title" class="text-danger"></span>
                             </div>
+
 
                             <div class="col-md-6">
                                 <label asp-for="Email" class="form-label fw-bold"></label>
