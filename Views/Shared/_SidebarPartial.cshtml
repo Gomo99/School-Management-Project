@@ -12,7 +12,9 @@
     <!-- Offcanvas Sidebar -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
         <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="sidebarLabel">Dashboard</h5>
+            <h5 class="offcanvas-title" id="sidebarLabel">
+                <span id="realTimeClock"></span>
+            </h5>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
@@ -38,7 +40,6 @@
                             <i class="bi bi-house-door"></i> Back to Dashboard
                         </a>
                     }
-                   
                 </div>
 
                 <!-- Admin only -->
@@ -64,7 +65,6 @@
                     </a>
                 }
 
-
                 <!-- Lecturer only -->
                 @if (role == "Lecturer")
                 {
@@ -84,6 +84,13 @@
                     </a>
                 }
 
+                <!-- Dark Mode Toggle -->
+                <div class="list-group-item list-group-item-action">
+                    <i class="bi bi-moon-stars"></i> 
+                    <label class="form-check-label ms-2">
+                        <input class="form-check-input" type="checkbox" id="darkModeToggle" /> Dark Mode
+                    </label>
+                </div>
                
                 <!-- Settings Dropdown -->
                 <div class="list-group-item p-0">
@@ -118,11 +125,7 @@
                             <i class="bi bi-person-x"></i> Delete Account
                         </a>
                     </div>
-
                 </div>
-
-
-
             </div>
         </div>
     </div>
@@ -131,4 +134,73 @@
     <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
         <i class="bi bi-list"></i> Menu
     </button>
+
+    <script>
+        // Function to apply dark mode
+        function applyDarkMode(isDark) {
+            const htmlElement = document.documentElement;
+            const navElement = document.querySelector('.navbar');
+            const sidebarElement = document.querySelector('.offcanvas');
+            
+            if (isDark) {
+                htmlElement.setAttribute('data-bs-theme', 'dark');
+                document.body.classList.add('bg-dark', 'text-white');
+                if (navElement) navElement.classList.add('navbar-dark', 'bg-dark');
+                if (sidebarElement) sidebarElement.classList.add('bg-dark', 'text-white');
+            } else {
+                htmlElement.removeAttribute('data-bs-theme');
+                document.body.classList.remove('bg-dark', 'text-white');
+                if (navElement) navElement.classList.remove('navbar-dark', 'bg-dark');
+                if (sidebarElement) sidebarElement.classList.remove('bg-dark', 'text-white');
+            }
+        }
+
+        // Initialize dark mode
+        document.addEventListener('DOMContentLoaded', () => {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            
+            darkModeToggle.checked = isDarkMode;
+            applyDarkMode(isDarkMode);
+
+            darkModeToggle.addEventListener('change', function() {
+                localStorage.setItem('darkMode', this.checked);
+                applyDarkMode(this.checked);
+            });
+        });
+
+        // Make sure dark mode persists across page navigation
+        window.addEventListener('pageshow', () => {
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            if (darkModeToggle) {
+                const isDarkMode = localStorage.getItem('darkMode') === 'true';
+                darkModeToggle.checked = isDarkMode;
+                applyDarkMode(isDarkMode);
+            }
+        });
+
+
+
+         function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const dateString = now.toLocaleDateString(undefined, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            document.getElementById('realTimeClock').innerHTML = `
+                <div class="text-center">
+                    <div class="fs-5 fw-bold">${timeString}</div>
+                    <div class="small">${dateString}</div>
+                </div>
+            `;
+        }
+
+        // Update clock immediately and then every second
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
 }

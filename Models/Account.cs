@@ -43,7 +43,7 @@ namespace SchoolProject.Models
         public UserStatus UserStatus { get; set; }
 
         public string? ResetPin { get; set; }
-        public string? PhoneNumber { get; set; }
+      
 
         public DateTime? ResetPinExpiration { get; set; }
         public ICollection<LecturerModule> LecturerModules { get; set; }

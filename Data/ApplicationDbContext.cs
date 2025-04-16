@@ -15,6 +15,7 @@ namespace SchoolProject.Data
         public DbSet<Module> Modules { get; set; }
         public DbSet<LecturerModule> LecturerModules { get; set; }
         public DbSet<StudentModule> StudentModules { get; set; }
+        public DbSet<SupportMessage> SupportMessages { get; set; }
 
         public DbSet<AssessmentType> assessmentTypes { get; set; }
         public DbSet<Assessment> Assessments { get; set; }

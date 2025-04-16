@@ -19,8 +19,6 @@ namespace SchoolProject.ViewModel
         [EmailAddress]
         public string Email { get; set; }
 
-        [Required]
-        public string PhoneNumber { get; set; }
 
     }
 }

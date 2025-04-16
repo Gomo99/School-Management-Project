@@ -3,7 +3,9 @@
 @{
     ViewData["Title"] = "Add Student Module";
 }
-
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
 <div class="container py-5">
     <div class="card shadow-lg">
         <div class="card-header bg-primary text-white">

@@ -264,8 +264,7 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProfile(EditProfileViewModel model)
         {
-            if (ModelState.IsValid)
-            {
+            
                 var currentUserName = User.Identity.Name;
                 var user = _context.Accounts.FirstOrDefault(a => a.Name == currentUserName);
 
@@ -292,7 +291,6 @@ namespace SchoolProject.Controllers
                 user.Surname = model.Surname;
                 user.Email = model.Email;
                 user.Title = model.Title;
-                user.PhoneNumber = model.PhoneNumber;
                 _context.SaveChanges();
 
                 // Send security alerts if email was changed
@@ -346,7 +344,7 @@ namespace SchoolProject.Controllers
                     UserRole.Student => RedirectToAction("Dashboard", "Student"),
                     _ => RedirectToAction("Index", "Home"),
                 };
-            }
+            
 
             return View(model);
         }
@@ -370,7 +368,6 @@ namespace SchoolProject.Controllers
                 Surname = user.Surname,
                 Email = user.Email,
                 Title = user.Title,
-                PhoneNumber = user.PhoneNumber,
                 Role = user.Role.ToString(),
                 UserStatus = user.UserStatus.ToString()
             };
@@ -543,7 +540,6 @@ namespace SchoolProject.Controllers
                     Name = u.Name,
                     Surname = u.Surname,
                     Email = u.Email,
-                    PhoneNumber = u.PhoneNumber,
                     Role = u.Role.ToString(),
                     UserStatus = u.UserStatus.ToString()
                 }).FirstOrDefault();
@@ -570,7 +566,6 @@ namespace SchoolProject.Controllers
             document.Add(new Paragraph($"Name: {userProfile.Name}", textFont));
             document.Add(new Paragraph($"Surname: {userProfile.Surname}", textFont));
             document.Add(new Paragraph($"Email: {userProfile.Email}", textFont));
-            document.Add(new Paragraph($"Phone Number: {userProfile.PhoneNumber}", textFont));
             document.Add(new Paragraph($"Role: {userProfile.Role}", textFont));
             document.Add(new Paragraph($"Status: {userProfile.UserStatus}", textFont));
 
@@ -585,7 +580,53 @@ namespace SchoolProject.Controllers
 
 
 
+        public async Task<IActionResult> Chat(int chatWithId)
+        {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
+            var messages = await _context.SupportMessages
+                .Where(m => (m.SenderID == currentUserId && m.ReceiverID == chatWithId) ||
+                            (m.SenderID == chatWithId && m.ReceiverID == currentUserId))
+                .OrderBy(m => m.Timestamp)
+                .ToListAsync();
+
+            // Mark unread as read
+            var unread = messages
+                .Where(m => m.ReceiverID == currentUserId && !m.IsRead)
+                .ToList();
+
+            foreach (var msg in unread)
+            {
+                msg.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync();
+
+            ViewBag.CurrentUserID = currentUserId;
+            ViewBag.ChatWithID = chatWithId;
+
+            return View(messages);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SendMessage(int receiverId, string messageText)
+        {
+            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var message = new SupportMessage
+            {
+                SenderID = currentUserId,
+                ReceiverID = receiverId,
+                MessageText = messageText?.Trim(),
+                Timestamp = DateTime.Now,
+                IsRead = false
+            };
+
+            _context.SupportMessages.Add(message);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Chat", new { chatWithId = receiverId });
+        }
 
 
 

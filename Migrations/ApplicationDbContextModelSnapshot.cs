@@ -44,9 +44,6 @@ namespace SchoolProject.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ResetPin")
                         .HasColumnType("nvarchar(max)");
 
@@ -629,6 +626,39 @@ namespace SchoolProject.Migrations
                     b.ToTable("StudentModules");
                 });
 
+            modelBuilder.Entity("SchoolProject.Models.SupportMessage", b =>
+                {
+                    b.Property<int>("SupportMessageID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupportMessageID"));
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MessageText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReceiverID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SenderID")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SupportMessageID");
+
+                    b.HasIndex("ReceiverID");
+
+                    b.HasIndex("SenderID");
+
+                    b.ToTable("SupportMessages");
+                });
+
             modelBuilder.Entity("SchoolProject.Models.Assessment", b =>
                 {
                     b.HasOne("SchoolProject.Models.AssessmentType", "AssessmentType")
@@ -692,6 +722,25 @@ namespace SchoolProject.Migrations
                     b.Navigation("LecturerModule");
 
                     b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("SchoolProject.Models.SupportMessage", b =>
+                {
+                    b.HasOne("SchoolProject.Models.Account", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SchoolProject.Models.Account", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("SchoolProject.Models.Account", b =>
