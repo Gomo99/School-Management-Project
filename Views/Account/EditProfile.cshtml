@@ -1,0 +1,114 @@
+﻿@model SchoolProject.ViewModel.EditProfileViewModel
+
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2 col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-header text-center">
+                    <h4>Edit Your Profile</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="EditProfile" method="post" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label for="Name" class="form-label">Name</label>
+                            <input type="text" class="form-control form-control-lg" id="Name" name="Name" value="@Model.Name" required />
+                            <div class="invalid-feedback">
+                                Please enter your name.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="Surname" class="form-label">Surname</label>
+                            <input type="text" class="form-control form-control-lg" id="Surname" name="Surname" value="@Model.Surname" required />
+                            <div class="invalid-feedback">
+                                Please enter your surname.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="Title" class="form-label">Title (optional)</label>
+                            <input type="text" class="form-control form-control-lg" id="Title" name="Title" value="@Model.Title" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="Email" class="form-label">Email</label>
+                            <input type="email" class="form-control form-control-lg" id="Email" name="Email" value="@Model.Email" required />
+                            <div class="invalid-feedback">
+                                Please enter a valid email address.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="PhoneNumber" class="form-label">Cellphone Number</label>
+                            <input type="tel" class="form-control form-control-lg" id="PhoneNumber" name="PhoneNumber" value="@Model.PhoneNumber" required />
+                            <div class="invalid-feedback">
+                                Please enter your cellphone number.
+                            </div>
+                        </div>
+
+                       
+
+                        <div class="mb-4 text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-4">Save Changes</button>
+                        </div>
+                    </form>
+
+                    <div class="mt-4 text-center">
+                        @if (User.IsInRole("Administrator"))
+                        {
+                            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-link">Back to Dashboard</a>
+                        }
+                        else if (User.IsInRole("Lecturer"))
+                        {
+                            <a href="@Url.Action("Dashboard", "Lecturer")" class="btn btn-link">Back to Dashboard</a>
+                        }
+                        else if (User.IsInRole("Student"))
+                        {
+                            <a href="@Url.Action("Dashboard", "Student")" class="btn btn-link">Back to Dashboard</a>
+                        }
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Apply input mask
+            $("#PhoneNumber").inputmask("+27 (99) 999-9999");
+
+            // Update input styles based on validity
+            function updateInputStyles(inputElement) {
+                if (inputElement.val().trim() === "") {
+                    inputElement.removeClass("is-valid");
+                    inputElement.addClass("is-invalid");
+                    inputElement.css("border-color", "red");
+                } else {
+                    inputElement.removeClass("is-invalid");
+                    inputElement.addClass("is-valid");
+                    inputElement.css("border-color", "green");
+                }
+            }
+
+            $("input, select").on("input", function () {
+                updateInputStyles($(this));
+            });
+
+            $("input, select").each(function () {
+                updateInputStyles($(this));
+            });
+        });
+    </script>
+}

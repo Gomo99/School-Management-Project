@@ -1,0 +1,19 @@
+﻿@model SchoolProject.Models.Module
+
+@{
+    ViewData["Title"] = "Delete Module";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<div class="container mt-4">
+    <h2>Are you sure you want to deactivate this module?</h2>
+    <div class="alert alert-warning mt-3">
+        <strong>@Model.ModuleName</strong> will be marked as inactive.
+    </div>
+    <form asp-action="DeleteModule">
+        <input type="hidden" asp-for="ModuleID" />
+        <button type="submit" class="btn btn-danger">Yes, Deactivate</button>
+        <a asp-action="ManageModules" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

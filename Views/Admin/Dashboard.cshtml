@@ -1,0 +1,11 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<partial name="_NotificationPartial" />
+
+

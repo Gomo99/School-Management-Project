@@ -1,0 +1,134 @@
+﻿@using System.Security.Claims
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var user = HttpContextAccessor.HttpContext.User;
+    var isAuthenticated = user.Identity.IsAuthenticated;
+    var role = user.FindFirst(ClaimTypes.Role)?.Value;
+}
+
+@if (isAuthenticated)
+{
+    <!-- Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sidebarLabel">Dashboard</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="list-group">
+
+                <!-- Replace the Dashboard link with the new code block inside the list group -->
+                <div class="list-group-item list-group-item-action mt-4 text-center">
+                    @if (User.IsInRole("Administrator"))
+                    {
+                        <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-primary">
+                            <i class="bi bi-house-door"></i> Back to Dashboard
+                        </a>
+                    }
+                    else if (User.IsInRole("Lecturer"))
+                    {
+                        <a href="@Url.Action("Dashboard", "Lecturer")" class="btn btn-primary">
+                            <i class="bi bi-house-door"></i> Back to Dashboard
+                        </a>
+                    }
+                    else if (User.IsInRole("Student"))
+                    {
+                        <a href="@Url.Action("Dashboard", "Student")" class="btn btn-primary">
+                            <i class="bi bi-house-door"></i> Back to Dashboard
+                        </a>
+                    }
+                   
+                </div>
+
+                <!-- Admin only -->
+                @if (role == "Administrator")
+                {
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageModules", "Admin")">
+                        <i class="bi bi-journal-bookmark"></i> Manage Modules
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageLecturerModules", "Admin")">
+                        <i class="bi bi-person-bounding-box"></i> Manage Lecture Modules
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("Reports", "Admin")">
+                        <i class="bi bi-bar-chart"></i> Reports
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ReactivateAccount", "Account")">
+                        <i class="bi bi-person-check-fill"></i> Reactivate Accounts
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageUsers", "Admin")">
+                        <i class="bi bi-person-check-fill"></i> Manage Users
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageStudentModule", "Admin")">
+                        <i class="bi bi-person-lines-fill"></i> Manage Student Modules
+                    </a>
+                }
+
+
+                <!-- Lecturer only -->
+                @if (role == "Lecturer")
+                {
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("Courses", "Lecturer")">
+                        <i class="bi bi-journal-bookmark"></i> My Courses
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageAssessmentType", "Lecturer")">
+                        <i class="bi bi-clipboard-data"></i> Manage Assessment Types
+                    </a>
+                }
+
+                <!-- Student only -->
+                @if (role == "Student")
+                {
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("MyGrades", "Student")">
+                        <i class="bi bi-card-checklist"></i> My Grades
+                    </a>
+                }
+
+               
+                <!-- Settings Dropdown -->
+                <div class="list-group-item p-0">
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center w-100"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#settingsMenu"
+                            aria-expanded="false"
+                            aria-controls="settingsMenu"
+                            type="button">
+                        <span><i class="bi bi-gear"></i> Settings</span>
+                        <i class="bi bi-caret-down-fill"></i>
+                    </button>
+
+                    <div class="collapse" id="settingsMenu">
+                        <a href="@Url.Action("ViewProfile", "Account")"
+                           class="list-group-item list-group-item-action border-0 ps-5">
+                            <i class="bi bi-person-badge"></i> View Profile
+                        </a>
+
+                        <a href="@Url.Action("EditProfile", "Account")"
+                           class="list-group-item list-group-item-action border-0 ps-5">
+                            <i class="bi bi-person"></i> Edit Profile
+                        </a>
+
+                        <a href="@Url.Action("ChangePassword", "Account")"
+                           class="list-group-item list-group-item-action border-0 ps-5">
+                            <i class="bi bi-shield-lock"></i> Change Password
+                        </a>
+
+                        <a href="@Url.Action("DeleteAccount", "Account")"
+                           class="list-group-item list-group-item-action border-0 ps-5 text-danger">
+                            <i class="bi bi-person-x"></i> Delete Account
+                        </a>
+                    </div>
+
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar toggle button -->
+    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
+        <i class="bi bi-list"></i> Menu
+    </button>
+}

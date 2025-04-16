@@ -1,0 +1,41 @@
+﻿@model SchoolProject.Models.StudentModule
+
+@{
+    ViewData["Title"] = "Delete Student Module";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container py-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-danger text-white">
+            <h4>Confirm Delete</h4>
+        </div>
+        <div class="card-body">
+            <p class="text-danger">Are you sure you want to delete this student module?</p>
+
+            <dl class="row">
+                <dt class="col-sm-4">Student</dt>
+                <dd class="col-sm-8">@Model.Student.Name @Model.Student.Surname</dd>
+
+                <dt class="col-sm-4">Lecturer</dt>
+                <dd class="col-sm-8">@Model.LecturerModule.Lecturer.Name @Model.LecturerModule.Lecturer.Surname</dd>
+
+                <dt class="col-sm-4">Module</dt>
+                <dd class="col-sm-8">@Model.LecturerModule.Module.ModuleName</dd>
+
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8">@Model.StudModStatus</dd>
+            </dl>
+
+            <form asp-action="DeleteStudentModule" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="StudentModuleID" />
+                <button type="submit" class="btn btn-danger">Delete</button>
+                <a asp-action="ManageStudentModule" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>

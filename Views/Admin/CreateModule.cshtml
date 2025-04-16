@@ -1,0 +1,52 @@
+﻿@model SchoolProject.Models.Module
+
+@{
+    ViewData["Title"] = "Create Module";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow rounded-4">
+                <div class="card-header bg-primary text-white rounded-top-4 d-flex align-items-center">
+                    <i class="bi bi-plus-circle-fill me-2"></i>
+                    <h5 class="mb-0">Create New Module</h5>
+                </div>
+                <div class="card-body bg-light rounded-bottom-4">
+                    <form asp-action="CreateModule" method="post">
+                        <div class="mb-3">
+                            <label asp-for="ModuleName" class="form-label">Module Name</label>
+                            <input asp-for="ModuleName" class="form-control form-control-lg" placeholder="e.g. Software Engineering" />
+                            <span asp-validation-for="ModuleName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Duration" class="form-label">Duration</label>
+                            <input asp-for="Duration" class="form-control form-control-lg" placeholder="e.g. 12 weeks" />
+                            <span asp-validation-for="Duration" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ModuleType" class="form-label">Module Type</label>
+                            <select asp-for="ModuleType" class="form-select form-select-lg" asp-items="Html.GetEnumSelectList<ModuleType>()">
+                                <option disabled selected>-- Select Type --</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="ManageModules" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-arrow-left-circle me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check2-circle me-1"></i> Create Module
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

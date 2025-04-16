@@ -1,0 +1,71 @@
+﻿@model SchoolProject.Models.StudentModule
+
+@{
+    ViewData["Title"] = "Edit Student Module";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+
+<div class="container py-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">`
+            <h4>Edit Student Module</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="EditStudentModule" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="StudentModuleID" />
+
+                <!-- Lecturer Dropdown -->
+                <div class="mb-3">
+                    <label for="LecturerModuleID" class="form-label">Lecturer and Module</label>
+                    <select id="LecturerModuleID" name="LecturerModuleID" class="form-select" required>
+                        <option value="">Select Lecturer and Module</option>
+                        @{
+                            var lecturers = ViewData["LecturerModuleID"] as SelectList;
+                            foreach (var item in lecturers)
+                            {
+                                var selected = item.Value == Model.LecturerModuleID.ToString() ? "selected" : "";
+                            }
+                        }
+                        @foreach (var item in (SelectList)ViewData["LecturerModuleID"])
+                        {
+                            <option value="@item.Value" selected="@(item.Value == Model.LecturerModuleID.ToString() ? "selected" : null)">
+                                @item.Text
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="LecturerModuleID" class="text-danger"></span>
+                </div>
+
+
+                <!-- Student Dropdown -->
+                <div class="mb-3">
+                    <label for="UserID" class="form-label">Student</label>
+                    <select id="UserID" name="UserID" class="form-select" required>
+                        <option value="">Select a Student</option>
+                        @foreach (var item in (SelectList)ViewData["UserID"])
+                        {
+                            <option value="@item.Value" selected="@(item.Value == Model.UserID.ToString() ? "selected" : null)">
+                                @item.Text
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="UserID" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Date" class="form-label">Date</label>
+                    <input type="date" id="Date" name="Date" class="form-control" required value="@Model.Date.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-success">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+

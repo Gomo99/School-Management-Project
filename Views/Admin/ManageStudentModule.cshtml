@@ -1,0 +1,68 @@
+﻿@model IEnumerable<SchoolProject.Models.StudentModule>
+
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<partial name="_NotificationPartial" />
+
+
+<div class="container py-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <h4>Manage Student Modules</h4>
+
+            <div class="mb-3">
+                <a href="@Url.Action("AddStudentModules", "Admin")" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Add Student Module
+                </a>
+            </div>
+        </div>
+
+
+
+        <div class="card-body">
+            <table class="table table-hover table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Student Surname</th>
+                        <th>Lecturer Name</th>
+                        <th>Lecturer Surname</th>
+                        <th>Module Name</th>
+                        <th>Module Type</th>
+                        <th>Module Duration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Student.Name</td>
+                            <td>@item.Student.Surname</td>
+                            <td>@item.LecturerModule.Lecturer.Name</td>
+                            <td>@item.LecturerModule.Lecturer.Surname</td>
+                            <td>@item.LecturerModule.Module.ModuleName</td>
+                            <td>@item.LecturerModule.Module.ModuleType</td>
+                            <td>@item.LecturerModule.Module.Duration</td>
+                            <td>@item.LecturerModule.Module.ModuleStatus.ToString()</td>
+                            <td>
+                                <a class="btn btn-sm btn-primary" href="@Url.Action("EditStudentModule", "Admin", new { id = item.StudentModuleID })">
+                                    <i class="bi bi-pencil-square"></i> Edit
+                                </a>
+                                <a class="btn btn-sm btn-danger" href="@Url.Action("DeleteStudentModule", "Admin", new { id = item.StudentModuleID })">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Bootstrap JS Bundle for features like modals or tooltips (if needed in the future) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

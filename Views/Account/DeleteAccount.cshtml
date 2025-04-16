@@ -1,0 +1,47 @@
+﻿@{
+    ViewData["Title"] = "Delete Account";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="card shadow-lg border-0 rounded-4" style="width: 500px;">
+        <div class="card-header bg-danger text-white rounded-top-4">
+            <h5 class="mb-0"><i class="bi bi-person-x"></i> Confirm Deactivation</h5>
+        </div>
+        <div class="card-body text-center">
+            <p class="fs-5 text-dark mb-4">Are you sure you want to <strong>deactivate your account</strong>?</p>
+            <p class="text-muted mb-4">This action can be reversed by an admin or through reactivation later.</p>
+
+            <form asp-action="DeleteAccountConfirmed" method="post">
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="bi bi-check-circle"></i> Yes, Deactivate
+                    </button>
+                    <div class="mt-4 text-center">
+                        @if (User.IsInRole("Administrator"))
+                        {
+                            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-primary">
+                                <i class="bi bi-house-door"></i> Back to Dashboard
+                            </a>
+                        }
+                        else if (User.IsInRole("Lecturer"))
+                        {
+                            <a href="@Url.Action("Dashboard", "Lecturer")" class="btn btn-primary">
+                                <i class="bi bi-house-door"></i> Back to Dashboard
+                            </a>
+                        }
+                        else if (User.IsInRole("Student"))
+                        {
+                            <a href="@Url.Action("Dashboard", "Student")" class="btn btn-primary">
+                                <i class="bi bi-house-door"></i> Back to Dashboard
+                            </a>
+                        }
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

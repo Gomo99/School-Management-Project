@@ -1,0 +1,18 @@
+﻿@model SchoolProject.Models.AssessmentType
+@{
+    ViewData["Title"] = "Delete Assessment Type";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<h2>@ViewData["Title"]</h2>
+
+<h4>Are you sure you want to deactivate this assessment type?</h4>
+<div>
+    <h4>@Model.AssessmentTypeDescription</h4>
+    <form asp-action="DeleteAssessmentType" method="post">
+        <input type="hidden" asp-for="AssessmentTypeID" />
+        <button type="submit" class="btn btn-danger">Deactivate</button>
+        <a asp-action="ManageAssessmentType" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

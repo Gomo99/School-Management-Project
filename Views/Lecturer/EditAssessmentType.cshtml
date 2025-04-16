@@ -1,0 +1,19 @@
+﻿@model SchoolProject.Models.AssessmentType
+@{
+    ViewData["Title"] = "Edit Assessment Type";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="EditAssessmentType" method="post">
+    <input type="hidden" asp-for="AssessmentTypeID" />
+    <div class="form-group">
+        <label asp-for="AssessmentTypeDescription" class="control-label"></label>
+        <input asp-for="AssessmentTypeDescription" class="form-control" />
+        <span asp-validation-for="AssessmentTypeDescription" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="ManageAssessmentType" class="btn btn-secondary">Cancel</a>
+</form>

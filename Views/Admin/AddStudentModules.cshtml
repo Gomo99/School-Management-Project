@@ -1,0 +1,58 @@
+﻿@model SchoolProject.Models.StudentModule
+
+@{
+    ViewData["Title"] = "Add Student Module";
+}
+
+<div class="container py-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white">
+            <h4>Add Student Module</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="AddStudentModules" method="post">
+                @Html.AntiForgeryToken()
+
+                <!-- Lecturer Dropdown -->
+                <div class="mb-3">
+                    <label for="LecturerModuleID" class="form-label">Lecturer and Module</label>
+                    <select id="LecturerModuleID" name="LecturerModuleID" class="form-select" required>
+                        <option value="">Select Lecturer and Module</option>
+                        @if (ViewData["LecturerModuleID"] != null)
+                        {
+                            foreach (var item in ViewData["LecturerModuleID"] as SelectList)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="LecturerModuleID" class="text-danger"></span>
+                </div>
+
+                <!-- Student Dropdown populated from Controller -->
+                <div class="mb-3">
+                    <label for="UserID" class="form-label">Student</label>
+                    <select id="UserID" name="UserID" class="form-select" required>
+                        <option value="">Select a Student</option>
+                        @if (ViewData["UserID"] != null)
+                        {
+                            foreach (var item in ViewData["UserID"] as SelectList)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <span asp-validation-for="UserID" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="Date" class="form-label">Date</label>
+                    <input type="date" id="Date" name="Date" class="form-control" required />
+                    <span asp-validation-for="Date" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-success">Add Student Module</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,55 @@
+﻿@model SchoolProject.Models.LecturerModule
+
+@{
+    ViewData["Title"] = "Edit Lecturer Module";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Card Layout for a desktop-like feel -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3>Edit Lecturer Module</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="EditLecturerModule" method="post">
+                        <input type="hidden" asp-for="LecturerModuleID" />
+
+                        <!-- Module Dropdown -->
+                        <div class="mb-4">
+                            <label for="ModuleID" class="form-label">Module</label>
+                            <select asp-for="ModuleID" class="form-select" asp-items="ViewBag.ModuleList">
+                                <option value="">Select Module</option>
+                            </select>
+                        </div>
+
+                        <!-- Lecturer Dropdown -->
+                        <div class="mb-4">
+                            <label for="UserID" class="form-label">Lecturer</label>
+                            <select asp-for="UserID" class="form-select" asp-items="ViewBag.LecturerList">
+                                <option value="">Select Lecturer</option>
+                            </select>
+                        </div>
+
+                        <!-- Assigned Date -->
+                        <div class="mb-4">
+                            <label for="AssignedDate" class="form-label">Date</label>
+                            <input asp-for="AssignedDate" type="date" class="form-control" />
+                        </div>
+
+                        <!-- Button Controls -->
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">Update</button>
+                            <a asp-action="ManageLecturerModules" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,43 @@
+﻿@model IEnumerable<SchoolProject.Models.LecturerModule>
+
+@{
+    ViewData["Title"] = "Manage Lecturer Modules";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<partial name="_NotificationPartial" />
+
+
+<div class="container mt-4">
+    <h2 class="mb-3">Lecturer Module Assignments</h2>
+    <a asp-action="AddLecturerModule" class="btn btn-primary mb-3">Assign New Lecturer</a>
+    <table class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th>Module</th>
+                <th>Lecturer</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lm in Model)
+            {
+                <tr>
+                    <td>@lm.Module?.ModuleName</td>
+                    <td>@lm.Lecturer?.Name @lm.Lecturer?.Surname</td>
+                    <td>@lm.AssignedDate.ToShortDateString()</td>
+                    <td>@lm.ModLecturerStatus</td>
+                    <td>
+                        <a asp-action="EditLecturerModule" asp-route-id="@lm.LecturerModuleID" class="btn btn-sm btn-warning">Edit</a>
+                        <a asp-action="DeleteLecturerModule" asp-route-id="@lm.LecturerModuleID" class="btn btn-sm btn-danger">Remove</a>
+                        <a asp-action="DetailsLecturerModule" asp-route-id="@lm.LecturerModuleID" class="btn btn-sm btn-info">Details</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

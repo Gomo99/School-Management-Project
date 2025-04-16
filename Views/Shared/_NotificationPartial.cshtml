@@ -1,0 +1,37 @@
+﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
+
+<script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+
+<script>
+    // Initialize Notyf ONCE (globally)
+    const notyf = new Notyf({
+        duration: 5000,
+        position: { x: 'right', y: 'top' },
+        types: [
+            {
+                type: 'success',
+                background: '#28a745',
+                dismissible: true
+            },
+            {
+                type: 'error',
+                background: '#dc3545',
+                dismissible: true
+            }
+        ]
+    });
+
+    // Show notifications if TempData exists
+    document.addEventListener('DOMContentLoaded', function () {
+    @if (TempData["SuccessMessage"] != null)
+    {
+        @:notyf.success('@Html.Raw(TempData["SuccessMessage"])');
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        @:notyf.error('@Html.Raw(TempData["ErrorMessage"])');
+    }
+    });
+</script>

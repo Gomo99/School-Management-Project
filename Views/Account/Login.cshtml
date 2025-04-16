@@ -1,0 +1,101 @@
+﻿@model SchoolProject.ViewModel.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+}
+<partial name="_NotificationPartial" />
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow rounded-4">
+                <div class="card-header bg-primary text-white text-center rounded-top-4">
+                    <h3 class="mb-0">Welcome Back</h3>
+                    <small>Please login to your account</small>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Login" method="post" novalidate>
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                                <input asp-for="Email" class="form-control" id="Email" placeholder="Email or Username" required />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-bold"></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                <input asp-for="Password" class="form-control" type="password" id="Password" placeholder="Password" required />
+                                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                    <i class="bi bi-eye-slash" id="eyeIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label">Remember Me</label>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </button>
+                        </div>
+
+                        <div class="mt-3 text-center">
+                            <a href="/Account/ForgotPassword">Forgot Password?</a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted text-center">
+                    Don't have an account? <a href="/Account/Register">Register here</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        // Toggle password visibility
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordField = document.getElementById("Password");
+        const eyeIcon = document.getElementById("eyeIcon");
+
+        togglePassword.addEventListener("click", function () {
+            const type = passwordField.type === "password" ? "text" : "password";
+            passwordField.type = type;
+            eyeIcon.classList.toggle("bi-eye-slash");
+            eyeIcon.classList.toggle("bi-eye");
+        });
+
+        // Validation styling
+        const emailField = document.getElementById("Email");
+
+        [emailField, passwordField].forEach(input => {
+            input.addEventListener("input", () => {
+                if (input.value.trim() !== "") {
+                    input.classList.add("is-valid");
+                    input.classList.remove("is-invalid");
+                } else {
+                    input.classList.remove("is-valid");
+                    input.classList.add("is-invalid");
+                }
+            });
+
+            // Trigger on page load if value exists
+            if (input.value.trim() !== "") {
+                input.classList.add("is-valid");
+            }
+        });
+    </script>
+}

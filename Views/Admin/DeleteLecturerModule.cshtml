@@ -1,0 +1,47 @@
+﻿@model SchoolProject.Models.LecturerModule
+
+@{
+    ViewData["Title"] = "Remove Lecturer From Module";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Card Layout for a desktop-like feel -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h4>Confirm Removal</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-center mb-4">Are you sure you want to remove this lecturer from the module?</p>
+
+                    <dl class="row mb-4">
+                        <dt class="col-sm-4">Lecturer:</dt>
+                        <dd class="col-sm-8">@Model.Lecturer?.Name @Model.Lecturer?.Surname</dd>
+
+                        <dt class="col-sm-4">Module:</dt>
+                        <dd class="col-sm-8">@Model.Module?.ModuleName</dd>
+                    </dl>
+
+                    <!-- Confirm Removal Form -->
+                    <form asp-action="DeleteLecturerModuleConfirmed" method="post">
+                        <input type="hidden" asp-for="LecturerModuleID" />
+
+                        <!-- Button Controls -->
+                        <div class="d-flex justify-content-between">
+                            <!-- Confirm Remove button -->
+                            <button type="submit" class="btn btn-danger">Remove</button>
+
+                            <!-- Cancel button -->
+                            <a asp-action="ManageLecturerModules" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,153 @@
+﻿@model SchoolProject.Models.Account
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow rounded-4">
+                <div class="card-header bg-primary text-white text-center rounded-top-4">
+                    <h3 class="mb-0">@ViewData["Title"]</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Register" method="post" novalidate>
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label fw-bold"></label>
+                                <input asp-for="Name" class="form-control" placeholder="Enter your first name" required />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Surname" class="form-label fw-bold"></label>
+                                <input asp-for="Surname" class="form-control" placeholder="Enter your surname" required />
+                                <span asp-validation-for="Surname" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Title" class="form-label fw-bold"></label>
+                                <input asp-for="Title" class="form-control" placeholder="e.g. Mr, Ms, Dr" required />
+                                <span asp-validation-for="Title" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"></span>
+                                    <input asp-for="Email" class="form-control" placeholder="your@email.com" type="email" required />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Password" class="form-label fw-bold"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                    <input asp-for="Password" class="form-control" placeholder="Enter password" type="password" id="Password" required />
+                                    <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                        <i class="bi bi-eye-slash" id="eyeIconPassword"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ConfirmPassword" class="form-label fw-bold"></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                    <input asp-for="ConfirmPassword" class="form-control" placeholder="Repeat password" type="password" id="ConfirmPassword" required />
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword">
+                                        <i class="bi bi-eye-slash" id="eyeIconConfirmPassword"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label asp-for="Role" class="form-label fw-bold"></label>
+                                <select asp-for="Role" class="form-select" required>
+                                    <option value="">-- Select Role --</option>
+                                    <option value="@SchoolProject.Models.UserRole.Administrator">@SchoolProject.Models.UserRole.Administrator</option>
+                                    <option value="@SchoolProject.Models.UserRole.Lecturer">@SchoolProject.Models.UserRole.Lecturer</option>
+                                    <option value="@SchoolProject.Models.UserRole.Student">@SchoolProject.Models.UserRole.Student</option>
+                                </select>
+                                <span asp-validation-for="Role" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+                                <i class="bi bi-person-plus-fill me-1"></i> Register
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted text-center">
+                    Already have an account? <a href="/Account/Login">Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        // Password field toggle visibility
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordField = document.getElementById("Password");
+        const eyeIconPassword = document.getElementById("eyeIconPassword");
+
+        togglePassword.addEventListener("click", function () {
+            const type = passwordField.type === "password" ? "text" : "password";
+            passwordField.type = type;
+            const iconClass = type === "password" ? "bi-eye-slash" : "bi-eye";
+            eyeIconPassword.classList.remove("bi-eye-slash", "bi-eye");
+            eyeIconPassword.classList.add(iconClass);
+        });
+
+        // Confirm Password field toggle visibility
+        const toggleConfirmPassword = document.getElementById("toggleConfirmPassword");
+        const confirmPasswordField = document.getElementById("ConfirmPassword");
+        const eyeIconConfirmPassword = document.getElementById("eyeIconConfirmPassword");
+
+        toggleConfirmPassword.addEventListener("click", function () {
+            const type = confirmPasswordField.type === "password" ? "text" : "password";
+            confirmPasswordField.type = type;
+            const iconClass = type === "password" ? "bi-eye-slash" : "bi-eye";
+            eyeIconConfirmPassword.classList.remove("bi-eye-slash", "bi-eye");
+            eyeIconConfirmPassword.classList.add(iconClass);
+        });
+
+        // Function to update the input border color
+        function updateInputStyles(inputElement) {
+            if (inputElement.value.trim() === "") {
+                inputElement.classList.remove("is-valid");
+                inputElement.classList.add("is-invalid");
+                inputElement.style.borderColor = "red";  // Red border for empty input
+            } else {
+                inputElement.classList.remove("is-invalid");
+                inputElement.classList.add("is-valid");
+                inputElement.style.borderColor = "green";  // Green border for valid input
+            }
+        }
+
+        // Add event listeners for each input field
+        const inputs = document.querySelectorAll("input, select");
+        inputs.forEach(input => {
+            input.addEventListener("input", function () {
+                updateInputStyles(input);
+            });
+
+            // Initial check on page load to update the styles
+            updateInputStyles(input);
+        });
+
+
+
+    </script>
+}

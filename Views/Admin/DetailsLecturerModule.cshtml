@@ -1,0 +1,41 @@
+﻿@model SchoolProject.Models.LecturerModule
+
+@{
+    ViewData["Title"] = "Lecturer Module Details";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4>Lecturer Module Details</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Lecturer Information -->
+                    <h5 class="card-title">Lecturer: @Model.Lecturer?.Name @Model.Lecturer?.Surname</h5>
+
+                    <!-- Module Information -->
+                    <h5 class="card-title">Module: @Model.Module?.ModuleName</h5>
+
+                    <!-- Assigned Date -->
+                    <p class="card-text">
+                        <strong>Assigned Date:</strong> @Model.AssignedDate.ToString("dd/MM/yyyy")
+                    </p>
+
+                    <!-- Status -->
+                    <p class="card-text">
+                        <strong>Status:</strong> @Model.ModLecturerStatus.ToString()
+                    </p>
+
+                    <!-- Back to List Button -->
+                    <a asp-action="ManageLecturerModules" class="btn btn-secondary">Back to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
