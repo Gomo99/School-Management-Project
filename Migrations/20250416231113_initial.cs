@@ -65,35 +65,6 @@ namespace SchoolProject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SupportMessages",
-                columns: table => new
-                {
-                    SupportMessageID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    SenderID = table.Column<int>(type: "int", nullable: false),
-                    ReceiverID = table.Column<int>(type: "int", nullable: false),
-                    MessageText = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SupportMessages", x => x.SupportMessageID);
-                    table.ForeignKey(
-                        name: "FK_SupportMessages_Accounts_ReceiverID",
-                        column: x => x.ReceiverID,
-                        principalTable: "Accounts",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SupportMessages_Accounts_SenderID",
-                        column: x => x.SenderID,
-                        principalTable: "Accounts",
-                        principalColumn: "UserID",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "LecturerModules",
                 columns: table => new
                 {
@@ -283,16 +254,6 @@ namespace SchoolProject.Migrations
                 name: "IX_StudentModules_UserID",
                 table: "StudentModules",
                 column: "UserID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SupportMessages_ReceiverID",
-                table: "SupportMessages",
-                column: "ReceiverID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SupportMessages_SenderID",
-                table: "SupportMessages",
-                column: "SenderID");
         }
 
         /// <inheritdoc />
@@ -300,9 +261,6 @@ namespace SchoolProject.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Assessments");
-
-            migrationBuilder.DropTable(
-                name: "SupportMessages");
 
             migrationBuilder.DropTable(
                 name: "StudentModules");

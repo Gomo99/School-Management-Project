@@ -580,54 +580,6 @@ namespace SchoolProject.Controllers
 
 
 
-        public async Task<IActionResult> Chat(int chatWithId)
-        {
-            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            var messages = await _context.SupportMessages
-                .Where(m => (m.SenderID == currentUserId && m.ReceiverID == chatWithId) ||
-                            (m.SenderID == chatWithId && m.ReceiverID == currentUserId))
-                .OrderBy(m => m.Timestamp)
-                .ToListAsync();
-
-            // Mark unread as read
-            var unread = messages
-                .Where(m => m.ReceiverID == currentUserId && !m.IsRead)
-                .ToList();
-
-            foreach (var msg in unread)
-            {
-                msg.IsRead = true;
-            }
-
-            await _context.SaveChangesAsync();
-
-            ViewBag.CurrentUserID = currentUserId;
-            ViewBag.ChatWithID = chatWithId;
-
-            return View(messages);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> SendMessage(int receiverId, string messageText)
-        {
-            var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-            var message = new SupportMessage
-            {
-                SenderID = currentUserId,
-                ReceiverID = receiverId,
-                MessageText = messageText?.Trim(),
-                Timestamp = DateTime.Now,
-                IsRead = false
-            };
-
-            _context.SupportMessages.Add(message);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction("Chat", new { chatWithId = receiverId });
-        }
-
 
 
 

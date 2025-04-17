@@ -5,7 +5,15 @@
     var user = HttpContextAccessor.HttpContext.User;
     var isAuthenticated = user.Identity.IsAuthenticated;
     var role = user.FindFirst(ClaimTypes.Role)?.Value;
+    var userId = HttpContextAccessor.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "guest";
 }
+
+
+<script>
+    const currentUserId = "@userId";
+</script>
+
+
 
 @if (isAuthenticated)
 {
@@ -22,24 +30,18 @@
 
                 <!-- Replace the Dashboard link with the new code block inside the list group -->
                 <div class="list-group-item list-group-item-action mt-4 text-center">
-                    @if (User.IsInRole("Administrator"))
-                    {
-                        <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-primary">
-                            <i class="bi bi-house-door"></i> Back to Dashboard
-                        </a>
+                    @{
+                        var dashboardAction = role switch
+                        {
+                            "Administrator" => Url.Action("Dashboard", "Admin"),
+                            "Lecturer" => Url.Action("Dashboard", "Lecturer"),
+                            "Student" => Url.Action("Dashboard", "Student"),
+                            _ => "#"
+                        };
                     }
-                    else if (User.IsInRole("Lecturer"))
-                    {
-                        <a href="@Url.Action("Dashboard", "Lecturer")" class="btn btn-primary">
-                            <i class="bi bi-house-door"></i> Back to Dashboard
-                        </a>
-                    }
-                    else if (User.IsInRole("Student"))
-                    {
-                        <a href="@Url.Action("Dashboard", "Student")" class="btn btn-primary">
-                            <i class="bi bi-house-door"></i> Back to Dashboard
-                        </a>
-                    }
+                    <a href="@dashboardAction" class="btn btn-primary">
+                        <i class="bi bi-house-door"></i> Back to Dashboard
+                    </a>
                 </div>
 
                 <!-- Admin only -->
@@ -91,7 +93,7 @@
                         <input class="form-check-input" type="checkbox" id="darkModeToggle" /> Dark Mode
                     </label>
                 </div>
-               
+
                 <!-- Settings Dropdown -->
                 <div class="list-group-item p-0">
                     <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center w-100"
@@ -99,9 +101,10 @@
                             data-bs-target="#settingsMenu"
                             aria-expanded="false"
                             aria-controls="settingsMenu"
-                            type="button">
+                            type="button"
+                            id="settingsToggleButton">
                         <span><i class="bi bi-gear"></i> Settings</span>
-                        <i class="bi bi-caret-down-fill"></i>
+                        <i class="bi bi-caret-down-fill toggle-icon"></i> <!-- Added a class for animation -->
                     </button>
 
                     <div class="collapse" id="settingsMenu">
@@ -109,23 +112,24 @@
                            class="list-group-item list-group-item-action border-0 ps-5">
                             <i class="bi bi-person-badge"></i> View Profile
                         </a>
-
                         <a href="@Url.Action("EditProfile", "Account")"
                            class="list-group-item list-group-item-action border-0 ps-5">
                             <i class="bi bi-person"></i> Edit Profile
                         </a>
-
                         <a href="@Url.Action("ChangePassword", "Account")"
                            class="list-group-item list-group-item-action border-0 ps-5">
                             <i class="bi bi-shield-lock"></i> Change Password
                         </a>
-
                         <a href="@Url.Action("DeleteAccount", "Account")"
                            class="list-group-item list-group-item-action border-0 ps-5 text-danger">
                             <i class="bi bi-person-x"></i> Delete Account
                         </a>
                     </div>
                 </div>
+
+
+
+
             </div>
         </div>
     </div>
@@ -136,12 +140,11 @@
     </button>
 
     <script>
-        // Function to apply dark mode
         function applyDarkMode(isDark) {
             const htmlElement = document.documentElement;
             const navElement = document.querySelector('.navbar');
             const sidebarElement = document.querySelector('.offcanvas');
-            
+
             if (isDark) {
                 htmlElement.setAttribute('data-bs-theme', 'dark');
                 document.body.classList.add('bg-dark', 'text-white');
@@ -155,33 +158,36 @@
             }
         }
 
-        // Initialize dark mode
         document.addEventListener('DOMContentLoaded', () => {
             const darkModeToggle = document.getElementById('darkModeToggle');
-            const isDarkMode = localStorage.getItem('darkMode') === 'true';
-            
-            darkModeToggle.checked = isDarkMode;
-            applyDarkMode(isDarkMode);
+            const userKey = `darkMode_${currentUserId}`;
+            const isDarkMode = localStorage.getItem(userKey) === 'true';
 
-            darkModeToggle.addEventListener('change', function() {
-                localStorage.setItem('darkMode', this.checked);
-                applyDarkMode(this.checked);
-            });
+            if (darkModeToggle) {
+                darkModeToggle.checked = isDarkMode;
+                applyDarkMode(isDarkMode);
+
+                darkModeToggle.addEventListener('change', function () {
+                    localStorage.setItem(userKey, this.checked);
+                    applyDarkMode(this.checked);
+                });
+            } else {
+                applyDarkMode(isDarkMode);
+            }
         });
 
-        // Make sure dark mode persists across page navigation
         window.addEventListener('pageshow', () => {
             const darkModeToggle = document.getElementById('darkModeToggle');
+            const userKey = `darkMode_${currentUserId}`;
             if (darkModeToggle) {
-                const isDarkMode = localStorage.getItem('darkMode') === 'true';
+                const isDarkMode = localStorage.getItem(userKey) === 'true';
                 darkModeToggle.checked = isDarkMode;
                 applyDarkMode(isDarkMode);
             }
         });
 
-
-
-         function updateClock() {
+        // Clock logic
+        function updateClock() {
             const now = new Date();
             const timeString = now.toLocaleTimeString();
             const dateString = now.toLocaleDateString(undefined, {
@@ -199,8 +205,8 @@
             `;
         }
 
-        // Update clock immediately and then every second
         updateClock();
         setInterval(updateClock, 1000);
     </script>
+
 }

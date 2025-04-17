@@ -1,4 +1,6 @@
-﻿@{
+﻿@model SchoolProject.ViewModel.DashboardViewModel
+
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Admin Dashboard";
 }
@@ -7,5 +9,62 @@
     @await Html.PartialAsync("_SidebarPartial")
 }
 <partial name="_NotificationPartial" />
+
+<div class="row mb-4">
+    <!-- Active Modules Card -->
+    <div class="col-md-4">
+        <div class="card text-white bg-success h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Active Modules</h6>
+                        <h2 class="mb-0">@Model.ActiveModulesCount</h2>
+                    </div>
+                    <i class="bi bi-check-circle-fill fs-1"></i>
+                </div>
+                <a href="@Url.Action("ManageModules", new { status = "Active" })"
+                   class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="col-md-4">
+        <div class="card text-white bg-danger h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Inactive Modules</h6>
+                        <h2 class="mb-0">@Model.InactiveModulesCount</h2>
+                    </div>
+                    <i class="bi bi-x-circle-fill fs-1"></i>
+                </div>
+                <a href="@Url.Action("ManageModules", new { status = "Inactive" })"
+                   class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <div class="col-md-4">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title">Total Modules</h6>
+                        <h2 class="mb-0">@Model.TotalModules</h2>
+                    </div>
+                    <i class="bi bi-collection-fill fs-1"></i>
+                </div>
+                <a href="@Url.Action("ManageModules")" class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 
 

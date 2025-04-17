@@ -11,6 +11,7 @@ using X.PagedList.Extensions;
 
 namespace SchoolProject.Controllers
 {
+    [Authorize(Roles = "Administrator")]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,12 +21,20 @@ namespace SchoolProject.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Administrator")]
-        public IActionResult Dashboard()
+      
+        public async Task<IActionResult> DashboardAsync()
         {
-            ViewData["_SidebarPartial"] = true;
             var currentUserName = User.Identity.Name;
-            return View();
+
+            var model = new DashboardViewModel
+            {
+                ActiveModulesCount = await _context.Modules
+                        .CountAsync(m => m.ModuleStatus == ModuleStatus.Active),
+                InactiveModulesCount = await _context.Modules
+                        .CountAsync(m => m.ModuleStatus == ModuleStatus.Inactive)
+            };
+
+            return View(model);
         }
 
         // View all modules
