@@ -173,22 +173,28 @@ namespace SchoolProject.Controllers
             { "ResetPin", resetPin }  // Send the plain PIN to the user in the email
         };
 
-                // Send email using the template
-                var subject = "Password Reset Request - SchoolProject";
-                await _emailService.SendEmailWithTemplateAsync(email, subject, "password-reset-template.html", placeholders);
+                try
+                {
+                    // Send email using the template
+                    var subject = "Password Reset Request - SchoolProject";
+                    await _emailService.SendEmailWithTemplateAsync(email, subject, "password-reset-template.html", placeholders);
 
+                    // Save the hashed PIN and expiration time in the database
+                    user.ResetPin = hashedResetPin;
+                    user.ResetPinExpiration = DateTime.Now.AddMinutes(5);
+                    await _context.SaveChangesAsync();
 
-
-
-                // Save the hashed PIN and expiration time in the database
-                user.ResetPin = hashedResetPin;
-                user.ResetPinExpiration = DateTime.Now.AddMinutes(5);
-                await _context.SaveChangesAsync();
-
-                return View("ResetPassword");
+                    TempData["SuccessMessage"] = "A password reset PIN has been sent to your email address.";
+                    return View("ResetPassword");
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = "An error occurred while sending the reset email. Please try again.";
+                    return View();
+                }
             }
 
-            ModelState.AddModelError(string.Empty, "The email address you entered is not associated with any account.");
+            TempData["ErrorMessage"] = "The email address you entered is not associated with any account.";
             return View();
         }
 
@@ -264,89 +270,85 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProfile(EditProfileViewModel model)
         {
-            
-                var currentUserName = User.Identity.Name;
-                var user = _context.Accounts.FirstOrDefault(a => a.Name == currentUserName);
+            var currentUserName = User.Identity.Name;
+            var user = _context.Accounts.FirstOrDefault(a => a.Name == currentUserName);
 
-                if (user == null)
-                {
-                    return NotFound();
-                }
-
-                // Check if the new email is taken by another user
-                var existingUserWithEmail = _context.Accounts
-                    .FirstOrDefault(a => a.Email == model.Email && a.UserID != user.UserID);
-
-                if (existingUserWithEmail != null)
-                {
-                    ModelState.AddModelError("Email", "This email is already in use by another user.");
-                    return View(model);
-                }
-
-                // Store old email before change
-                var oldEmail = user.Email;
-
-                // Update user info
-                user.Name = model.Name;
-                user.Surname = model.Surname;
-                user.Email = model.Email;
-                user.Title = model.Title;
-                _context.SaveChanges();
-
-                // Send security alerts if email was changed
-                if (oldEmail != user.Email)
-                {
-                    var changeDate = DateTime.Now.ToString("dddd, MMMM dd, yyyy hh:mm tt");
-
-                    // 1. Alert to old email
-                    var oldEmailPlaceholders = new Dictionary<string, string>
+            if (user == null)
             {
-                { "Name", user.Name },
-                { "OldEmail", oldEmail },
-                { "NewEmail", user.Email },
-                { "ChangeDate", changeDate }
-            };
+                TempData["ErrorMessage"] = "User not found. Please try again.";
+                return RedirectToAction("Login", "Account");
+            }
 
-                    await _emailService.SendEmailWithTemplateAsync(
-                        oldEmail,
-                        "Security Alert: Your Email Address Was Changed",
-                        "EmailChangeTemplate.html",
-                        oldEmailPlaceholders
-                    );
+            // Check if the new email is taken by another user
+            var existingUserWithEmail = _context.Accounts
+                .FirstOrDefault(a => a.Email == model.Email && a.UserID != user.UserID);
 
-                    // 2. Alert to new email (with full profile details)
-                    var newEmailPlaceholders = new Dictionary<string, string>
+            if (existingUserWithEmail != null)
             {
-                { "Name", user.Name },
-                { "Surname", user.Surname },
-                { "Title", user.Title },
-                { "OldEmail", oldEmail },
-                { "NewEmail", user.Email },
-                { "ChangeDate", changeDate },
-                { "Role", user.Role.ToString() },
-                { "Status", user.UserStatus.ToString() }
+                TempData["ErrorMessage"] = "This email is already in use by another user.";
+                return View(model);
+            }
+
+            var oldEmail = user.Email;
+
+            // Update user info
+            user.Name = model.Name;
+            user.Surname = model.Surname;
+            user.Email = model.Email;
+            user.Title = model.Title;
+            _context.SaveChanges();
+
+            // Send security alerts if email changed
+            if (oldEmail != user.Email)
+            {
+                var changeDate = DateTime.Now.ToString("dddd, MMMM dd, yyyy hh:mm tt");
+
+                // Send alert to old email
+                var oldEmailPlaceholders = new Dictionary<string, string>
+        {
+            { "Name", user.Name },
+            { "OldEmail", oldEmail },
+            { "NewEmail", user.Email },
+            { "ChangeDate", changeDate }
+        };
+
+                await _emailService.SendEmailWithTemplateAsync(
+                    oldEmail,
+                    "Security Alert: Your Email Address Was Changed",
+                    "EmailChangeTemplate.html",
+                    oldEmailPlaceholders
+                );
+
+                // Send alert to new email
+                var newEmailPlaceholders = new Dictionary<string, string>
+        {
+            { "Name", user.Name },
+            { "Surname", user.Surname },
+            { "Title", user.Title },
+            { "OldEmail", oldEmail },
+            { "NewEmail", user.Email },
+            { "ChangeDate", changeDate },
+            { "Role", user.Role.ToString() },
+            { "Status", user.UserStatus.ToString() }
+        };
+
+                await _emailService.SendEmailWithTemplateAsync(
+                    user.Email,
+                    "Welcome! Your Email Address Has Been Updated",
+                    "EmailChangeAlert_New.html",
+                    newEmailPlaceholders
+                );
+            }
+
+            TempData["SuccessMessage"] = "Your profile has been updated successfully.";
+
+            return user.Role switch
+            {
+                UserRole.Administrator => RedirectToAction("Dashboard", "Admin"),
+                UserRole.Lecturer => RedirectToAction("Dashboard", "Lecturer"),
+                UserRole.Student => RedirectToAction("Dashboard", "Student"),
+                _ => RedirectToAction("Index", "Home"),
             };
-
-                    await _emailService.SendEmailWithTemplateAsync(
-                        user.Email,
-                        "Welcome! Your Email Address Has Been Updated",
-                        "EmailChangeAlert_New.html",
-                        newEmailPlaceholders
-                    );
-                }
-
-                TempData["SuccessMessage"] = "Your profile has been updated successfully.";
-
-                return user.Role switch
-                {
-                    UserRole.Administrator => RedirectToAction("Dashboard", "Admin"),
-                    UserRole.Lecturer => RedirectToAction("Dashboard", "Lecturer"),
-                    UserRole.Student => RedirectToAction("Dashboard", "Student"),
-                    _ => RedirectToAction("Index", "Home"),
-                };
-            
-
-            return View(model);
         }
 
 

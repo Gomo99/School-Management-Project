@@ -6,6 +6,7 @@
     var isAuthenticated = user.Identity.IsAuthenticated;
     var role = user.FindFirst(ClaimTypes.Role)?.Value;
     var userId = HttpContextAccessor.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "guest";
+
 }
 
 
@@ -96,6 +97,7 @@
 
                 <!-- Settings Dropdown -->
                 <div class="list-group-item p-0">
+                    <!-- Settings Toggle Button -->
                     <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center w-100"
                             data-bs-toggle="collapse"
                             data-bs-target="#settingsMenu"
@@ -107,6 +109,7 @@
                         <i class="bi bi-caret-down-fill toggle-icon"></i> <!-- Added a class for animation -->
                     </button>
 
+                    <!-- Collapsible Settings Menu -->
                     <div class="collapse" id="settingsMenu">
                         <a href="@Url.Action("ViewProfile", "Account")"
                            class="list-group-item list-group-item-action border-0 ps-5">
@@ -130,6 +133,8 @@
 
 
 
+
+
             </div>
         </div>
     </div>
@@ -140,6 +145,28 @@
     </button>
 
     <script>
+                document.addEventListener('DOMContentLoaded', function () {
+            var settingsButton = document.getElementById('settingsToggleButton');
+            var settingsMenu = document.getElementById('settingsMenu');
+            var caretIcon = settingsButton.querySelector('.toggle-icon');
+
+            // When the collapse state changes, toggle the caret icon
+            settingsButton.addEventListener('click', function () {
+                if (settingsMenu.classList.contains('show')) {
+                    // If the menu is shown, it will collapse, so rotate the caret back
+                    caretIcon.classList.remove('bi-caret-up-fill');
+                    caretIcon.classList.add('bi-caret-down-fill');
+                } else {
+                    // If the menu is hidden, it will expand, so rotate the caret up
+                    caretIcon.classList.remove('bi-caret-down-fill');
+                    caretIcon.classList.add('bi-caret-up-fill');
+                }
+            });
+        });
+
+
+
+
         function applyDarkMode(isDark) {
             const htmlElement = document.documentElement;
             const navElement = document.querySelector('.navbar');
@@ -208,5 +235,11 @@
         updateClock();
         setInterval(updateClock, 1000);
     </script>
+    <style>
 
+                .collapse {
+            transition: height 0.3s ease;
+            overflow: hidden;
+        }
+    </style>
 }
