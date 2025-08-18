@@ -1,0 +1,40 @@
+﻿@model SchoolProject.Models.Assessment
+@{
+    ViewData["Title"] = "Edit Assessment";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<h2>Edit Assessment</h2>
+<hr />
+
+<form asp-action="EditAssessment" method="post">
+    <input type="hidden" asp-for="AssessmentID" />
+
+    <div class="form-group">
+        <label asp-for="StudentModuleID" class="control-label"></label>
+        <select asp-for="StudentModuleID" class="form-control" asp-items="ViewBag.StudentModuleID"></select>
+        <span asp-validation-for="StudentModuleID" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="AssessmentTypeID" class="control-label"></label>
+        <select asp-for="AssessmentTypeID" class="form-control" asp-items="ViewBag.AssessmentTypeID"></select>
+        <span asp-validation-for="AssessmentTypeID" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="DueDate" class="control-label"></label>
+        <input asp-for="DueDate" class="form-control" type="date" />
+        <span asp-validation-for="DueDate" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a asp-action="ManageAssessments" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

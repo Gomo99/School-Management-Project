@@ -1,37 +1,13 @@
-﻿@model SchoolProject.ViewModel.UserManagementViewModel
+﻿@model IEnumerable<SchoolProject.Models.Account>
+
 @section Sidebar {
     @await Html.PartialAsync("_SidebarPartial")
 }
+
 <div class="container mt-5">
     <div class="card shadow-lg border-0 rounded-4">
         <div class="card-body">
             <h2 class="card-title mb-4">User Management</h2>
-
-            <!-- Search and Filter Form -->
-            <form asp-action="ManageUsers" method="get" class="mb-4">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label">Search</label>
-                        <input name="search" value="@Model.SearchTerm" class="form-control" placeholder="Search by name or email" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Filter by Role</label>
-                        <select name="roleFilter" asp-items="Model.Roles" class="form-select">
-                            <option value="">All Roles</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Filter by Status</label>
-                        <select name="statusFilter" asp-items="Model.Statuses" class="form-select">
-                            <option value="">All Statuses</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-grid">
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                        <a asp-action="ManageUsers" class="btn btn-outline-secondary mt-2">Reset</a>
-                    </div>
-                </div>
-            </form>
 
             <!-- Users Table -->
             <div class="table-responsive">
@@ -46,9 +22,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.Users.Any())
+                        @if (Model.Any())
                         {
-                            foreach (var user in Model.Users)
+                            foreach (var user in Model)
                             {
                                 <tr>
                                     <td>@user.Name @user.Surname</td>
@@ -57,16 +33,32 @@
                                     <td>
                                         <span class="badge bg-@(user.UserStatus == UserStatus.Active ? "success" : "secondary")">@user.UserStatus</span>
                                     </td>
-                                    <td>
-                                        @if (user.UserStatus == UserStatus.Inactive)
+                                    <td class="d-flex gap-2">
+                                        <!-- Edit Button -->
+                                        <a asp-action="EditUser" asp-route-id="@user.UserID"
+                                           class="btn btn-sm btn-primary" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+
+                                        <!-- Delete/Deactivate Button -->
+                                        @if (user.UserStatus == UserStatus.Active)
                                         {
-                                            <a asp-action="ReactivateAccount" asp-route-id="@user.UserID" class="btn btn-sm btn-success">
-                                                <i class="bi bi-arrow-clockwise me-1"></i> Reactivate
-                                            </a>
+                                            <form asp-action="DeleteUser" asp-route-id="@user.UserID" method="post">
+                                                <button type="submit" class="btn btn-sm btn-danger" title="Deactivate"
+                                                        onclick="return confirm('Are you sure you want to deactivate this user?')">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
                                         }
                                         else
                                         {
-                                            <span class="text-muted">—</span>
+                                            <!-- Reactivate Button -->
+                                            <form asp-action="ReactivateAccount" asp-route-id="@user.UserID" method="post">
+                                                <button type="submit" class="btn btn-sm btn-success" title="Reactivate"
+                                                        onclick="return confirm('Are you sure you want to reactivate this user?')">
+                                                    <i class="bi bi-arrow-clockwise"></i>
+                                                </button>
+                                            </form>
                                         }
                                     </td>
                                 </tr>
@@ -75,31 +67,12 @@
                         else
                         {
                             <tr>
-                                <td colspan="5" class="text-center text-muted">No users found matching the criteria.</td>
+                                <td colspan="5" class="text-center text-muted">No users found.</td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
-
-            <!-- Pagination -->
-            <nav class="mt-4">
-                <ul class="pagination justify-content-center">
-                    @for (int i = 1; i <= Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
-                    {
-                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                            <a class="page-link"
-                               asp-action="ManageUsers"
-                               asp-route-page="@i"
-                               asp-route-search="@Model.SearchTerm"
-                               asp-route-roleFilter="@Model.RoleFilter"
-                               asp-route-statusFilter="@Model.StatusFilter">
-                                @i
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </nav>
         </div>
     </div>
 </div>

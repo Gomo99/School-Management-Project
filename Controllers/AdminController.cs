@@ -325,7 +325,7 @@ namespace SchoolProject.Controllers
 
 
 
-        // GET: EditLecturerModule
+        
         // GET: EditLecturerModule
         public async Task<IActionResult> EditLecturerModule(int id)
         {
@@ -449,40 +449,6 @@ namespace SchoolProject.Controllers
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         public async Task<IActionResult> ManageStudentModule()
         {
             var studentModules = await _context.StudentModules
@@ -496,11 +462,6 @@ namespace SchoolProject.Controllers
 
             return View(studentModules);
         }
-
-
-
-
-
 
 
 
@@ -530,8 +491,6 @@ namespace SchoolProject.Controllers
 
             return View();
         }
-
-
 
 
 
@@ -723,64 +682,186 @@ namespace SchoolProject.Controllers
 
 
 
-        public async Task<IActionResult> ManageUsers(string search, UserRole? roleFilter, UserStatus? statusFilter, int page = 1, int pageSize = 10)
+        public async Task<IActionResult> ManageUsers()
         {
-            // Start with base query
-            var usersQuery = _context.Accounts.AsQueryable();
-
-            // Apply filters if provided
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                usersQuery = usersQuery.Where(u =>
-                    u.Name.Contains(search) ||
-                    u.Surname.Contains(search) ||
-                    u.Email.Contains(search));
-            }
-
-            if (roleFilter.HasValue)
-            {
-                usersQuery = usersQuery.Where(u => u.Role == roleFilter.Value);
-            }
-
-            if (statusFilter.HasValue)
-            {
-                usersQuery = usersQuery.Where(u => u.UserStatus == statusFilter.Value);
-            }
-
-            // Get total count for pagination
-            var totalCount = await usersQuery.CountAsync();
-
-            // Apply pagination
-            var users = await usersQuery
+            // Get all active users ordered by surname and name
+            var users = await _context.Accounts
                 .OrderBy(u => u.Surname)
                 .ThenBy(u => u.Name)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
                 .ToListAsync();
 
-            // Prepare view model
-            var model = new UserManagementViewModel
-            {
-                Users = users,
-                SearchTerm = search,
-                RoleFilter = roleFilter,
-                StatusFilter = statusFilter,
-                CurrentPage = page,
-                PageSize = pageSize,
-                TotalCount = totalCount,
-                Roles = Enum.GetValues<UserRole>().Select(r => new SelectListItem
-                {
-                    Value = r.ToString(),
-                    Text = r.ToString()
-                }).ToList(),
-                Statuses = Enum.GetValues<UserStatus>().Select(s => new SelectListItem
-                {
-                    Value = s.ToString(),
-                    Text = s.ToString()
-                }).ToList()
-            };
+            return View(users);
+        }
 
-            return View(model);
+
+
+
+
+
+
+        // GET: Create User
+        public IActionResult CreateUser()
+        {
+            PopulateRoleDropdown(); // No need to await, it's synchronous
+            return View();
+        }
+
+        // POST: Create User
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser(Account account)
+        {
+           
+                try
+                {
+                    // Check if email already exists
+                    if (_context.Accounts.Any(a => a.Email == account.Email))
+                    {
+                        TempData["ErrorMessage"] = "Email already exists in the system.";
+                        await PopulateRoleDropdown();
+                        return View(account);
+                    }
+
+                    // Force status to Active regardless of input
+                    account.UserStatus = UserStatus.Active;
+
+                    _context.Accounts.Add(account);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = $"{account.Name} created successfully!";
+                    return RedirectToAction(nameof(ManageUsers));
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+                }
+            
+
+            await PopulateRoleDropdown();
+            TempData["ErrorMessage"] = "Invalid data. Please check the form.";
+            return View(account);
+        }
+
+
+
+       
+        public async Task<IActionResult> EditUser(int id)
+        {
+            var user = await _context.Accounts.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            await PopulateRoleDropdown(user.Role);
+            await PopulateStatusDropdown(user.UserStatus);
+            return View(user);
+        }
+
+        // POST: Edit User
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(int id, Account account)
+        {
+            if (id != account.UserID)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Prevent changing email to one that already exists (for another user)
+                    if (_context.Accounts.Any(a => a.Email == account.Email && a.UserID != account.UserID))
+                    {
+                        TempData["ErrorMessage"] = "Email already exists in the system.";
+                        await PopulateRoleDropdown(account.Role);
+                        await PopulateStatusDropdown(account.UserStatus);
+                        return View(account);
+                    }
+
+                    // Get the existing user from database
+                    var existingUser = await _context.Accounts.FindAsync(id);
+                    if (existingUser == null)
+                    {
+                        return NotFound();
+                    }
+
+                    // Update only the fields we want to allow changing
+                    existingUser.Name = account.Name;
+                    existingUser.Surname = account.Surname;
+                    existingUser.Title = account.Title;
+                    existingUser.Role = account.Role;
+                    existingUser.Email = account.Email;
+
+                    // Force status to Active regardless of input
+                    existingUser.UserStatus = UserStatus.Active;
+
+                    // Explicitly tell EF which properties to update
+                    _context.Entry(existingUser).Property(x => x.Name).IsModified = true;
+                    _context.Entry(existingUser).Property(x => x.Surname).IsModified = true;
+                    _context.Entry(existingUser).Property(x => x.Title).IsModified = true;
+                    _context.Entry(existingUser).Property(x => x.Role).IsModified = true;
+                    _context.Entry(existingUser).Property(x => x.Email).IsModified = true;
+                    _context.Entry(existingUser).Property(x => x.UserStatus).IsModified = true;
+
+                    await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "User updated successfully!";
+                    return RedirectToAction(nameof(ManageUsers));
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!_context.Accounts.Any(e => e.UserID == account.UserID))
+                    {
+                        return NotFound();
+                    }
+                    throw;
+                }
+            }
+
+            await PopulateRoleDropdown(account.Role);
+            await PopulateStatusDropdown(account.UserStatus);
+            return View(account);
+        }
+        // GET: Delete User
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var user = await _context.Accounts.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            return View(user);
+        }
+
+        // POST: Delete User
+        [HttpPost, ActionName("DeleteUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUserConfirmed(int id)
+        {
+            var user = await _context.Accounts.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                // Soft delete by setting status to Inactive
+                user.UserStatus = UserStatus.Inactive;
+                _context.Accounts.Update(user);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "User deactivated successfully!";
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "An error occurred while deactivating the user.";
+            }
+
+            return RedirectToAction(nameof(ManageUsers));
         }
 
 
@@ -791,6 +872,39 @@ namespace SchoolProject.Controllers
 
 
 
+
+
+
+        // Helper methods
+        private async Task PopulateRoleDropdown(UserRole? selectedRole = null)
+        {
+            var roles = Enum.GetValues(typeof(UserRole))
+                .Cast<UserRole>()
+                .Select(r => new SelectListItem
+                {
+                    Value = r.ToString(),
+                    Text = r.ToString(),
+                    Selected = selectedRole.HasValue && r == selectedRole.Value
+                })
+                .ToList();
+
+            ViewBag.Roles = new SelectList(roles, "Value", "Text", selectedRole);
+        }
+
+        private async Task PopulateStatusDropdown(UserStatus? selectedStatus = null)
+        {
+            var statuses = Enum.GetValues(typeof(UserStatus))
+                .Cast<UserStatus>()
+                .Select(s => new SelectListItem
+                {
+                    Value = s.ToString(),
+                    Text = s.ToString(),
+                    Selected = selectedStatus.HasValue && s == selectedStatus.Value
+                })
+                .ToList();
+
+            ViewBag.Statuses = new SelectList(statuses, "Value", "Text", selectedStatus);
+        }
 
 
 

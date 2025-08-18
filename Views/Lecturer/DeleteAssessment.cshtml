@@ -1,0 +1,30 @@
+﻿@model SchoolProject.Models.Assessment
+@{
+    ViewData["Title"] = "Delete Assessment";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<h2>Delete Assessment</h2>
+<hr />
+
+<h4>Are you sure you want to delete this assessment?</h4>
+
+<div>
+    <dl class="row">
+        <dt class="col-sm-3">Student Module</dt>
+        <dd class="col-sm-9">@Model.StudentModuleID</dd>
+
+        <dt class="col-sm-3">Assessment Type</dt>
+        <dd class="col-sm-9">@Model.AssessmentType?.AssessmentTypeDescription</dd>
+
+        <dt class="col-sm-3">Due Date</dt>
+        <dd class="col-sm-9">@Model.DueDate.ToShortDateString()</dd>
+    </dl>
+</div>
+
+<form asp-action="DeleteAssessment" method="post">
+    <input type="hidden" asp-for="AssessmentID" />
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="ManageAssessments" class="btn btn-secondary">Cancel</a>
+</form>

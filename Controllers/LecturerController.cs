@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SchoolProject.Data;
 using SchoolProject.Models;
@@ -19,6 +20,9 @@ namespace SchoolProject.Controllers
         {
             return View();
         }
+
+
+
 
 
         public async Task<IActionResult> ManageAssessmentType()
@@ -136,6 +140,235 @@ namespace SchoolProject.Controllers
 
             return RedirectToAction(nameof(ManageAssessmentType));
         }
+
+
+
+
+
+
+
+        public IActionResult ManageAssessments()
+        {
+            var assessments = _context.Assessments
+                .Include(a => a.StudentModule)
+                    .ThenInclude(sm => sm.Student)
+                .Include(a => a.StudentModule)
+                    .ThenInclude(sm => sm.LecturerModule)
+                        .ThenInclude(lm => lm.Module)
+                .Include(a => a.AssessmentType)
+                .ToList();
+
+            return View(assessments);
+        }
+
+
+        // GET: Add Assessment
+        // GET: Add Assessment
+        public IActionResult AddAssessment()
+        {
+            var studentModules = _context.StudentModules
+                .Include(sm => sm.Student)
+                .Include(sm => sm.LecturerModule)
+                    .ThenInclude(lm => lm.Module) // Module comes through LecturerModule
+                .Select(sm => new
+                {
+                    sm.StudentModuleID,
+                    DisplayName = sm.Student.Name + " " + sm.Student.Surname + " - " + sm.LecturerModule.Module.ModuleName
+                })
+                .ToList();
+
+            ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName");
+
+            ViewData["AssessmentTypeID"] = new SelectList(
+                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                "AssessmentTypeID",
+                "AssessmentTypeDescription"
+            );
+
+            return View();
+        }
+
+
+        // POST: Add Assessment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddAssessment([Bind("StudentModuleID,AssessmentTypeID,DueDate")] Assessment assessment)
+        {
+            
+                assessment.AssessmentStatus = AssessmentStatus.Active;
+                _context.Assessments.Add(assessment);
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction(nameof(ManageAssessments));
+            
+
+            var studentModules = _context.StudentModules
+       .Include(sm => sm.Student)
+       .Include(sm => sm.LecturerModule)
+           .ThenInclude(lm => lm.Module)
+       .Select(sm => new
+       {
+           sm.StudentModuleID,
+           DisplayName = sm.Student.Name + " " + sm.Student.Surname + " - " + sm.LecturerModule.Module.ModuleName
+       })
+       .ToList();
+
+            ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName", assessment.StudentModuleID);
+
+            ViewData["AssessmentTypeID"] = new SelectList(
+                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                "AssessmentTypeID",
+                "AssessmentTypeDescription",
+                assessment.AssessmentTypeID
+            );
+
+            return View(assessment);
+        }
+
+        // GET: Edit Assessment
+        // GET: Edit Assessment
+        public async Task<IActionResult> EditAssessment(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var assessment = await _context.Assessments.FindAsync(id);
+            if (assessment == null || assessment.AssessmentStatus == AssessmentStatus.Inactive) return NotFound();
+
+            // Prepare StudentModule dropdown with Student Name + Module Name
+            var studentModules = _context.StudentModules
+                .Include(sm => sm.Student)
+                .Include(sm => sm.LecturerModule)
+                    .ThenInclude(lm => lm.Module)
+                .Select(sm => new
+                {
+                    sm.StudentModuleID,
+                    DisplayName = sm.Student.Name + " " + sm.Student.Surname + " - " + sm.LecturerModule.Module.ModuleName
+                })
+                .ToList();
+
+            ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName", assessment.StudentModuleID);
+
+            // AssessmentType dropdown
+            ViewData["AssessmentTypeID"] = new SelectList(
+                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                "AssessmentTypeID",
+                "AssessmentTypeDescription",
+                assessment.AssessmentTypeID
+            );
+
+            return View(assessment);
+        }
+
+        // POST: Edit Assessment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAssessment(int id, [Bind("AssessmentID,StudentModuleID,AssessmentTypeID,DueDate")] Assessment assessment)
+        {
+            if (id != assessment.AssessmentID) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var existing = await _context.Assessments.FindAsync(id);
+                    if (existing == null || existing.AssessmentStatus == AssessmentStatus.Inactive) return NotFound();
+
+                    existing.StudentModuleID = assessment.StudentModuleID;
+                    existing.AssessmentTypeID = assessment.AssessmentTypeID;
+                    existing.DueDate = assessment.DueDate;
+
+                    _context.Update(existing);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!AssessmentExists(assessment.AssessmentID)) return NotFound();
+                    else throw;
+                }
+
+                return RedirectToAction(nameof(ManageAssessments));
+            }
+
+            // Re-populate dropdowns if ModelState is invalid
+            var studentModules = _context.StudentModules
+                .Include(sm => sm.Student)
+                .Include(sm => sm.LecturerModule)
+                    .ThenInclude(lm => lm.Module)
+                .Select(sm => new
+                {
+                    sm.StudentModuleID,
+                    DisplayName = sm.Student.Name + " " + sm.Student.Surname + " - " + sm.LecturerModule.Module.ModuleName
+                })
+                .ToList();
+
+            ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName", assessment.StudentModuleID);
+
+            ViewData["AssessmentTypeID"] = new SelectList(
+                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                "AssessmentTypeID",
+                "AssessmentTypeDescription",
+                assessment.AssessmentTypeID
+            );
+
+            return View(assessment);
+        }
+
+        // GET: Delete Assessment
+        public async Task<IActionResult> DeleteAssessment(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var assessment = await _context.Assessments
+                .Include(a => a.AssessmentType)
+                .Include(a => a.StudentModule)
+                .FirstOrDefaultAsync(m => m.AssessmentID == id);
+
+            if (assessment == null || assessment.AssessmentStatus == AssessmentStatus.Inactive) return NotFound();
+
+            return View(assessment);
+        }
+
+        // POST: Delete Assessment (Soft Delete)
+        [HttpPost, ActionName("DeleteAssessment")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAssessmentConfirmed(int id)
+        {
+            var assessment = await _context.Assessments.FindAsync(id);
+            if (assessment != null && assessment.AssessmentStatus == AssessmentStatus.Active)
+            {
+                assessment.AssessmentStatus = AssessmentStatus.Inactive;
+                _context.Update(assessment);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(ManageAssessments));
+        }
+
+
+
+
+
+
+
+
+
+
+        // Helper
+        private bool AssessmentExists(int id)
+        {
+            return _context.Assessments.Any(e => e.AssessmentID == id);
+        }
+
+
+
+
+
+
+
+
+
+
+
 
         private bool AssessmentTypeExists(int id)
         {

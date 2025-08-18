@@ -71,6 +71,41 @@ namespace SchoolProject.Migrations
                     b.HasKey("UserID");
 
                     b.ToTable("Accounts");
+
+                    b.HasData(
+                        new
+                        {
+                            UserID = 1,
+                            Email = "admin@school.com",
+                            Name = "Admin",
+                            Password = "admin123",
+                            Role = "Administrator",
+                            Surname = "User",
+                            Title = "System Admin",
+                            UserStatus = "Active"
+                        },
+                        new
+                        {
+                            UserID = 2,
+                            Email = "lecturer@school.com",
+                            Name = "lECTURE",
+                            Password = "admin123",
+                            Role = "Lecturer",
+                            Surname = "User",
+                            Title = "System Lecturer",
+                            UserStatus = "Active"
+                        },
+                        new
+                        {
+                            UserID = 3,
+                            Email = "student@school.com",
+                            Name = "Student",
+                            Password = "admin123",
+                            Role = "Student",
+                            Surname = "User",
+                            Title = "System Student",
+                            UserStatus = "Active"
+                        });
                 });
 
             modelBuilder.Entity("SchoolProject.Models.Assessment", b =>
@@ -123,6 +158,68 @@ namespace SchoolProject.Migrations
                     b.HasKey("AssessmentTypeID");
 
                     b.ToTable("assessmentTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            AssessmentTypeID = 1,
+                            AssessmentTypeDescription = "Formal written examination",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 2,
+                            AssessmentTypeDescription = "Short knowledge test",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 3,
+                            AssessmentTypeDescription = "Practical or theoretical work assignment",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 4,
+                            AssessmentTypeDescription = "Extended practical project work",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 5,
+                            AssessmentTypeDescription = "Oral presentation of work",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 6,
+                            AssessmentTypeDescription = "Hands-on practical assessment",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 7,
+                            AssessmentTypeDescription = "Analysis of real-world scenarios",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 8,
+                            AssessmentTypeDescription = "Collection of work samples",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 9,
+                            AssessmentTypeDescription = "Scientific laboratory report",
+                            AssessmentTypeStatus = "Active"
+                        },
+                        new
+                        {
+                            AssessmentTypeID = 10,
+                            AssessmentTypeDescription = "Academic research paper",
+                            AssessmentTypeStatus = "Active"
+                        });
                 });
 
             modelBuilder.Entity("SchoolProject.Models.LecturerModule", b =>

@@ -159,6 +159,16 @@ namespace SchoolProject.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Accounts",
+                columns: new[] { "UserID", "Email", "Name", "Password", "ResetPin", "ResetPinExpiration", "Role", "Surname", "Title", "UserStatus" },
+                values: new object[,]
+                {
+                    { 1, "admin@school.com", "Admin", "admin123", null, null, "Administrator", "User", "System Admin", "Active" },
+                    { 2, "lecturer@school.com", "lECTURE", "admin123", null, null, "Lecturer", "User", "System Lecturer", "Active" },
+                    { 3, "student@school.com", "Student", "admin123", null, null, "Student", "User", "System Student", "Active" }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Modules",
                 columns: new[] { "ModuleID", "Duration", "ModuleName", "ModuleStatus", "ModuleType" },
                 values: new object[,]
@@ -213,6 +223,23 @@ namespace SchoolProject.Migrations
                     { 48, 12, "Logistics 101", "Active", "Elective" },
                     { 49, 16, "Supply Chain Management 101", "Active", "Core" },
                     { 50, 15, "Business Analytics 101", "Active", "Elective" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "assessmentTypes",
+                columns: new[] { "AssessmentTypeID", "AssessmentTypeDescription", "AssessmentTypeStatus" },
+                values: new object[,]
+                {
+                    { 1, "Formal written examination", "Active" },
+                    { 2, "Short knowledge test", "Active" },
+                    { 3, "Practical or theoretical work assignment", "Active" },
+                    { 4, "Extended practical project work", "Active" },
+                    { 5, "Oral presentation of work", "Active" },
+                    { 6, "Hands-on practical assessment", "Active" },
+                    { 7, "Analysis of real-world scenarios", "Active" },
+                    { 8, "Collection of work samples", "Active" },
+                    { 9, "Scientific laboratory report", "Active" },
+                    { 10, "Academic research paper", "Active" }
                 });
 
             migrationBuilder.CreateIndex(

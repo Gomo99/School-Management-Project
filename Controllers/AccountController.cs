@@ -27,53 +27,13 @@ namespace SchoolProject.Controllers
         }
 
 
-        [HttpGet]
-        public IActionResult Register()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Register(Account account)
-        {
-            // Password strength validation
-            var passwordRegex = new Regex(@"^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$");
-            if (!passwordRegex.IsMatch(account.Password))
-            {
-                TempData["ErrorMessage"] = "Password must be at least 6 characters long, contain at least one uppercase letter, one number, and one special character.";
-                return View(account);
-            }
-
-            // Check if the email already exists in the database
-            if (_context.Accounts.Any(a => a.Email == account.Email))
-            {
-                TempData["ErrorMessage"] = "This email is already in use.";
-                return View(account); // Return to the view with the error message
-            }
-
-            // Ensure that the user status is set to Active during registration
-            account.UserStatus = UserStatus.Active;
-
-            // Hash the password using bcrypt before saving it to the database
-            account.Password = BCrypt.Net.BCrypt.HashPassword(account.Password);
-
-            // Save the account with the hashed password and the active user status
-            _context.Accounts.Add(account);
-            _context.SaveChanges();
-
-            TempData["SuccessMessage"] = "Registration successful! You can now log in.";
-            // Redirect to login after successful registration
-            return RedirectToAction("Login", "Account");
-        }
-
+       
 
         [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -86,7 +46,8 @@ namespace SchoolProject.Controllers
                     (a.Email.ToLower() == model.Email.ToLower() || a.Name.ToLower() == model.Email.ToLower())
                     && a.UserStatus == UserStatus.Active);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(model.Password, user.Password))
+            // Replace BCrypt verification with simple comparison
+            if (user == null || user.Password != model.Password) // Insecure - see better alternative below
             {
                 TempData["ErrorMessage"] = "Invalid login attempt or account is inactive.";
                 return View(model);
@@ -102,7 +63,6 @@ namespace SchoolProject.Controllers
     };
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
-
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = model.RememberMe
@@ -118,7 +78,6 @@ namespace SchoolProject.Controllers
                 _ => RedirectToAction("Index", "Home"),
             };
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -160,17 +119,15 @@ namespace SchoolProject.Controllers
 
             if (user != null)
             {
+                // Generate a simple 6-digit PIN (no hashing)
                 string resetPin = new Random().Next(100000, 999999).ToString();
-
-                // Hash the reset PIN before saving it
-                string hashedResetPin = BCrypt.Net.BCrypt.HashPassword(resetPin);
 
                 // Prepare placeholders for dynamic content
                 var placeholders = new Dictionary<string, string>
         {
             { "Name", user.Name },
             { "Email", email },
-            { "ResetPin", resetPin }  // Send the plain PIN to the user in the email
+            { "ResetPin", resetPin }
         };
 
                 try
@@ -179,8 +136,8 @@ namespace SchoolProject.Controllers
                     var subject = "Password Reset Request - SchoolProject";
                     await _emailService.SendEmailWithTemplateAsync(email, subject, "password-reset-template.html", placeholders);
 
-                    // Save the hashed PIN and expiration time in the database
-                    user.ResetPin = hashedResetPin;
+                    // Save the plain PIN and expiration time in the database
+                    user.ResetPin = resetPin;
                     user.ResetPinExpiration = DateTime.Now.AddMinutes(5);
                     await _context.SaveChangesAsync();
 
@@ -199,7 +156,6 @@ namespace SchoolProject.Controllers
         }
 
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ResetPassword(string pin, string newPassword)
@@ -211,32 +167,29 @@ namespace SchoolProject.Controllers
                 return View();
             }
 
-            // Validate the PIN from the database (assuming you store it as a hashed value)
-            var user = _context.Accounts.FirstOrDefault(a => a.ResetPinExpiration > DateTime.Now);
+            // Find user with matching unexpired PIN
+            var user = _context.Accounts.FirstOrDefault(a =>
+                a.ResetPin == pin &&
+                a.ResetPinExpiration > DateTime.Now);
 
-            if (user != null && BCrypt.Net.BCrypt.Verify(pin, user.ResetPin))  // Verify the hashed PIN
+            if (user != null)
             {
-                // If the PIN is correct, hash the new password
-                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
+                // Store the new password in plain text (no hashing)
+                user.Password = newPassword;
 
-                // Update the user's password with the new hashed password
-                user.Password = hashedPassword;
-
-                // Clear the ResetPin after successful password change (for security reasons)
+                // Clear the reset PIN
                 user.ResetPin = null;
 
-                // Save changes to the database
+                // Save changes
                 _context.SaveChanges();
 
-                // Redirect to login page after successful password reset
+                // Redirect to login page
                 return RedirectToAction("Login");
             }
 
-            // If PIN is invalid, return an error message
-            ModelState.AddModelError(string.Empty, "Invalid PIN.");
+            ModelState.AddModelError(string.Empty, "Invalid PIN or PIN has expired.");
             return View();
         }
-
 
 
 

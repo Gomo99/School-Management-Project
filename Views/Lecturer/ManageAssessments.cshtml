@@ -1,0 +1,40 @@
+﻿@model IEnumerable<SchoolProject.Models.Assessment>
+@{
+    ViewData["Title"] = "Manage Assessments";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<h2>Manage Assessments</h2>
+<hr />
+
+<a asp-action="AddAssessment" class="btn btn-success mb-3">+ Add Assessment</a>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Student Module</th>
+            <th>Assessment Type</th>
+            <th>Description</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.StudentModule.Student.Name @item.StudentModule.Student.Surname</td>
+                <td>@item.StudentModule.LecturerModule.Module.ModuleName</td>
+                <td>@item.AssessmentType.AssessmentTypeDescription</td>
+                <td>@item.DueDate.ToShortDateString()</td>
+                <td>@item.AssessmentStatus</td>
+                <td>
+                    <a asp-action="EditAssessment" asp-route-id="@item.AssessmentID" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="DeleteAssessment" asp-route-id="@item.AssessmentID" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
