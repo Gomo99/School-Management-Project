@@ -1,0 +1,25 @@
+﻿@model IEnumerable<SchoolProject.Models.LecturerModule>
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<h2>My Modules</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Module Code</th>
+            <th>Module Name</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var lm in Model)
+    {
+        <tr>
+            <td>@lm.Module.ModuleType</td>
+            <td>@lm.Module.ModuleName</td>
+            
+        </tr>
+    }
+    </tbody>
+</table>

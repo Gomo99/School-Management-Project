@@ -5,68 +5,54 @@
 }
 <partial name="_NotificationPartial" />
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow rounded-4">
-                <div class="card-header bg-primary text-white text-center rounded-top-4">
-                    <h3 class="mb-0">Welcome Back</h3>
-                    <small>Please login to your account</small>
-                </div>
-                <div class="card-body">
-                    <form asp-action="Login" method="post" novalidate>
-                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <form asp-action="Login" method="post" class="form_main shadow">
+        <p class="heading">Login</p>
 
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
-                                <input asp-for="Email" class="form-control" id="Email" placeholder="Email or Username" required />
-                            </div>
-                            <span asp-validation-for="Email" class="text-danger"></span>
-                        </div>
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
 
-                        <div class="mb-3">
-                            <label asp-for="Password" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                <input asp-for="Password" class="form-control" type="password" id="Password" placeholder="Password" required />
-                                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
-                                    <i class="bi bi-eye-slash" id="eyeIcon"></i>
-                                </button>
-                            </div>
-                            <span asp-validation-for="Password" class="text-danger"></span>
-                        </div>
-
-                        <div class="form-check mb-3">
-                            <input asp-for="RememberMe" class="form-check-input" />
-                            <label asp-for="RememberMe" class="form-check-label">Remember Me</label>
-                        </div>
-
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg rounded-pill">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                            </button>
-                        </div>
-
-                        <div class="mt-3 text-center">
-                            <a href="/Account/ForgotPassword">Forgot Password?</a>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer text-muted text-center">
-                    Don't have an account? <a href="/Account/Register">Register here</a>
-                </div>
-            </div>
+        <!-- Email -->
+        <div class="inputContainer">
+            <svg class="inputIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2e2e2e" viewBox="0 0 16 16">
+                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8V4z" />
+                <path d="M0 6.383v5.634A2 2 0 0 0 2 14h12a2 2 0 0 0 2-2V6.383l-7.555 4.533a1 1 0 0 1-1.11 0L0 6.383z" />
+            </svg>
+            <input asp-for="Email" class="inputField" id="Email" placeholder="Email or Username" required />
         </div>
-    </div>
+        <span asp-validation-for="Email" class="text-danger"></span>
+
+        <!-- Password -->
+        <div class="inputContainer" style="position: relative;">
+            <svg class="inputIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2e2e2e" viewBox="0 0 16 16">
+                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+            </svg>
+            <input asp-for="Password" type="password" class="inputField" id="Password" placeholder="Password" required />
+            <button type="button" id="togglePassword" style="position:absolute; right:5px; top:50%; transform:translateY(-50%); border:none; background:none; cursor:pointer; z-index:3;">
+                <i class="bi bi-eye-slash" id="eyeIcon"></i>
+            </button>
+        </div>
+        <span asp-validation-for="Password" class="text-danger"></span>
+
+        <!-- Remember Me -->
+        <div class="form-check text-start w-100 mt-2">
+            <input asp-for="RememberMe" class="form-check-input" />
+            <label asp-for="RememberMe" class="form-check-label">Remember Me</label>
+        </div>
+
+        <!-- Submit -->
+        <button id="button" type="submit">Login</button>
+
+        <!-- Forgot Password -->
+        <a class="forgotLink" href="/Account/ForgotPassword">Forgot your password?</a>
+        <div class="mt-2 text-center">
+            <small>Don’t have an account? <a href="/Account/Register">Register here</a></small>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
-
     <script>
-        // Toggle password visibility
         const togglePassword = document.getElementById("togglePassword");
         const passwordField = document.getElementById("Password");
         const eyeIcon = document.getElementById("eyeIcon");
@@ -77,25 +63,98 @@
             eyeIcon.classList.toggle("bi-eye-slash");
             eyeIcon.classList.toggle("bi-eye");
         });
-
-        // Validation styling
-        const emailField = document.getElementById("Email");
-
-        [emailField, passwordField].forEach(input => {
-            input.addEventListener("input", () => {
-                if (input.value.trim() !== "") {
-                    input.classList.add("is-valid");
-                    input.classList.remove("is-invalid");
-                } else {
-                    input.classList.remove("is-valid");
-                    input.classList.add("is-invalid");
-                }
-            });
-
-            // Trigger on page load if value exists
-            if (input.value.trim() !== "") {
-                input.classList.add("is-valid");
-            }
-        });
     </script>
 }
+
+
+<style>
+    .form_main {
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0px 0px 40px rgba(0, 0, 0, 0.062);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .form_main::before {
+            position: absolute;
+            content: "";
+            width: 300px;
+            height: 300px;
+            background-color: rgb(209, 193, 255);
+            transform: rotate(45deg);
+            left: -180px;
+            bottom: 30px;
+            z-index: 1;
+            border-radius: 30px;
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.082);
+        }
+
+    .heading {
+        font-size: 1.8em;
+        color: #2e2e2e;
+        font-weight: 700;
+        margin-bottom: 20px;
+        z-index: 2;
+    }
+
+    .inputContainer {
+        width: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        z-index: 2;
+    }
+
+    .inputIcon {
+        position: absolute;
+        left: 5px;
+    }
+
+    .inputField {
+        width: 100%;
+        height: 40px;
+        background-color: transparent;
+        border: none;
+        border-bottom: 2px solid #adadad;
+        padding-left: 30px;
+        font-size: .9em;
+        font-weight: 500;
+    }
+
+        .inputField:focus {
+            outline: none;
+            border-bottom: 2px solid #a268ff;
+        }
+
+    #button {
+        width: 100%;
+        border: none;
+        background-color: #a268ff;
+        height: 40px;
+        border-radius: 8px;
+        color: white;
+        font-size: 1em;
+        font-weight: 600;
+        margin: 15px 0;
+        cursor: pointer;
+    }
+
+        #button:hover {
+            background-color: #7e54ff;
+        }
+
+    .forgotLink {
+        font-size: .8em;
+        color: rgb(44, 24, 128);
+        text-decoration: none;
+        z-index: 2;
+    }
+
+</style>

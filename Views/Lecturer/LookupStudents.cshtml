@@ -1,0 +1,38 @@
+﻿@model IEnumerable<SchoolProject.Models.Account>
+
+@{
+    ViewData["Title"] = "Lookup Students";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Active Students</h2>
+
+    <table class="table table-hover table-striped shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Surname</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var student in Model)
+                {
+                    <tr>
+                        <td>@student.Name</td>
+                        <td>@student.Surname</td>
+                        <td>@student.Email</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No active students found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

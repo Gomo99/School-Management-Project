@@ -71,11 +71,14 @@
                 <!-- Lecturer only -->
                 @if (role == "Lecturer")
                 {
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("Courses", "Lecturer")">
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ListModules", "Lecturer")">
                         <i class="bi bi-journal-bookmark"></i> My Courses
                     </a>
                     <a class="list-group-item list-group-item-action" href="@Url.Action("ManageAssessmentType", "Lecturer")">
                         <i class="bi bi-clipboard-data"></i> Manage Assessment Types
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageAssessments", "Lecturer")">
+                        <i class="bi bi-clipboard-data"></i> Manage Assessment
                     </a>
                 }
 

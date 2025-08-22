@@ -57,10 +57,12 @@ namespace SchoolProject.Controllers
             TempData["UserName"] = user.Name;
 
             var claims = new List<Claim>
-    {
-        new Claim(ClaimTypes.Name, user.Name),
-        new Claim(ClaimTypes.Role, user.Role.ToString())
-    };
+{
+    new Claim(ClaimTypes.Name, user.Name),
+    new Claim(ClaimTypes.Role, user.Role.ToString()),
+    new Claim("UserID", user.UserID.ToString()) // 👈 Add this
+};
+
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
             var authProperties = new AuthenticationProperties
@@ -435,20 +437,13 @@ namespace SchoolProject.Controllers
 
         [Authorize(Roles = "Administrator")]
         [HttpGet]
-        public IActionResult ReactivateAccount(string search)
+        public IActionResult ReactivateAccount()
         {
             var users = _context.Accounts
-                .Where(u => u.UserStatus == UserStatus.Inactive);
+                .Where(u => u.UserStatus == UserStatus.Inactive)
+                .ToList();
 
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                users = users.Where(u =>
-                    u.Name.Contains(search) ||
-                    u.Surname.Contains(search) ||
-                    u.Email.Contains(search));
-            }
-
-            return View(users.ToList());
+            return View(users);
         }
 
 

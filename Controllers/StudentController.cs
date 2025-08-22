@@ -8,6 +8,7 @@ namespace SchoolProject.Controllers
         [Authorize(Roles = " Student")]
         public IActionResult Dashboard()
         {
+            var currentUserName = User.Identity.Name;
             return View();
         }
     }

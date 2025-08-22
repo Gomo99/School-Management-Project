@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SchoolProject.Data;
 using SchoolProject.Models;
+using System.Security.Claims;
 
 namespace SchoolProject.Controllers
 {
+    [Authorize(Roles = "Lecturer")]
     public class LecturerController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -15,14 +17,27 @@ namespace SchoolProject.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Lecturer")]
+       
         public IActionResult Dashboard()
         {
+            var currentUserName = User.Identity.Name;
             return View();
         }
 
 
+        public async Task<IActionResult> ListModules()
+        {
+            var userId = GetCurrentUserId();
 
+            var lecturerModules = await _context.LecturerModules
+                .Include(lm => lm.Module)
+                .Where(lm => lm.UserID == userId && lm.ModLecturerStatus == ModLecturerStatus.Active)
+                .ToListAsync();
+
+            return View(lecturerModules);
+        }
+
+    
 
 
         public async Task<IActionResult> ManageAssessmentType()
@@ -266,8 +281,7 @@ namespace SchoolProject.Controllers
         {
             if (id != assessment.AssessmentID) return NotFound();
 
-            if (ModelState.IsValid)
-            {
+           
                 try
                 {
                     var existing = await _context.Assessments.FindAsync(id);
@@ -287,7 +301,7 @@ namespace SchoolProject.Controllers
                 }
 
                 return RedirectToAction(nameof(ManageAssessments));
-            }
+            
 
             // Re-populate dropdowns if ModelState is invalid
             var studentModules = _context.StudentModules
@@ -346,6 +360,17 @@ namespace SchoolProject.Controllers
 
 
 
+        // GET: Lecturer/LookupStudents
+        public async Task<IActionResult> LookupStudents()
+        {
+            var students = await _context.Accounts
+                .Where(a => a.Role == UserRole.Student && a.UserStatus == UserStatus.Active)
+                .OrderBy(s => s.Surname)
+                .ThenBy(s => s.Name)
+                .ToListAsync();
+
+            return View(students);
+        }
 
 
 
@@ -362,6 +387,12 @@ namespace SchoolProject.Controllers
 
 
 
+
+        
+        private int GetCurrentUserId()
+        {
+            return int.Parse(User.FindFirstValue("UserID"));
+        }
 
 
 
