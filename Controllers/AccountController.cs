@@ -54,14 +54,14 @@ namespace SchoolProject.Controllers
             }
 
             TempData["SuccessMessage"] = "Login successful!";
-            TempData["UserName"] = user.Name;
+            TempData["SuccessMessage"] = user.Name;
 
-            var claims = new List<Claim>
-{
-    new Claim(ClaimTypes.Name, user.Name),
-    new Claim(ClaimTypes.Role, user.Role.ToString()),
-    new Claim("UserID", user.UserID.ToString()) // 👈 Add this
-};
+                 var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
+                    new Claim(ClaimTypes.Role, user.Role.ToString()),
+                    new Claim("UserID", user.UserID.ToString())
+                };
 
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
@@ -199,120 +199,121 @@ namespace SchoolProject.Controllers
         [HttpGet]
         public IActionResult EditProfile()
         {
-            // Get the current user from the context
-            var currentUserName = User.Identity.Name;
-            var user = _context.Accounts.FirstOrDefault(a => a.Name == currentUserName);
-
-            if (user == null)
+            // Get current user ID from claims
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
-                return NotFound();  // If user is not found
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
             }
 
-            // Create a ViewModel for profile editing (optional)
-            var model = new EditProfileViewModel
+            // Find user in database
+            var user = _context.Accounts.FirstOrDefault(u => u.UserID == userId);
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
+
+            // Map to ViewModel
+            var viewModel = new EditProfileViewModel
             {
                 Name = user.Name,
                 Surname = user.Surname,
-                Email = user.Email,
-                Title = user.Title
+                Title = user.Title,
+                Email = user.Email
             };
 
-            return View(model);
+            return View(viewModel);
         }
+
+
 
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditProfile(EditProfileViewModel model)
         {
-            var currentUserName = User.Identity.Name;
-            var user = _context.Accounts.FirstOrDefault(a => a.Name == currentUserName);
-
-            if (user == null)
+            if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "User not found. Please try again.";
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check if the new email is taken by another user
-            var existingUserWithEmail = _context.Accounts
-                .FirstOrDefault(a => a.Email == model.Email && a.UserID != user.UserID);
-
-            if (existingUserWithEmail != null)
-            {
-                TempData["ErrorMessage"] = "This email is already in use by another user.";
                 return View(model);
             }
 
-            var oldEmail = user.Email;
-
-            // Update user info
-            user.Name = model.Name;
-            user.Surname = model.Surname;
-            user.Email = model.Email;
-            user.Title = model.Title;
-            _context.SaveChanges();
-
-            // Send security alerts if email changed
-            if (oldEmail != user.Email)
+            try
             {
-                var changeDate = DateTime.Now.ToString("dddd, MMMM dd, yyyy hh:mm tt");
+                // Get current user ID from claims
+                var userIdClaim = User.FindFirst("UserID");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    TempData["ErrorMessage"] = "User not found.";
+                    return RedirectToAction("Login");
+                }
 
-                // Send alert to old email
-                var oldEmailPlaceholders = new Dictionary<string, string>
-        {
-            { "Name", user.Name },
-            { "OldEmail", oldEmail },
-            { "NewEmail", user.Email },
-            { "ChangeDate", changeDate }
-        };
+                // Find user in database
+                var user = await _context.Accounts.FirstOrDefaultAsync(u => u.UserID == userId);
+                if (user == null)
+                {
+                    TempData["ErrorMessage"] = "User not found.";
+                    return RedirectToAction("Login");
+                }
 
-                await _emailService.SendEmailWithTemplateAsync(
-                    oldEmail,
-                    "Security Alert: Your Email Address Was Changed",
-                    "EmailChangeTemplate.html",
-                    oldEmailPlaceholders
-                );
+                // Check if email is already taken by another user
+                var existingUser = await _context.Accounts
+                    .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower() && u.UserID != userId);
 
-                // Send alert to new email
-                var newEmailPlaceholders = new Dictionary<string, string>
-        {
-            { "Name", user.Name },
-            { "Surname", user.Surname },
-            { "Title", user.Title },
-            { "OldEmail", oldEmail },
-            { "NewEmail", user.Email },
-            { "ChangeDate", changeDate },
-            { "Role", user.Role.ToString() },
-            { "Status", user.UserStatus.ToString() }
-        };
+                if (existingUser != null)
+                {
+                    ModelState.AddModelError("Email", "This email address is already in use.");
+                    return View(model);
+                }
 
-                await _emailService.SendEmailWithTemplateAsync(
-                    user.Email,
-                    "Welcome! Your Email Address Has Been Updated",
-                    "EmailChangeAlert_New.html",
-                    newEmailPlaceholders
-                );
+                // Update user properties
+                user.Name = model.Name;
+                user.Surname = model.Surname;
+                user.Title = model.Title;
+                user.Email = model.Email;
+
+                // Save changes
+                await _context.SaveChangesAsync();
+
+                // Update the Name claim if needed
+                var identity = User.Identity as ClaimsIdentity;
+                var nameClaim = identity?.FindFirst(ClaimTypes.Name);
+                if (nameClaim != null)
+                {
+                    identity.RemoveClaim(nameClaim);
+                    identity.AddClaim(new Claim(ClaimTypes.Name, $"{model.Name} {model.Surname}"));
+
+                    // Re-sign in to update the cookie
+                    await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(identity));
+                }
+
+                TempData["SuccessMessage"] = "Profile updated successfully!";
+                return RedirectToAction("EditProfile");
             }
-
-            TempData["SuccessMessage"] = "Your profile has been updated successfully.";
-
-            return user.Role switch
+            catch (Exception ex)
             {
-                UserRole.Administrator => RedirectToAction("Dashboard", "Admin"),
-                UserRole.Lecturer => RedirectToAction("Dashboard", "Lecturer"),
-                UserRole.Student => RedirectToAction("Dashboard", "Student"),
-                _ => RedirectToAction("Index", "Home"),
-            };
+                // Log the exception (you should implement proper logging)
+                TempData["ErrorMessage"] = "An error occurred while updating your profile. Please try again.";
+                return View(model);
+            }
         }
+
 
 
         [Authorize]
         [HttpGet]
         public IActionResult ViewProfile()
         {
-            var currentUserName = User.Identity.Name;
-            var user = _context.Accounts.FirstOrDefault(a => a.Name == currentUserName);
+            // Get user ID from claims instead of name
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
+
+            var user = _context.Accounts.FirstOrDefault(a => a.UserID == userId);
 
             if (user == null)
             {
@@ -333,7 +334,6 @@ namespace SchoolProject.Controllers
         }
 
 
-
         [Authorize]
         [HttpGet]
         public IActionResult ChangePassword()
@@ -346,34 +346,53 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var username = User.Identity.Name;
-                var user = _context.Accounts.FirstOrDefault(a => a.Name == username);
+                return View(model);
+            }
+
+            try
+            {
+                // Get user ID from claims instead of name
+                var userIdClaim = User.FindFirst("UserID");
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    TempData["ErrorMessage"] = "User not found.";
+                    return RedirectToAction("Login");
+                }
+
+                var user = _context.Accounts.FirstOrDefault(a => a.UserID == userId);
 
                 if (user == null)
                 {
                     TempData["ErrorMessage"] = "User not found.";
-                    return NotFound();
+                    return RedirectToAction("Login");
                 }
 
-                // Check if the current password is correct
-                if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.Password))
+                // Check if the current password is correct (plain text comparison)
+                if (model.CurrentPassword != user.Password)
                 {
-                    TempData["ErrorMessage"] = "Current password is incorrect.";
+                    ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
                     return View(model);
                 }
 
                 // Ensure that the new password is not the same as the current password
                 if (model.CurrentPassword == model.NewPassword)
                 {
-                    TempData["ErrorMessage"] = "The new password cannot be the same as the current password.";
+                    ModelState.AddModelError("NewPassword", "The new password cannot be the same as the current password.");
                     return View(model);
                 }
 
-                // Hash and update the new password
-                user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
-                _context.SaveChanges();
+                // Ensure new password and confirmation match
+                if (model.NewPassword != model.ConfirmPassword)
+                {
+                    ModelState.AddModelError("ConfirmPassword", "The new password and confirmation password do not match.");
+                    return View(model);
+                }
+
+                // Update the password (store in plain text)
+                user.Password = model.NewPassword;
+                await _context.SaveChangesAsync();
 
                 // Prepare dynamic content for email template
                 var placeholders = new Dictionary<string, string>
@@ -391,6 +410,7 @@ namespace SchoolProject.Controllers
                 );
 
                 TempData["SuccessMessage"] = "Password changed successfully!";
+
                 return user.Role switch
                 {
                     UserRole.Administrator => RedirectToAction("Dashboard", "Admin"),
@@ -399,11 +419,13 @@ namespace SchoolProject.Controllers
                     _ => RedirectToAction("Index", "Home"),
                 };
             }
-
-            TempData["ErrorMessage"] = "Password change failed.";
-            return View(model);
+            catch (Exception ex)
+            {
+                // Log the exception here
+                TempData["ErrorMessage"] = "An error occurred while changing your password. Please try again.";
+                return View(model);
+            }
         }
-
 
 
 
@@ -474,8 +496,15 @@ namespace SchoolProject.Controllers
         [HttpPost]
         public async Task<IActionResult> DownloadProfile()
         {
-            var userName = User.Identity.Name;
-            var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Name == userName);
+            // Get user ID from claims instead of name
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Accounts.FirstOrDefaultAsync(a => a.UserID == userId);
 
             if (user == null)
             {
@@ -483,7 +512,7 @@ namespace SchoolProject.Controllers
             }
 
             var userProfile = _context.Accounts
-                .Where(u => u.UserID == user.UserID)
+                .Where(u => u.UserID == userId)
                 .Select(u => new ViewProfileViewModel
                 {
                     Title = u.Title,
@@ -526,7 +555,6 @@ namespace SchoolProject.Controllers
             var fileName = $"Profile_{user.Name}_{user.Surname}_{DateTime.Now:yyyyMMdd}.pdf";
             return File(memoryStream, "application/pdf", fileName);
         }
-
 
 
 

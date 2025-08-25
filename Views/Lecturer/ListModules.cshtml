@@ -1,25 +1,52 @@
 ﻿@model IEnumerable<SchoolProject.Models.LecturerModule>
+@{
+    var lecturerName = User.Identity?.Name;
+}
+
+
+
+
 @section Sidebar {
     @await Html.PartialAsync("_SidebarPartial")
 }
 
-<h2>My Modules</h2>
+<div class="container mt-4">
+    <!-- Lecturer Info Card -->
+    <div class="card shadow-sm border-0 rounded-3 mb-4">
+        <div class="card-body">
+            <h4 class="card-title mb-0">
+                <i class="bi bi-person-badge me-2"></i>
+                @lecturerName
+            </h4>
+            <p class="text-muted mb-0">Lecturer Dashboard</p>
+        </div>
+    </div>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Module Code</th>
-            <th>Module Name</th>
-        </tr>
-    </thead>
-    <tbody>
-    @foreach (var lm in Model)
-    {
-        <tr>
-            <td>@lm.Module.ModuleType</td>
-            <td>@lm.Module.ModuleName</td>
-            
-        </tr>
-    }
-    </tbody>
-</table>
+    <!-- Modules Table -->
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-book me-2"></i> My Modules
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Module Code</th>
+                            <th scope="col">Module Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var lm in Model)
+                        {
+                            <tr>
+                                <td>@lm.Module.ModuleType</td>
+                                <td>@lm.Module.ModuleName</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
