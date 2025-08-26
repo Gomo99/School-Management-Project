@@ -34,6 +34,12 @@ namespace SchoolProject.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("EmailVerificationTokenExpires")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmailVerificationTokenHash")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsTwoFactorEnabled")
                         .HasColumnType("bit");
 

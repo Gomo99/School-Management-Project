@@ -8,20 +8,25 @@ using SchoolProject.Data;
 using SchoolProject.Models;
 using SchoolProject.ViewModel;
 using X.PagedList.Extensions;
+using SchoolProject.Service;
 
 namespace SchoolProject.Controllers
 {
     [Authorize(Roles = "Administrator")]
     public class AdminController : Controller
     {
-        private readonly ApplicationDbContext _context;
 
-        public AdminController(ApplicationDbContext context)
+        private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
+
+        // Single constructor with all required dependencies
+        public AdminController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
+            _configuration = configuration;
         }
 
-      
+
         public async Task<IActionResult> DashboardAsync()
         {
             var currentUserName = User.Identity.Name;
@@ -711,40 +716,60 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateUser(Account account)
         {
-           
-                try
+            try
+            {
+                if (_context.Accounts.Any(a => a.Email == account.Email))
                 {
-                    // Check if email already exists
-                    if (_context.Accounts.Any(a => a.Email == account.Email))
-                    {
-                        TempData["ErrorMessage"] = "Email already exists in the system.";
-                        await PopulateRoleDropdown();
-                        return View(account);
-                    }
-
-                    // Force status to Active regardless of input
-                    account.UserStatus = UserStatus.Active;
-
-                    _context.Accounts.Add(account);
-                    await _context.SaveChangesAsync();
-
-                    TempData["SuccessMessage"] = $"{account.Name} created successfully!";
-                    return RedirectToAction(nameof(ManageUsers));
+                    TempData["ErrorMessage"] = "Email already exists in the system.";
+                    PopulateRoleDropdown();
+                    return View(account);
                 }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
-                }
-            
 
-            await PopulateRoleDropdown();
-            TempData["ErrorMessage"] = "Invalid data. Please check the form.";
+                // Set status inactive initially
+                account.UserStatus = UserStatus.Inactive;
+
+                // Generate verification token
+                account.EmailVerificationTokenHash = Guid.NewGuid().ToString();
+                account.EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24);
+
+                _context.Accounts.Add(account);
+                await _context.SaveChangesAsync();
+
+                // Send verification email
+                var emailService = new EmailService(_configuration);
+                var verificationLink = Url.Action(
+                    "VerifyEmail",
+                    "Account",
+                    new { userId = account.UserID, token = account.EmailVerificationTokenHash },
+                    Request.Scheme);
+
+                var placeholders = new Dictionary<string, string>
+        {
+            { "Name", account.Name },
+            { "VerificationLink", verificationLink }
+        };
+
+                await emailService.SendEmailWithTemplateAsync(
+                    account.Email,
+                    "Verify your email",
+                    "EmailVerificationTemplate.html",
+                    placeholders);
+
+                TempData["SuccessMessage"] = $"User created! A verification email has been sent to {account.Email}.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+            }
+
+            PopulateRoleDropdown();
             return View(account);
         }
 
 
 
-       
+
         public async Task<IActionResult> EditUser(int id)
         {
             var user = await _context.Accounts.FindAsync(id);
@@ -1056,6 +1081,8 @@ namespace SchoolProject.Controllers
             ViewBag.Lecturers = new SelectList(availableLecturers, "UserID", "FullName");
         }
 
+        
+       
 
 
 

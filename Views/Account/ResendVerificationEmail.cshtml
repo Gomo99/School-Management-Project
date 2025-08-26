@@ -1,0 +1,14 @@
+﻿@{
+    ViewData["Title"] = "Resend Verification Email";
+}
+
+<h2>Resend Verification Email</h2>
+
+<form asp-action="ResendVerificationEmail" method="post">
+    <div class="form-group">
+        <label for="Email">Email</label>
+        <input type="email" name="Email" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Send Verification Email</button>
+</form>
+

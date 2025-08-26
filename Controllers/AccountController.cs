@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
 using iTextSharp.text.pdf;
 using iTextSharp.text;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SchoolProject.Controllers
 {
@@ -694,6 +696,118 @@ namespace SchoolProject.Controllers
             return RedirectToAction("ViewProfile");
         }
 
+
+
+        [HttpGet]
+        public async Task<IActionResult> VerifyEmail(int userId, string token)
+        {
+            var user = await _context.Accounts.FirstOrDefaultAsync(u => u.UserID == userId);
+            if (user == null)
+                return NotFound("User not found");
+
+            if (user.UserStatus == UserStatus.Active)
+            {
+                TempData["SuccessMessage"] = "Email already verified.";
+                return RedirectToAction("Login");
+            }
+
+            if (user.EmailVerificationTokenHash != token || user.EmailVerificationTokenExpires < DateTime.UtcNow)
+            {
+                TempData["ErrorMessage"] = "Invalid or expired verification link.";
+                return RedirectToAction("Login");
+            }
+
+            // Activate account
+            user.UserStatus = UserStatus.Active;
+            user.EmailVerificationTokenHash = null;
+            user.EmailVerificationTokenExpires = null;
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Email verified successfully! You can now log in.";
+            return RedirectToAction("Login");
+        }
+
+
+
+
+
+
+
+
+        [HttpGet]
+        public IActionResult ResendVerificationEmail()
+        {
+            return View();
+        }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResendVerificationEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                TempData["ErrorMessage"] = "Please enter your email.";
+                return View();
+            }
+
+            var user = await _context.Accounts.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "No account found with this email.";
+                return View();
+            }
+
+            if (user.UserStatus == UserStatus.Active)
+            {
+                TempData["SuccessMessage"] = "Your account is already verified. You can log in.";
+                return RedirectToAction("Login");
+            }
+
+            // Generate new token
+            string token = Guid.NewGuid().ToString("N");
+            user.EmailVerificationTokenHash = token;
+            user.EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24);
+            await _context.SaveChangesAsync();
+
+            // Build verification link
+            var verificationLink = Url.Action(
+                "VerifyEmail",
+                "Account",
+                new { userId = user.UserID, token = token },
+                protocol: HttpContext.Request.Scheme
+            );
+
+            var placeholders = new Dictionary<string, string>
+    {
+        { "Name", user.Name },
+        { "VerificationLink", verificationLink }
+    };
+
+            try
+            {
+                await _emailService.SendEmailWithTemplateAsync(
+                    user.Email,
+                    "Email Verification - SchoolProject",
+                    "EmailVerificationTemplate.html",
+                    placeholders
+                );
+
+                TempData["SuccessMessage"] = "A new verification link has been sent to your email.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Failed to send email: {ex.Message}";
+            }
+
+            return View();
+        }
+
+
+
+
+
         private async Task SignInUser(Account user, bool isPersistent)
         {
             var claims = new List<Claim>
@@ -722,5 +836,23 @@ namespace SchoolProject.Controllers
                 _ => RedirectToAction("Index", "Home"),
             };
         }
+
+
+
+   
+
+        private static string HashToken(string token)
+        {
+            using var sha = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var hash = sha.ComputeHash(bytes);
+            return System.Convert.ToBase64String(hash);
+        }
+
+        private static string GenerateVerificationToken()
+        {
+            return Guid.NewGuid().ToString("N"); // 32 chars, no dashes
+        }
+
     }
 }

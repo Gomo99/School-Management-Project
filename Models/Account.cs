@@ -40,7 +40,7 @@ namespace SchoolProject.Models
 
         [Required]
         [EnumDataType(typeof(UserStatus))]
-        public UserStatus UserStatus { get; set; }
+        public UserStatus UserStatus { get; set; } = UserStatus.Inactive;
 
         public string? ResetPin { get; set; }
 
@@ -50,6 +50,8 @@ namespace SchoolProject.Models
         public string? TwoFactorRecoveryCodes { get; set; }
 
 
+        public string? EmailVerificationTokenHash { get; set; }
+        public DateTime? EmailVerificationTokenExpires { get; set; }
 
 
 
