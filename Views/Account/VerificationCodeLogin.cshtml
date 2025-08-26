@@ -1,0 +1,43 @@
+﻿@model SchoolProject.ViewModel.VerificationCodeLoginViewModel
+
+@{
+    ViewData["Title"] = "Verification Code Login";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center">Verification Code Login</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Enter the verification code from your authenticator app.</p>
+
+                <form asp-action="VerificationCodeLogin" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="form-group">
+                        <label asp-for="VerificationCode" class="control-label"></label>
+                        <input asp-for="VerificationCode" class="form-control" placeholder="Enter 6-digit code" />
+                        <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <button type="submit" class="btn btn-primary w-100">Log in with Verification Code</button>
+                    </div>
+                </form>
+
+
+                <div class="text-center mt-3">
+                    <a asp-action="Login">Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

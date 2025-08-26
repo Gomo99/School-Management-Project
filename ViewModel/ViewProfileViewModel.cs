@@ -8,6 +8,8 @@
         public string Email { get; set; }
         public string Role { get; set; }
         public string UserStatus { get; set; }
+
+        public bool IsTwoFactorEnabled { get; set; }
     }
 
 }

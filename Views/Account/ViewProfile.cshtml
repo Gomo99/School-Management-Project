@@ -58,22 +58,19 @@
             var userIdClaim = user.FindFirst("UserID");
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
-                var dbUser = ViewBag.User as Account; // You'll need to pass this from controller
-                if (dbUser?.IsTwoFactorEnabled == true)
+                @if (Model.IsTwoFactorEnabled)
                 {
-                    <div class="alert alert-success">
-                        <i class="fas fa-shield-alt"></i> Two-factor authentication is enabled
-                    </div>
-                    <a href="@Url.Action("DisableTwoFactor")" class="btn btn-outline-danger">Disable 2FA</a>
+                    <div class="alert alert-success">2FA enabled</div>
+                    <a href="@Url.Action("DisableTwoFactor")" class="btn btn-danger">Disable 2FA</a>
                 }
                 else
                 {
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i> Two-factor authentication is disabled
-                    </div>
+                    <div class="alert alert-warning">2FA disabled</div>
                     <a href="@Url.Action("SetupTwoFactor")" class="btn btn-success">Enable 2FA</a>
                 }
+
             }
         }
     </div>
+
 </div>
