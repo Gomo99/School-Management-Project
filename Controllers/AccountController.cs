@@ -19,15 +19,17 @@ namespace SchoolProject.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly TwoFactorAuthService _twoFactorService;
 
-        public AccountController(ApplicationDbContext context, EmailService emailService)
+
+        public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService)
         {
             _context = context;
             _emailService = emailService;
+            _twoFactorService = twoFactorService;
         }
 
 
-       
 
         [HttpGet]
         public IActionResult Login()
@@ -62,6 +64,15 @@ namespace SchoolProject.Controllers
                     new Claim(ClaimTypes.Role, user.Role.ToString()),
                     new Claim("UserID", user.UserID.ToString())
                 };
+
+
+            if (user.IsTwoFactorEnabled)
+            {
+                // Store user ID in session for 2FA verification
+                HttpContext.Session.SetInt32("TwoFactorUserId", user.UserID);
+                return RedirectToAction("TwoFactorLogin");
+            }
+
 
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
@@ -555,6 +566,303 @@ namespace SchoolProject.Controllers
             var fileName = $"Profile_{user.Name}_{user.Surname}_{DateTime.Now:yyyyMMdd}.pdf";
             return File(memoryStream, "application/pdf", fileName);
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        [HttpGet]
+        public IActionResult TwoFactorLogin()
+        {
+            var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View(new TwoFactorLoginViewModel());
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TwoFactorLogin(TwoFactorLoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Accounts.FindAsync(userId.Value);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            bool isValidCode = false;
+
+            if (model.UseRecoveryCode && !string.IsNullOrEmpty(model.RecoveryCode))
+            {
+                // Validate recovery code
+                var recoveryCodes = user.TwoFactorRecoveryCodes?.Split(',').ToList() ?? new List<string>();
+                if (recoveryCodes.Contains(model.RecoveryCode.ToUpper()))
+                {
+                    // Remove used recovery code
+                    recoveryCodes.Remove(model.RecoveryCode.ToUpper());
+                    user.TwoFactorRecoveryCodes = string.Join(",", recoveryCodes);
+                    await _context.SaveChangesAsync();
+                    isValidCode = true;
+                }
+            }
+            else if (!string.IsNullOrEmpty(model.VerificationCode))
+            {
+                // Validate TOTP code
+                isValidCode = _twoFactorService.ValidatePin(user.TwoFactorSecretKey, model.VerificationCode);
+            }
+
+            if (!isValidCode)
+            {
+                ModelState.AddModelError("", "Invalid verification code.");
+                return View(model);
+            }
+
+            // Clear the session
+            HttpContext.Session.Remove("TwoFactorUserId");
+
+            // Sign in the user
+            await SignInUser(user, false);
+            return RedirectBasedOnRole(user.Role);
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Setup Two Factor Authentication GET
+        [Authorize]
+        [HttpGet]
+        public IActionResult SetupTwoFactor()
+        {
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = _context.Accounts.FirstOrDefault(u => u.UserID == userId);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            if (user.IsTwoFactorEnabled)
+            {
+                TempData["ErrorMessage"] = "Two-factor authentication is already enabled.";
+                return RedirectToAction("ViewProfile");
+            }
+
+            // Generate new secret key
+            var secretKey = _twoFactorService.GenerateSecretKey();
+            var setupCode = _twoFactorService.GenerateQrCode(user.Email, secretKey);
+
+            var viewModel = new TwoFactorSetupViewModel
+            {
+                QrCodeImageUrl = setupCode.QrCodeSetupImageUrl,
+                ManualEntryKey = secretKey
+            };
+
+            // Store secret key in session temporarily
+            HttpContext.Session.SetString("TempSecretKey", secretKey);
+
+            return View(viewModel);
+        }
+
+        // Setup Two Factor Authentication POST
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetupTwoFactor(TwoFactorSetupViewModel model)
+        {
+            if (string.IsNullOrEmpty(model.VerificationCode))
+            {
+                ModelState.AddModelError("VerificationCode", "Please enter the verification code from your authenticator app.");
+                return View(model);
+            }
+
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Accounts.FindAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var secretKey = HttpContext.Session.GetString("TempSecretKey");
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                TempData["ErrorMessage"] = "Session expired. Please try again.";
+                return RedirectToAction("SetupTwoFactor");
+            }
+
+            // Validate the verification code
+            if (!_twoFactorService.ValidatePin(secretKey, model.VerificationCode))
+            {
+                ModelState.AddModelError("VerificationCode", "Invalid verification code. Please try again.");
+
+                // Regenerate QR code for the view
+                var setupCode = _twoFactorService.GenerateQrCode(user.Email, secretKey);
+                model.QrCodeImageUrl = setupCode.QrCodeSetupImageUrl;
+                model.ManualEntryKey = secretKey;
+
+                return View(model);
+            }
+
+            // Generate recovery codes
+            var recoveryCodes = _twoFactorService.GenerateRecoveryCodes();
+
+            // Save 2FA settings
+            user.IsTwoFactorEnabled = true;
+            user.TwoFactorSecretKey = secretKey;
+            user.TwoFactorRecoveryCodes = string.Join(",", recoveryCodes);
+
+            await _context.SaveChangesAsync();
+
+            // Clear temp session data
+            HttpContext.Session.Remove("TempSecretKey");
+
+            // Show recovery codes
+            model.RecoveryCodes = recoveryCodes;
+            TempData["SuccessMessage"] = "Two-factor authentication has been enabled successfully!";
+
+            return View("TwoFactorRecoveryCodes", model);
+        }
+
+        // Disable Two Factor Authentication GET
+        [Authorize]
+        [HttpGet]
+        public IActionResult DisableTwoFactor()
+        {
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = _context.Accounts.FirstOrDefault(u => u.UserID == userId);
+            if (user == null || !user.IsTwoFactorEnabled)
+            {
+                return RedirectToAction("ViewProfile");
+            }
+
+            return View(new DisableTwoFactorViewModel());
+        }
+
+        // Disable Two Factor Authentication POST
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DisableTwoFactor(DisableTwoFactorViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Accounts.FindAsync(userId);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            // Verify current password
+            if (user.Password != model.CurrentPassword)
+            {
+                ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+                return View(model);
+            }
+
+            // Verify 2FA code
+            if (!_twoFactorService.ValidatePin(user.TwoFactorSecretKey, model.VerificationCode))
+            {
+                ModelState.AddModelError("VerificationCode", "Invalid verification code.");
+                return View(model);
+            }
+
+            // Disable 2FA
+            user.IsTwoFactorEnabled = false;
+            user.TwoFactorSecretKey = null;
+            user.TwoFactorRecoveryCodes = null;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Two-factor authentication has been disabled.";
+            return RedirectToAction("ViewProfile");
+        }
+
+        // Helper methods
+        private async Task SignInUser(Account user, bool isPersistent)
+        {
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
+        new Claim(ClaimTypes.Role, user.Role.ToString()),
+        new Claim("UserID", user.UserID.ToString())
+    };
+
+            var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = isPersistent
+            };
+
+            await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
+        }
+
+        private IActionResult RedirectBasedOnRole(UserRole role)
+        {
+            return role switch
+            {
+                UserRole.Administrator => RedirectToAction("Dashboard", "Admin"),
+                UserRole.Lecturer => RedirectToAction("Dashboard", "Lecturer"),
+                UserRole.Student => RedirectToAction("Dashboard", "Student"),
+                _ => RedirectToAction("Index", "Home"),
+            };
+        }
+
+
 
 
 

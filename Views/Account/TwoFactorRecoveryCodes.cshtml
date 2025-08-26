@@ -1,0 +1,42 @@
+﻿@model SchoolProject.ViewModel.TwoFactorSetupViewModel
+@{
+    ViewData["Title"] = "Recovery Codes";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="alert alert-warning">
+            <h4>⚠️ Important: Save Your Recovery Codes</h4>
+            <p>These recovery codes can be used to access your account if you lose your authenticator device. Save them in a secure location.</p>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h4>Your Recovery Codes</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var code in Model.RecoveryCodes)
+                    {
+                        <div class="col-md-6 mb-2">
+                            <code class="d-block p-2 bg-light">@code</code>
+                        </div>
+                    }
+                </div>
+
+                <hr />
+
+                <div class="d-flex justify-content-between">
+                    <button onclick="printCodes()" class="btn btn-secondary">Print Codes</button>
+                    <a href="@Url.Action("ViewProfile")" class="btn btn-primary">Continue</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function printCodes() {
+        window.print();
+    }
+</script>

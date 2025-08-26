@@ -12,7 +12,7 @@ using SchoolProject.Data;
 namespace SchoolProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250823124658_initial")]
+    [Migration("20250826110542_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -36,6 +36,9 @@ namespace SchoolProject.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsTwoFactorEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -67,6 +70,12 @@ namespace SchoolProject.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("TwoFactorRecoveryCodes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TwoFactorSecretKey")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("UserStatus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -80,6 +89,7 @@ namespace SchoolProject.Migrations
                         {
                             UserID = 1,
                             Email = "admin@school.com",
+                            IsTwoFactorEnabled = false,
                             Name = "Admin",
                             Password = "admin123",
                             Role = "Administrator",
@@ -91,6 +101,7 @@ namespace SchoolProject.Migrations
                         {
                             UserID = 2,
                             Email = "lecturer@school.com",
+                            IsTwoFactorEnabled = false,
                             Name = "lECTURE",
                             Password = "admin123",
                             Role = "Lecturer",
@@ -102,6 +113,7 @@ namespace SchoolProject.Migrations
                         {
                             UserID = 3,
                             Email = "student@school.com",
+                            IsTwoFactorEnabled = false,
                             Name = "Student",
                             Password = "admin123",
                             Role = "Student",

@@ -1,0 +1,51 @@
+﻿@model SchoolProject.ViewModel.TwoFactorLoginViewModel
+@{
+    ViewData["Title"] = "Two-Factor Authentication";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h4>Two-Factor Authentication</h4>
+            </div>
+            <div class="card-body">
+                <form asp-action="TwoFactorLogin" method="post">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+                    
+                    <div class="form-group mb-3">
+                        <label asp-for="VerificationCode"></label>
+                        <input asp-for="VerificationCode" class="form-control" placeholder="Enter 6-digit code" />
+                        <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Verify</button>
+                    
+                    <hr />
+                    
+                    <div class="form-check mb-3">
+                        <input asp-for="UseRecoveryCode" class="form-check-input" type="checkbox" />
+                        <label asp-for="UseRecoveryCode" class="form-check-label">
+                            Use a recovery code instead
+                        </label>
+                    </div>
+                    
+                    <div id="recoveryCodeSection" style="display: none;">
+                        <div class="form-group mb-3">
+                            <label asp-for="RecoveryCode"></label>
+                            <input asp-for="RecoveryCode" class="form-control" placeholder="Enter recovery code" />
+                            <span asp-validation-for="RecoveryCode" class="text-danger"></span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('UseRecoveryCode').addEventListener('change', function() {
+        var recoverySection = document.getElementById('recoveryCodeSection');
+        recoverySection.style.display = this.checked ? 'block' : 'none';
+    });
+</script>

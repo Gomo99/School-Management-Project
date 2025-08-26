@@ -45,9 +45,11 @@ namespace SchoolProject.Models
         public string? ResetPin { get; set; }
 
 
+        public bool IsTwoFactorEnabled { get; set; } = false;
+        public string? TwoFactorSecretKey { get; set; }
+        public string? TwoFactorRecoveryCodes { get; set; }
 
-        
-    
+
 
 
 

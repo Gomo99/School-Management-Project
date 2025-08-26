@@ -45,3 +45,35 @@
         </div>
     </div>
 </div>
+
+
+<!-- Add this section to your ViewProfile.cshtml -->
+<div class="card mt-3">
+    <div class="card-header">
+        <h5>Security Settings</h5>
+    </div>
+    <div class="card-body">
+        @{
+            var user = Context.User;
+            var userIdClaim = user.FindFirst("UserID");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                var dbUser = ViewBag.User as Account; // You'll need to pass this from controller
+                if (dbUser?.IsTwoFactorEnabled == true)
+                {
+                    <div class="alert alert-success">
+                        <i class="fas fa-shield-alt"></i> Two-factor authentication is enabled
+                    </div>
+                    <a href="@Url.Action("DisableTwoFactor")" class="btn btn-outline-danger">Disable 2FA</a>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Two-factor authentication is disabled
+                    </div>
+                    <a href="@Url.Action("SetupTwoFactor")" class="btn btn-success">Enable 2FA</a>
+                }
+            }
+        }
+    </div>
+</div>
