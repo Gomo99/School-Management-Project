@@ -6,189 +6,596 @@
     var isAuthenticated = user.Identity.IsAuthenticated;
     var role = user.FindFirst(ClaimTypes.Role)?.Value;
     var userId = HttpContextAccessor.HttpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "guest";
-
+    var userName = user.FindFirst(ClaimTypes.Name)?.Value ?? "User";
+    var userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? "";
 }
-
 
 <script>
     const currentUserId = "@userId";
 </script>
 
-
-
 @if (isAuthenticated)
 {
-    <!-- Offcanvas Sidebar -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="sidebarLabel">
-                <span id="realTimeClock"></span>
-            </h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <div class="list-group">
-
-                <!-- Replace the Dashboard link with the new code block inside the list group -->
-                <div class="list-group-item list-group-item-action mt-4 text-center">
-                    @{
-                        var dashboardAction = role switch
-                        {
-                            "Administrator" => Url.Action("Dashboard", "Admin"),
-                            "Lecturer" => Url.Action("Dashboard", "Lecturer"),
-                            "Student" => Url.Action("Dashboard", "Student"),
-                            _ => "#"
-                        };
+    <!-- Enhanced Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start sidebar-modern" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel">
+        <!-- Header with User Info -->
+        <div class="offcanvas-header border-bottom bg-gradient position-relative overflow-hidden">
+            <div class="d-flex align-items-center w-100">
+                <div class="user-avatar me-3">
+                    <div class="avatar-circle bg-primary bg-gradient">
+                        <i class="bi bi-person-fill text-white fs-4"></i>
+                    </div>
+                    <div class="status-indicator bg-success"></div>
+                </div>
+                <div class="user-info flex-grow-1">
+                    <h6 class="offcanvas-title mb-0 fw-bold text-dark" id="sidebarLabel">@userName</h6>
+                    <small class="text-muted d-block">@role</small>
+                    @if (!string.IsNullOrEmpty(userEmail))
+                    {
+                        <small class="text-muted d-block text-truncate">@userEmail</small>
                     }
-                    <a href="@dashboardAction" class="btn btn-primary">
-                        <i class="bi bi-house-door"></i> Back to Dashboard
-                    </a>
                 </div>
+            </div>
+            <button type="button" class="btn-close btn-close-modern" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="header-decoration"></div>
+        </div>
 
-                <!-- Admin only -->
-                @if (role == "Administrator")
-                {
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageModules", "Admin")">
-                        <i class="bi bi-journal-bookmark"></i> Manage Modules
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageLecturerModules", "Admin")">
-                        <i class="bi bi-person-bounding-box"></i> Manage Lecture Modules
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("Reports", "Admin")">
-                        <i class="bi bi-bar-chart"></i> Reports
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ReactivateAccount", "Account")">
-                        <i class="bi bi-person-check-fill"></i> Reactivate Accounts
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageUsers", "Admin")">
-                        <i class="bi bi-person-check-fill"></i> Manage Users
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageStudentModule", "Admin")">
-                        <i class="bi bi-person-lines-fill"></i> Manage Student Modules
-                    </a>
+        <!-- Clock Widget -->
+        <div class="clock-widget p-3 border-bottom bg-light">
+            <div id="realTimeClock" class="text-center"></div>
+        </div>
+
+        <div class="offcanvas-body p-0">
+            <!-- Dashboard Button -->
+            <div class="p-3 border-bottom">
+                @{
+                    var dashboardAction = role switch
+                    {
+                        "Administrator" => Url.Action("Dashboard", "Admin"),
+                        "Lecturer" => Url.Action("Dashboard", "Lecturer"),
+                        "Student" => Url.Action("Dashboard", "Student"),
+                        _ => "#"
+                    };
                 }
+                <a href="@dashboardAction" class="btn btn-primary btn-lg w-100 rounded-pill dashboard-btn">
+                    <i class="bi bi-house-door-fill me-2"></i>
+                    <span>Back to Dashboard</span>
+                    <i class="bi bi-arrow-right ms-auto"></i>
+                </a>
+            </div>
 
-                <!-- Lecturer only -->
-                @if (role == "Lecturer")
-                {
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ListModules", "Lecturer")">
-                        <i class="bi bi-journal-bookmark"></i> My Courses
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageAssessmentType", "Lecturer")">
-                        <i class="bi bi-clipboard-data"></i> Manage Assessment Types
-                    </a>
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("ManageAssessments", "Lecturer")">
-                        <i class="bi bi-clipboard-data"></i> Manage Assessment
-                    </a>
-                }
+            <!-- Navigation Menu -->
+            <nav class="sidebar-nav p-3">
+                <div class="nav-section">
+                    <!-- Admin Section -->
+                    @if (role == "Administrator")
+                    {
+                        <div class="nav-group mb-4">
+                            <h6 class="nav-group-title text-muted text-uppercase small fw-bold mb-3">
+                                <i class="bi bi-shield-check me-2"></i>Administration
+                            </h6>
+                            <div class="nav-items">
+                                <a class="nav-link-modern" href="@Url.Action("ManageModules", "Admin")">
+                                    <div class="nav-icon bg-info bg-gradient">
+                                        <i class="bi bi-journal-bookmark text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Manage Modules</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("ManageLecturerModules", "Admin")">
+                                    <div class="nav-icon bg-success bg-gradient">
+                                        <i class="bi bi-person-bounding-box text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Manage Lecturer Modules</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("Reports", "Admin")">
+                                    <div class="nav-icon bg-warning bg-gradient">
+                                        <i class="bi bi-bar-chart text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Reports</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("ReactivateAccount", "Account")">
+                                    <div class="nav-icon bg-danger bg-gradient">
+                                        <i class="bi bi-person-check-fill text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Reactivate Accounts</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("ManageUsers", "Admin")">
+                                    <div class="nav-icon bg-primary bg-gradient">
+                                        <i class="bi bi-people-fill text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Manage Users</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("ManageStudentModule", "Admin")">
+                                    <div class="nav-icon bg-secondary bg-gradient">
+                                        <i class="bi bi-person-lines-fill text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Manage Student Modules</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                            </div>
+                        </div>
+                    }
 
-                <!-- Student only -->
-                @if (role == "Student")
-                {
-                    <a class="list-group-item list-group-item-action" href="@Url.Action("MyGrades", "Student")">
-                        <i class="bi bi-card-checklist"></i> My Grades
-                    </a>
-                }
+                    <!-- Lecturer Section -->
+                    @if (role == "Lecturer")
+                    {
+                        <div class="nav-group mb-4">
+                            <h6 class="nav-group-title text-muted text-uppercase small fw-bold mb-3">
+                                <i class="bi bi-mortarboard me-2"></i>Teaching
+                            </h6>
+                            <div class="nav-items">
+                                <a class="nav-link-modern" href="@Url.Action("ListModules", "Lecturer")">
+                                    <div class="nav-icon bg-info bg-gradient">
+                                        <i class="bi bi-journal-bookmark text-white"></i>
+                                    </div>
+                                    <span class="nav-text">My Courses</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("ManageAssessmentType", "Lecturer")">
+                                    <div class="nav-icon bg-success bg-gradient">
+                                        <i class="bi bi-clipboard-data text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Assessment Types</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                                <a class="nav-link-modern" href="@Url.Action("ManageAssessments", "Lecturer")">
+                                    <div class="nav-icon bg-primary bg-gradient">
+                                        <i class="bi bi-clipboard-check text-white"></i>
+                                    </div>
+                                    <span class="nav-text">Manage Assessments</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                            </div>
+                        </div>
+                    }
 
-                <!-- Dark Mode Toggle -->
-                <div class="list-group-item list-group-item-action">
-                    <i class="bi bi-moon-stars"></i> 
-                    <label class="form-check-label ms-2">
-                        <input class="form-check-input" type="checkbox" id="darkModeToggle" /> Dark Mode
-                    </label>
-                </div>
+                    <!-- Student Section -->
+                    @if (role == "Student")
+                    {
+                        <div class="nav-group mb-4">
+                            <h6 class="nav-group-title text-muted text-uppercase small fw-bold mb-3">
+                                <i class="bi bi-book me-2"></i>Academics
+                            </h6>
+                            <div class="nav-items">
+                                <a class="nav-link-modern" href="@Url.Action("MyGrades", "Student")">
+                                    <div class="nav-icon bg-success bg-gradient">
+                                        <i class="bi bi-card-checklist text-white"></i>
+                                    </div>
+                                    <span class="nav-text">My Grades</span>
+                                    <i class="bi bi-chevron-right nav-arrow"></i>
+                                </a>
+                            </div>
+                        </div>
+                    }
 
-                <!-- Settings Dropdown -->
-                <div class="list-group-item p-0">
-                    <!-- Settings Toggle Button -->
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center w-100"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#settingsMenu"
-                            aria-expanded="false"
-                            aria-controls="settingsMenu"
-                            type="button"
-                            id="settingsToggleButton">
-                        <span><i class="bi bi-gear"></i> Settings</span>
-                        <i class="bi bi-caret-down-fill toggle-icon"></i> <!-- Added a class for animation -->
-                    </button>
+                    <!-- Settings & Preferences -->
+                    <div class="nav-group">
+                        <h6 class="nav-group-title text-muted text-uppercase small fw-bold mb-3">
+                            <i class="bi bi-gear me-2"></i>Settings
+                        </h6>
 
-                    <!-- Collapsible Settings Menu -->
-                    <div class="collapse" id="settingsMenu">
-                        <a href="@Url.Action("ViewProfile", "Account")"
-                           class="list-group-item list-group-item-action border-0 ps-5">
-                            <i class="bi bi-person-badge"></i> View Profile
-                        </a>
-                        <a href="@Url.Action("EditProfile", "Account")"
-                           class="list-group-item list-group-item-action border-0 ps-5">
-                            <i class="bi bi-person"></i> Edit Profile
-                        </a>
-                        <a href="@Url.Action("ChangePassword", "Account")"
-                           class="list-group-item list-group-item-action border-0 ps-5">
-                            <i class="bi bi-shield-lock"></i> Change Password
-                        </a>
-                        <a href="@Url.Action("DeleteAccount", "Account")"
-                           class="list-group-item list-group-item-action border-0 ps-5 text-danger">
-                            <i class="bi bi-person-x"></i> Delete Account
-                        </a>
+                        <!-- Dark Mode Toggle -->
+                        <div class="nav-link-modern setting-item">
+                            <div class="nav-icon bg-dark">
+                                <i class="bi bi-moon-stars text-white"></i>
+                            </div>
+                            <span class="nav-text">Dark Mode</span>
+                            <div class="form-check form-switch ms-auto">
+                                <input class="form-check-input" type="checkbox" id="darkModeToggle" />
+                            </div>
+                        </div>
+
+                        <!-- Settings Expandable Menu -->
+                        <div class="settings-expandable">
+                            <button class="nav-link-modern w-100 border-0 bg-transparent text-start settings-toggle"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#settingsMenu"
+                                    aria-expanded="false"
+                                    aria-controls="settingsMenu"
+                                    type="button">
+                                <div class="nav-icon bg-secondary bg-gradient">
+                                    <i class="bi bi-person-gear text-white"></i>
+                                </div>
+                                <span class="nav-text">Account Settings</span>
+                                <i class="bi bi-chevron-down nav-arrow settings-arrow"></i>
+                            </button>
+
+                            <div class="collapse settings-collapse" id="settingsMenu">
+                                <div class="settings-submenu">
+                                    <a href="@Url.Action("ViewProfile", "Account")" class="submenu-link">
+                                        <i class="bi bi-person-badge"></i>
+                                        <span>View Profile</span>
+                                    </a>
+                                    <a href="@Url.Action("EditProfile", "Account")" class="submenu-link">
+                                        <i class="bi bi-person-gear"></i>
+                                        <span>Edit Profile</span>
+                                    </a>
+                                    <a href="@Url.Action("ChangePassword", "Account")" class="submenu-link">
+                                        <i class="bi bi-shield-lock"></i>
+                                        <span>Change Password</span>
+                                    </a>
+                                    <a href="@Url.Action("DeleteAccount", "Account")" class="submenu-link text-danger">
+                                        <i class="bi bi-person-x"></i>
+                                        <span>Delete Account</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </nav>
+        </div>
 
-
-
-
-
-
-            </div>
+        <!-- Footer -->
+        <div class="sidebar-footer border-top p-3 text-center bg-light">
+            <small class="text-muted">
+                <i class="bi bi-shield-check text-success me-1"></i>
+                Secure Session Active
+            </small>
         </div>
     </div>
 
-    <!-- Sidebar toggle button -->
-    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar">
-        <i class="bi bi-list"></i> Menu
-    </button>
+    <!-- Enhanced Sidebar Toggle Button -->
+    <div class="sidebar-toggle-container">
+        <button class="btn btn-primary btn-floating shadow-lg"
+                type="button"
+                data-bs-toggle="offcanvas"
+                data-bs-target="#sidebar"
+                aria-controls="sidebar"
+                id="sidebarToggle">
+            <i class="bi bi-list fs-4"></i>
+            <span class="ripple"></span>
+        </button>
+    </div>
 
-    <script>
-                document.addEventListener('DOMContentLoaded', function () {
-            var settingsButton = document.getElementById('settingsToggleButton');
-            var settingsMenu = document.getElementById('settingsMenu');
-            var caretIcon = settingsButton.querySelector('.toggle-icon');
-
-            // When the collapse state changes, toggle the caret icon
-            settingsButton.addEventListener('click', function () {
-                if (settingsMenu.classList.contains('show')) {
-                    // If the menu is shown, it will collapse, so rotate the caret back
-                    caretIcon.classList.remove('bi-caret-up-fill');
-                    caretIcon.classList.add('bi-caret-down-fill');
-                } else {
-                    // If the menu is hidden, it will expand, so rotate the caret up
-                    caretIcon.classList.remove('bi-caret-down-fill');
-                    caretIcon.classList.add('bi-caret-up-fill');
-                }
-            });
-        });
-
-
-
-
-        function applyDarkMode(isDark) {
-            const htmlElement = document.documentElement;
-            const navElement = document.querySelector('.navbar');
-            const sidebarElement = document.querySelector('.offcanvas');
-
-            if (isDark) {
-                htmlElement.setAttribute('data-bs-theme', 'dark');
-                document.body.classList.add('bg-dark', 'text-white');
-                if (navElement) navElement.classList.add('navbar-dark', 'bg-dark');
-                if (sidebarElement) sidebarElement.classList.add('bg-dark', 'text-white');
-            } else {
-                htmlElement.removeAttribute('data-bs-theme');
-                document.body.classList.remove('bg-dark', 'text-white');
-                if (navElement) navElement.classList.remove('navbar-dark', 'bg-dark');
-                if (sidebarElement) sidebarElement.classList.remove('bg-dark', 'text-white');
-            }
+    <style>
+        /* Modern Sidebar Styles */
+        .sidebar-modern {
+            width: 320px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+            .sidebar-modern .offcanvas-header {
+                padding: 1.5rem;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                position: relative;
+                overflow: hidden;
+            }
+
+        .header-decoration {
+            position: absolute;
+            top: -50%;
+            right: -20px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+       
+
+        .user-avatar {
+            position: relative;
+        }
+
+        .avatar-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .status-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-info h6 {
+            color: white !important;
+        }
+
+        .btn-close-modern {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clock-widget {
+            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        #realTimeClock .time-display {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .dashboard-btn {
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+            .dashboard-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
+            }
+
+            .dashboard-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+                transition: left 0.5s;
+            }
+
+            .dashboard-btn:hover::before {
+                left: 100%;
+            }
+
+        .nav-group-title {
+            position: relative;
+            padding-left: 8px;
+        }
+
+            .nav-group-title::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 3px;
+                height: 16px;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                border-radius: 2px;
+            }
+
+        .nav-link-modern {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .nav-link-modern:hover {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                color: #495057;
+                transform: translateX(4px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .nav-link-modern.setting-item {
+                cursor: default;
+            }
+
+                .nav-link-modern.setting-item:hover {
+                    transform: none;
+                }
+
+        .nav-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-text {
+            flex-grow: 1;
+            font-weight: 500;
+        }
+
+        .nav-arrow {
+            opacity: 0;
+            transition: all 0.3s ease;
+            margin-left: 8px;
+        }
+
+        .nav-link-modern:hover .nav-arrow {
+            opacity: 1;
+            transform: translateX(4px);
+        }
+
+        .settings-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .settings-toggle[aria-expanded="true"] .settings-arrow {
+            transform: rotate(180deg);
+        }
+
+        .settings-collapse {
+            margin-top: 8px;
+        }
+
+        .settings-submenu {
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 8px;
+            padding: 8px;
+            margin-left: 48px;
+        }
+
+        .submenu-link {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+            .submenu-link:hover {
+                background: white;
+                color: #495057;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .submenu-link i {
+                width: 16px;
+                margin-right: 8px;
+            }
+
+        .sidebar-footer {
+            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .sidebar-toggle-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1050;
+        }
+
+        .btn-floating {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+            .btn-floating:hover {
+                transform: scale(1.1);
+                box-shadow: 0 8px 25px rgba(13, 110, 253, 0.4);
+            }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+        }
+
+       
+        /* Dark Mode Styles */
+        [data-bs-theme="dark"] .sidebar-modern {
+            background: linear-gradient(180deg, #212529 0%, #343a40 100%);
+            color: white;
+        }
+
+        [data-bs-theme="dark"] .nav-link-modern {
+            color: #adb5bd;
+        }
+
+            [data-bs-theme="dark"] .nav-link-modern:hover {
+                background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+                color: white;
+            }
+
+        [data-bs-theme="dark"] .clock-widget {
+            background: linear-gradient(90deg, #495057 0%, #6c757d 100%);
+            color: white;
+        }
+
+        [data-bs-theme="dark"] .sidebar-footer {
+            background: linear-gradient(90deg, #495057 0%, #6c757d 100%);
+            color: white;
+        }
+
+        [data-bs-theme="dark"] .settings-submenu {
+            background: rgba(73, 80, 87, 0.8);
+        }
+
+        [data-bs-theme="dark"] .submenu-link {
+            color: #adb5bd;
+        }
+
+            [data-bs-theme="dark"] .submenu-link:hover {
+                background: #495057;
+                color: white;
+            }
+
+        /* Responsive */
+      
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Settings toggle functionality
+            var settingsButton = document.querySelector('.settings-toggle');
+            var settingsMenu = document.getElementById('settingsMenu');
+
+            if (settingsButton && settingsMenu) {
+                settingsButton.addEventListener('click', function () {
+                    var isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                });
+            }
+
+            // Ripple effect for toggle button
+            var toggleButton = document.getElementById('sidebarToggle');
+            if (toggleButton) {
+                toggleButton.addEventListener('click', function(e) {
+                    var ripple = this.querySelector('.ripple');
+                    ripple.style.left = e.offsetX + 'px';
+                    ripple.style.top = e.offsetY + 'px';
+                    ripple.style.animation = 'none';
+                    ripple.offsetHeight; // Trigger reflow
+                    ripple.style.animation = 'ripple-animation 0.6s linear';
+                });
+            }
+
+            // Dark mode functionality
+            function applyDarkMode(isDark) {
+                const htmlElement = document.documentElement;
+                const navElement = document.querySelector('.navbar');
+                const sidebarElement = document.querySelector('.sidebar-modern');
+
+                if (isDark) {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    document.body.classList.add('bg-dark', 'text-white');
+                    if (navElement) navElement.classList.add('navbar-dark', 'bg-dark');
+                } else {
+                    htmlElement.removeAttribute('data-bs-theme');
+                    document.body.classList.remove('bg-dark', 'text-white');
+                    if (navElement) navElement.classList.remove('navbar-dark', 'bg-dark');
+                }
+            }
+
             const darkModeToggle = document.getElementById('darkModeToggle');
             const userKey = `darkMode_${currentUserId}`;
             const isDarkMode = localStorage.getItem(userKey) === 'true';
@@ -204,45 +611,44 @@
             } else {
                 applyDarkMode(isDarkMode);
             }
-        });
 
-        window.addEventListener('pageshow', () => {
-            const darkModeToggle = document.getElementById('darkModeToggle');
-            const userKey = `darkMode_${currentUserId}`;
-            if (darkModeToggle) {
-                const isDarkMode = localStorage.getItem(userKey) === 'true';
-                darkModeToggle.checked = isDarkMode;
-                applyDarkMode(isDarkMode);
-            }
-        });
-
-        // Clock logic
-        function updateClock() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString();
-            const dateString = now.toLocaleDateString(undefined, {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
+            // Page show event
+            window.addEventListener('pageshow', () => {
+                if (darkModeToggle) {
+                    const isDarkMode = localStorage.getItem(userKey) === 'true';
+                    darkModeToggle.checked = isDarkMode;
+                    applyDarkMode(isDarkMode);
+                }
             });
 
-            document.getElementById('realTimeClock').innerHTML = `
-                <div class="text-center">
-                    <div class="fs-5 fw-bold">${timeString}</div>
-                    <div class="small">${dateString}</div>
-                </div>
-            `;
-        }
+            // Enhanced clock with animations
+            function updateClock() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('en-US', {
+                    hour12: true,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const dateString = now.toLocaleDateString(undefined, {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric'
+                });
 
-        updateClock();
-        setInterval(updateClock, 1000);
+                const clockElement = document.getElementById('realTimeClock');
+                if (clockElement) {
+                    clockElement.innerHTML = `
+                        <div>
+                            <div class="time-display fs-6 fw-bold text-primary mb-1">${timeString}</div>
+                            <div class="small text-muted">${dateString}</div>
+                        </div>
+                    `;
+                }
+            }
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
     </script>
-    <style>
-
-                .collapse {
-            transition: height 0.3s ease;
-            overflow: hidden;
-        }
-    </style>
 }

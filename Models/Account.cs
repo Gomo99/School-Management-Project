@@ -54,6 +54,10 @@ namespace SchoolProject.Models
         public DateTime? EmailVerificationTokenExpires { get; set; }
 
 
+        public int FailedLoginAttempts { get; set; } = 0;
+        public DateTime? LockoutEnd { get; set; }
+
+
 
         public DateTime? ResetPinExpiration { get; set; }
         public ICollection<LecturerModule> LecturerModules { get; set; }

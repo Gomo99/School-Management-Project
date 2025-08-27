@@ -32,6 +32,8 @@ namespace SchoolProject.Migrations
                     TwoFactorRecoveryCodes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmailVerificationTokenHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmailVerificationTokenExpires = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FailedLoginAttempts = table.Column<int>(type: "int", nullable: false),
+                    LockoutEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResetPinExpiration = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
@@ -67,6 +69,31 @@ namespace SchoolProject.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Modules", x => x.ModuleID);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RememberedDevices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    TokenHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DeviceName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Revoked = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RememberedDevices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RememberedDevices_Accounts_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Accounts",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -165,12 +192,12 @@ namespace SchoolProject.Migrations
 
             migrationBuilder.InsertData(
                 table: "Accounts",
-                columns: new[] { "UserID", "Email", "EmailVerificationTokenExpires", "EmailVerificationTokenHash", "IsTwoFactorEnabled", "Name", "Password", "ResetPin", "ResetPinExpiration", "Role", "Surname", "Title", "TwoFactorRecoveryCodes", "TwoFactorSecretKey", "UserStatus" },
+                columns: new[] { "UserID", "Email", "EmailVerificationTokenExpires", "EmailVerificationTokenHash", "FailedLoginAttempts", "IsTwoFactorEnabled", "LockoutEnd", "Name", "Password", "ResetPin", "ResetPinExpiration", "Role", "Surname", "Title", "TwoFactorRecoveryCodes", "TwoFactorSecretKey", "UserStatus" },
                 values: new object[,]
                 {
-                    { 1, "admin@school.com", null, null, false, "Admin", "admin123", null, null, "Administrator", "User", "System Admin", null, null, "Active" },
-                    { 2, "lecturer@school.com", null, null, false, "lECTURE", "admin123", null, null, "Lecturer", "User", "System Lecturer", null, null, "Active" },
-                    { 3, "student@school.com", null, null, false, "Student", "admin123", null, null, "Student", "User", "System Student", null, null, "Active" }
+                    { 1, "admin@school.com", null, null, 0, false, null, "Admin", "admin123", null, null, "Administrator", "User", "System Admin", null, null, "Active" },
+                    { 2, "lecturer@school.com", null, null, 0, false, null, "lECTURE", "admin123", null, null, "Lecturer", "User", "System Lecturer", null, null, "Active" },
+                    { 3, "student@school.com", null, null, 0, false, null, "Student", "admin123", null, null, "Student", "User", "System Student", null, null, "Active" }
                 });
 
             migrationBuilder.InsertData(
@@ -268,6 +295,11 @@ namespace SchoolProject.Migrations
                 column: "UserID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RememberedDevices_UserId",
+                table: "RememberedDevices",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_StudentModules_AccountUserID",
                 table: "StudentModules",
                 column: "AccountUserID");
@@ -293,6 +325,9 @@ namespace SchoolProject.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Assessments");
+
+            migrationBuilder.DropTable(
+                name: "RememberedDevices");
 
             migrationBuilder.DropTable(
                 name: "StudentModules");

@@ -14,6 +14,7 @@ using iTextSharp.text.pdf;
 using iTextSharp.text;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Options;
 
 namespace SchoolProject.Controllers
 {
@@ -22,17 +23,23 @@ namespace SchoolProject.Controllers
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly TwoFactorAuthService _twoFactorService;
+        private const int MaxFailedAttempts = 5;
+        private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
+        
 
-        public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService)
+        public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService
+            )
         {
             _context = context;
             _emailService = emailService;
             _twoFactorService = twoFactorService;
+            
         }
 
         [HttpGet]
         public IActionResult Login()
         {
+            
             return View();
         }
 
@@ -43,50 +50,78 @@ namespace SchoolProject.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Changed to async
+         
+
+            // Fetch user
             var user = await _context.Accounts
                 .FirstOrDefaultAsync(a =>
-                    (a.Email.ToLower() == model.Email.ToLower() || a.Name.ToLower() == model.Email.ToLower())
-                    && a.UserStatus == UserStatus.Active);
+                    (a.Email.ToLower() == model.Email.ToLower() || a.Name.ToLower() == model.Email.ToLower()));
 
-            if (user == null || user.Password != model.Password)
+            if (user == null || user.UserStatus != UserStatus.Active)
             {
                 TempData["ErrorMessage"] = "Invalid login attempt or account is inactive.";
                 return View(model);
             }
 
-            TempData["SuccessMessage"] = "Login successful!";
-            TempData["SuccessMessage"] = user.Name;
-
-            var claims = new List<Claim>
+            // Check if account is locked
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
             {
-                new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim("UserID", user.UserID.ToString())
-            };
+                TempData["ErrorMessage"] = $"Account is locked. Try again at {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.";
+                return View(model);
+            }
+
+            if (user.Password != model.Password)
+            {
+                // Increment failed attempts
+                user.FailedLoginAttempts++;
+
+                // Lock account if max attempts reached
+                if (user.FailedLoginAttempts >= MaxFailedAttempts)
+                {
+                    user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
+                    TempData["ErrorMessage"] = $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Invalid login attempt.";
+                }
+
+                await _context.SaveChangesAsync();
+                return View(model);
+            }
+
+            // Reset failed attempts on successful login
+            user.FailedLoginAttempts = 0;
+            user.LockoutEnd = null;
+            await _context.SaveChangesAsync();
+
+            // Successful login logic (2FA handling, cookie auth)
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
+        new Claim(ClaimTypes.Role, user.Role.ToString()),
+        new Claim("UserID", user.UserID.ToString())
+    };
 
             if (user.IsTwoFactorEnabled)
             {
+                if (await IsRememberedDeviceValidAsync(user.UserID))
+                {
+                    await SignInUser(user, model.RememberMe);
+                    return RedirectBasedOnRole(user.Role);
+                }
+
                 HttpContext.Session.SetInt32("TwoFactorUserId", user.UserID);
                 return RedirectToAction("VerificationCodeLogin");
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = model.RememberMe
-            };
-
+            var authProperties = new AuthenticationProperties { IsPersistent = model.RememberMe };
             await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
 
-            return user.Role switch
-            {
-                UserRole.Administrator => RedirectToAction("Dashboard", "Admin"),
-                UserRole.Lecturer => RedirectToAction("Dashboard", "Lecturer"),
-                UserRole.Student => RedirectToAction("Dashboard", "Student"),
-                _ => RedirectToAction("Index", "Home"),
-            };
+            return RedirectBasedOnRole(user.Role);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -368,6 +403,7 @@ namespace SchoolProject.Controllers
                 );
 
                 TempData["SuccessMessage"] = "Password changed successfully!";
+                await RevokeAllRememberedDevicesAsync(user.UserID);
 
                 return user.Role switch
                 {
@@ -524,26 +560,52 @@ namespace SchoolProject.Controllers
 
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
-            {
                 return RedirectToAction("Login");
-            }
 
             var user = await _context.Accounts.FindAsync(userId.Value);
             if (user == null)
-            {
                 return RedirectToAction("Login");
+
+            // Check if account is locked
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                ModelState.AddModelError("", $"Account is locked until {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.");
+                return View(model);
             }
 
             bool isValidCode = _twoFactorService.ValidatePin(user.TwoFactorSecretKey, model.VerificationCode);
 
             if (isValidCode)
             {
+                // Reset failed attempts after successful 2FA
+                user.FailedLoginAttempts = 0;
+                user.LockoutEnd = null;
+                await _context.SaveChangesAsync();
+
+                if (model.RememberThisDevice)
+                {
+                    var deviceName = HttpContext.Connection.RemoteIpAddress?.ToString();
+                    await RememberCurrentDeviceAsync(user, deviceName);
+                }
+
                 HttpContext.Session.Remove("TwoFactorUserId");
                 await SignInUser(user, false);
                 return RedirectBasedOnRole(user.Role);
             }
 
-            ModelState.AddModelError("", "Invalid verification code.");
+            // Increment failed attempts for invalid 2FA code
+            user.FailedLoginAttempts++;
+            if (user.FailedLoginAttempts >= MaxFailedAttempts)
+            {
+                user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
+                ModelState.AddModelError("", $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Invalid verification code.");
+            }
+            await _context.SaveChangesAsync();
+
             return View(model);
         }
 
@@ -693,6 +755,7 @@ namespace SchoolProject.Controllers
 
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Two-factor authentication has been disabled.";
+            await RevokeAllRememberedDevicesAsync(user.UserID);
             return RedirectToAction("ViewProfile");
         }
 
@@ -806,6 +869,268 @@ namespace SchoolProject.Controllers
 
 
 
+        [Authorize]
+        public async Task<IActionResult> ManageDevices()
+        {
+            var userIdClaim = User.FindFirst("UserID")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(); // fallback if claim missing
+
+            var userId = int.Parse(userIdClaim);
+
+
+            var devices = await _context.RememberedDevices
+                .Where(d => d.UserId == userId && !d.Revoked)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
+
+            return View(devices); // expects a Razor view with a table of devices
+        }
+        [Authorize]
+        // POST: /Device/RevokeDevice/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RevokeDevice(int id)
+        {
+            var userIdClaim = User.FindFirst("UserID")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(); // fallback if claim missing
+
+            var userId = int.Parse(userIdClaim);
+            var device = await _context.RememberedDevices
+                .FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
+
+            if (device == null)
+            {
+                TempData["ErrorMessage"] = "Device not found.";
+                return RedirectToAction(nameof(ViewProfile));
+            }
+
+            device.Revoked = true;
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Device revoked successfully.";
+            return RedirectToAction(nameof(ViewProfile));
+        }
+
+
+        [Authorize]
+        // POST: /Device/RevokeAllDevices
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RevokeAllDevices()
+        {
+            var userIdClaim = User.FindFirst("UserID")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(); // fallback if claim missing
+
+            var userId = int.Parse(userIdClaim);
+
+
+            var devices = await _context.RememberedDevices
+                .Where(d => d.UserId == userId && !d.Revoked)
+                .ToListAsync();
+
+            foreach (var d in devices)
+                d.Revoked = true;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "All remembered devices have been revoked.";
+            return RedirectToAction(nameof(ViewProfile));
+        }
+
+
+
+
+
+
+        [HttpGet]
+        public IActionResult RecoveryLogin()
+        {
+            // Check if the 2FA session is active
+            var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
+            if (userId == null)
+            {
+                // No user in session, redirect to login
+                return RedirectToAction("Login");
+            }
+
+            return View(new RecoveryLoginViewModel());
+        }
+
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecoveryLogin(RecoveryLoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
+            if (userId == null)
+                return RedirectToAction("Login");
+
+            var user = await _context.Accounts.FindAsync(userId.Value);
+            if (user == null)
+                return RedirectToAction("Login");
+
+            // Check if account is locked
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                ModelState.AddModelError("", $"Account is locked until {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.");
+                return View(model);
+            }
+
+            var codes = (user.TwoFactorRecoveryCodes ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            if (codes.Contains(model.RecoveryCode))
+            {
+                // Reset failed attempts after successful recovery login
+                user.FailedLoginAttempts = 0;
+                user.LockoutEnd = null;
+
+                var remainingCodes = codes.Where(c => c != model.RecoveryCode);
+                user.TwoFactorRecoveryCodes = string.Join(",", remainingCodes);
+
+                await _context.SaveChangesAsync();
+
+                HttpContext.Session.Remove("TwoFactorUserId");
+                await SignInUser(user, false);
+
+                TempData["SuccessMessage"] = "Logged in successfully using recovery code.";
+                return RedirectBasedOnRole(user.Role);
+            }
+
+            // Increment failed attempts for invalid recovery code
+            user.FailedLoginAttempts++;
+            if (user.FailedLoginAttempts >= MaxFailedAttempts)
+            {
+                user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
+                ModelState.AddModelError("", $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.");
+            }
+            else
+            {
+                ModelState.AddModelError("", "Invalid recovery code. Please try again.");
+            }
+
+            await _context.SaveChangesAsync();
+            return View(model);
+        }
+
+
+
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult ResendRecoveryCodes()
+        {
+            // Ensure the 2FA session is active
+            var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View();
+        }
+
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResendRecoveryCodesPost()
+        {
+            var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
+            if (userId == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            var user = await _context.Accounts.FindAsync(userId.Value);
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+            if (!user.IsTwoFactorEnabled || string.IsNullOrEmpty(user.TwoFactorSecretKey))
+            {
+                TempData["ErrorMessage"] = "Two-factor authentication is not enabled for this account.";
+                return RedirectToAction("ViewProfile");
+            }
+
+            // Generate new recovery codes
+            var recoveryCodes = _twoFactorService.GenerateRecoveryCodes();
+
+            // Save codes in the database
+            user.TwoFactorRecoveryCodes = string.Join(",", recoveryCodes);
+            await _context.SaveChangesAsync();
+
+            // Prepare email placeholders
+            var placeholders = new Dictionary<string, string>
+    {
+        { "Name", user.Name },
+        { "RecoveryCodes", string.Join("<br>", recoveryCodes) }, // HTML line breaks
+        { "Date", DateTime.Now.ToString("f") }
+    };
+
+            try
+            {
+                await _emailService.SendEmailWithTemplateAsync(
+                    user.Email,
+                    "Your New Two-Factor Recovery Codes",
+                    "RecoveryCodesTemplate.html", // create this HTML template
+                    placeholders
+                );
+
+                TempData["SuccessMessage"] = "New recovery codes have been generated and sent to your email. Please check your inbox.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Failed to send recovery codes via email: {ex.Message}";
+                return View();
+            }
+
+            // Optionally show them on the screen too
+            return View("TwoFactorRecoveryCodes", new TwoFactorSetupViewModel { RecoveryCodes = recoveryCodes });
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         private async Task SignInUser(Account user, bool isPersistent)
@@ -853,6 +1178,89 @@ namespace SchoolProject.Controllers
         {
             return Guid.NewGuid().ToString("N"); // 32 chars, no dashes
         }
+
+
+
+
+
+
+        private const string TwoFactorRememberCookie = "SP.2FA.Remember";
+        private static readonly TimeSpan RememberDuration = TimeSpan.FromDays(30);
+
+        // Checks if the current browser has a valid "remembered device" token for this user
+        private async Task<bool> IsRememberedDeviceValidAsync(int userId)
+        {
+            if (!Request.Cookies.TryGetValue(TwoFactorRememberCookie, out var rawToken) || string.IsNullOrWhiteSpace(rawToken))
+                return false;
+
+            var tokenHash = HashToken(rawToken);
+
+            var record = await _context.RememberedDevices
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.TokenHash == tokenHash && !r.Revoked);
+
+            if (record == null)
+                return false;
+
+            if (record.ExpiresAt <= DateTime.UtcNow)
+            {
+                // Clean up expired record + cookie
+                _context.RememberedDevices.Remove(record);
+                await _context.SaveChangesAsync();
+                Response.Cookies.Delete(TwoFactorRememberCookie);
+                return false;
+            }
+
+            return true;
+        }
+
+        // Stores a new "remember this device" token for the current browser
+        private async Task RememberCurrentDeviceAsync(Account user, string? deviceName = null)
+        {
+            var rawToken = Guid.NewGuid().ToString("N"); // what goes to the cookie
+            var tokenHash = HashToken(rawToken);         // what we store in DB
+
+            var record = new RememberedDevice
+            {
+                UserId = user.UserID,
+                TokenHash = tokenHash,
+                ExpiresAt = DateTime.UtcNow.Add(RememberDuration),
+                DeviceName = deviceName,
+                UserAgent = Request.Headers["User-Agent"].ToString()
+            };
+
+            _context.RememberedDevices.Add(record);
+            await _context.SaveChangesAsync();
+
+            // Persist a secure cookie with the raw token (only useful if paired with the hashed DB record)
+            Response.Cookies.Append(
+                TwoFactorRememberCookie,
+                rawToken,
+                new CookieOptions
+                {
+                    Expires = DateTimeOffset.UtcNow.Add(RememberDuration),
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax
+                });
+        }
+
+        // Optional: revoke all remembered devices for a user (good to call on password change / disable 2FA)
+        private async Task RevokeAllRememberedDevicesAsync(int userId)
+        {
+            var items = _context.RememberedDevices.Where(r => r.UserId == userId);
+            _context.RememberedDevices.RemoveRange(items);
+            await _context.SaveChangesAsync();
+
+            // Delete cookie on this browser (other browsers still hold their own cookies)
+            Response.Cookies.Delete(TwoFactorRememberCookie);
+        }
+
+
+
+
+
+
+
 
     }
 }

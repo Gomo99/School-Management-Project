@@ -1,0 +1,57 @@
+﻿@model IEnumerable<SchoolProject.Models.RememberedDevice>
+
+@{
+    ViewData["Title"] = "Manage Devices";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+<div class="container mt-4">
+    <h2 class="mb-3">Manage Remembered Devices</h2>
+
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">No remembered devices found.</div>
+    }
+    else
+    {
+        <form asp-action="RevokeAllDevices" method="post" class="mb-3">
+            <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Revoke ALL devices? This will require re-login everywhere.')">
+                Revoke All Devices
+            </button>
+        </form>
+
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Device Name</th>
+                    <th>User Agent</th>
+                    <th>Created</th>
+                    <th>Expires</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var device in Model)
+                {
+                    <tr>
+                        <td>@(device.DeviceName ?? "Unknown")</td>
+                        <td class="text-truncate" style="max-width: 250px;">@device.UserAgent</td>
+                        <td>@device.CreatedAt.ToLocalTime().ToString("g")</td>
+                        <td>@device.ExpiresAt.ToLocalTime().ToString("g")</td>
+                        <td>
+                            <form asp-action="RevokeDevice" method="post" asp-route-id="@device.Id">
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Revoke this device?')">
+                                    Revoke
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

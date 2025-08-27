@@ -1,43 +1,231 @@
 ﻿@model SchoolProject.ViewModel.VerificationCodeLoginViewModel
 
 @{
-    ViewData["Title"] = "Verification Code Login";
+    ViewData["Title"] = "Two-Factor Authentication";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="text-center">Verification Code Login</h3>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">Enter the verification code from your authenticator app.</p>
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <!-- Header with branding -->
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-gradient p-3 rounded-circle d-inline-flex mb-3">
+                        <i class="bi bi-shield-lock text-white fs-2"></i>
+                    </div>
+                    <h1 class="h2 fw-bold text-primary mb-2">Two-Factor Authentication</h1>
+                    <p class="text-muted">Enhanced security for your account</p>
+                </div>
 
-                <form asp-action="VerificationCodeLogin" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                    <div class="form-group">
-                        <label asp-for="VerificationCode" class="control-label"></label>
-                        <input asp-for="VerificationCode" class="form-control" placeholder="Enter 6-digit code" />
-                        <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                <!-- Main card -->
+                <div class="card border-0 shadow-lg rounded-4">
+                    <div class="card-header bg-transparent py-4 border-0 text-center">
+                        <h3 class="card-title mb-0 text-dark">
+                            <i class="bi bi-phone-fill text-primary me-2"></i>Enter Verification Code
+                        </h3>
                     </div>
 
-                    <div class="form-group mt-3">
-                        <button type="submit" class="btn btn-primary w-100">Log in with Verification Code</button>
+                    <div class="card-body p-5">
+                        <!-- Instructions -->
+                        <div class="alert alert-info border-0 rounded-3 mb-4">
+                            <div class="d-flex">
+                                <i class="bi bi-info-circle-fill text-info me-2 fs-5"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-1">Where to find your code</h6>
+                                    <p class="mb-0 small">Open your authenticator app to get your 6-digit verification code</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form asp-action="VerificationCodeLogin" method="post" class="needs-validation" novalidate>
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3"></div>
+
+                            <!-- Verification Code Input -->
+                            <div class="mb-4">
+                                <label asp-for="VerificationCode" class="form-label fw-semibold text-dark">
+                                    <i class="bi bi-key-fill text-primary me-1"></i>Verification Code
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="bi bi-shield-check text-primary"></i>
+                                    </span>
+                                    <input asp-for="VerificationCode"
+                                           class="form-control border-start-0 py-3"
+                                           placeholder="Enter 6-digit code"
+                                           required
+                                           pattern="[0-9]{6}"
+                                           maxlength="6"
+                                           inputmode="numeric" />
+                                    <span class="input-group-text bg-light border-start-0">
+                                        <i class="bi bi-123 text-muted"></i>
+                                    </span>
+                                </div>
+                                <span asp-validation-for="VerificationCode" class="text-danger small"></span>
+                                <div class="form-text">Enter the 6-digit code from your authenticator app</div>
+                            </div>
+
+                            <!-- Remember Device Option -->
+                            <div class="form-check form-switch mb-4">
+                                <input asp-for="RememberThisDevice" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="RememberThisDevice" class="form-check-label text-dark">
+                                    <i class="bi bi-device-ssd text-primary me-1"></i>Remember this device for 30 days
+                                </label>
+                                <div class="form-text small">Don't select this on public or shared devices</div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 py-3 mb-4">
+                                <i class="bi bi-unlock-fill me-2"></i>Verify & Continue
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+                            </button>
+                        </form>
+
+                        <!-- Alternative Options -->
+                        <div class="text-center">
+                            <p class="text-muted mb-3">Having trouble?</p>
+                            <div class="d-grid gap-2">
+                                <a asp-action="RecoveryLogin" class="btn btn-outline-secondary rounded-3">
+                                    <i class="bi bi-key me-2"></i>Use Recovery Code
+                                </a>
+                                <a asp-action="Login" class="btn btn-link text-decoration-none">
+                                    <i class="bi bi-arrow-left me-1"></i>Back to Login
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </div>
 
-
-                <div class="text-center mt-3">
-                    <a asp-action="Login">Back to Login</a>
+                <!-- Security Tips -->
+                <div class="text-center mt-4">
+                    <div class="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1">
+                        <i class="bi bi-shield-check text-success me-2"></i>
+                        <small class="text-muted">Your security is our priority</small>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+
+    <style>
+        .min-vh-100 {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .input-group-text {
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus + .input-group-text,
+        .form-control:focus ~ .input-group-text {
+            background-color: #e3f2fd;
+            border-color: #0d6efd;
+        }
+
+        .btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+
+            .btn:active {
+                transform: translateY(0);
+            }
+
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .input-group {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .form-control {
+            border-left: none !important;
+            border-right: none !important;
+        }
+
+        .alert {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+
+
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        // Enhanced form validation and UX
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.needs-validation');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const spinner = submitButton.querySelector('.spinner-border');
+
+            // Auto-focus on code input
+            const codeInput = document.getElementById('VerificationCode');
+            if (codeInput) {
+                codeInput.focus();
+            }
+
+            // Auto-tab between digits (if you had multiple inputs)
+            const inputs = form.querySelectorAll('input[type="text"]');
+            inputs.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    if (this.value.length === this.maxLength) {
+                        if (inputs[index + 1]) {
+                            inputs[index + 1].focus();
+                        }
+                    }
+                });
+
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && this.value.length === 0) {
+                        if (inputs[index - 1]) {
+                            inputs[index - 1].focus();
+                        }
+                    }
+                });
+            });
+
+            // Form submission handling
+            form.addEventListener('submit', function(e) {
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                } else {
+                    // Show loading spinner
+                    submitButton.disabled = true;
+                    spinner.classList.remove('d-none');
+                }
+
+                form.classList.add('was-validated');
+            });
+
+            // Input validation
+            codeInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '');
+                if (this.value.length > 6) {
+                    this.value = this.value.slice(0, 6);
+                }
+            });
+        });
+    </script>
 }

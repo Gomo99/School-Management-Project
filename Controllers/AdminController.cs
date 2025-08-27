@@ -7,8 +7,11 @@ using Microsoft.EntityFrameworkCore;
 using SchoolProject.Data;
 using SchoolProject.Models;
 using SchoolProject.ViewModel;
-using X.PagedList.Extensions;
 using SchoolProject.Service;
+
+
+// With this:
+
 
 namespace SchoolProject.Controllers
 {
@@ -34,35 +37,33 @@ namespace SchoolProject.Controllers
             var model = new DashboardViewModel
             {
                 ActiveModulesCount = await _context.Modules
-                        .CountAsync(m => m.ModuleStatus == ModuleStatus.Active),
+           .CountAsync(m => m.ModuleStatus == ModuleStatus.Active),
                 InactiveModulesCount = await _context.Modules
-                        .CountAsync(m => m.ModuleStatus == ModuleStatus.Inactive)
+           .CountAsync(m => m.ModuleStatus == ModuleStatus.Inactive),
+
+                RecentAccounts = await _context.Accounts
+           .OrderByDescending(a => a.UserID) // latest accounts
+           .Take(5)
+           .ToListAsync()
             };
+
 
             return View(model);
         }
 
+
+
+
         // View all modules
-        public IActionResult ManageModules(int? page, string searchString)
+        public IActionResult ManageModules()
         {
-            int pageSize = 10;
-            int pageNumber = page ?? 1;
+            var modules = _context.Modules
+                .Where(m => m.ModuleStatus == ModuleStatus.Active)
+                .OrderBy(m => m.ModuleName)
+                .ToList();
 
-            var query = _context.Modules
-                .Where(m => m.ModuleStatus == ModuleStatus.Active);
-
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                query = query.Where(m =>
-                    m.ModuleName.Contains(searchString) ||
-                    m.ModuleType.ToString().Contains(searchString) ||
-                    m.Duration.ToString().Contains(searchString));
-            }
-
-            var modules = query.OrderBy(m => m.ModuleName);
-            return View(modules.ToPagedList(pageNumber, pageSize));
+            return View(modules);
         }
-
         public IActionResult ExportModulesPdf(string searchString)
         {
             var query = _context.Modules

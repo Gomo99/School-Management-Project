@@ -2,13 +2,322 @@
     ViewData["Title"] = "Resend Verification Email";
 }
 
-<h2>Resend Verification Email</h2>
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <!-- Header with branding -->
+                <div class="text-center mb-4">
+                    <div class="bg-primary bg-gradient p-3 rounded-circle d-inline-flex mb-3">
+                        <i class="bi bi-envelope-check text-white fs-2"></i>
+                    </div>
+                    <h1 class="h2 fw-bold text-primary mb-2">Resend Verification Email</h1>
+                    <p class="text-muted">We'll send you a new verification link</p>
+                </div>
 
-<form asp-action="ResendVerificationEmail" method="post">
-    <div class="form-group">
-        <label for="Email">Email</label>
-        <input type="email" name="Email" class="form-control" required />
+                <!-- Main card -->
+                <div class="card border-0 shadow-lg rounded-4">
+                    <div class="card-header bg-transparent py-4 border-0 text-center">
+                        <h3 class="card-title mb-0 text-dark">
+                            <i class="bi bi-arrow-clockwise text-primary me-2"></i>Request New Link
+                        </h3>
+                    </div>
+                    
+                    <div class="card-body p-5">
+                        <!-- Information Alert -->
+                        <div class="alert alert-info border-0 rounded-3 mb-4">
+                            <div class="d-flex">
+                                <i class="bi bi-info-circle-fill text-info me-2 fs-5"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-1">Didn't receive your verification email?</h6>
+                                    <p class="mb-0 small">Check your spam folder or request a new verification link below</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form asp-action="ResendVerificationEmail" method="post" class="needs-validation" novalidate>
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3"></div>
+
+                            <!-- Email Input -->
+                            <div class="mb-4">
+                                <label for="Email" class="form-label fw-semibold text-dark">
+                                    <i class="bi bi-envelope-fill text-primary me-1"></i>Email Address
+                                </label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="bi bi-at text-primary"></i>
+                                    </span>
+                                    <input type="email" 
+                                           name="Email" 
+                                           id="Email"
+                                           class="form-control border-start-0 py-3" 
+                                           placeholder="Enter your email address" 
+                                           required
+                                           autocomplete="email" />
+                                    <span class="input-group-text bg-light border-start-0">
+                                        <i class="bi bi-check-circle text-success d-none validation-icon"></i>
+                                        <i class="bi bi-exclamation-triangle text-danger d-none validation-icon"></i>
+                                    </span>
+                                </div>
+                                <div class="invalid-feedback">Please provide a valid email address</div>
+                                <div class="form-text">We'll send a verification link to this email address</div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-3 py-3 mb-4">
+                                <i class="bi bi-send-fill me-2"></i>Send Verification Email
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </span>
+                            </button>
+                        </form>
+
+                        <!-- Success Message (hidden by default) -->
+                        <div class="alert alert-success border-0 rounded-3 d-none" id="successMessage">
+                            <div class="d-flex">
+                                <i class="bi bi-check-circle-fill text-success me-2 fs-5"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-1">Verification email sent!</h6>
+                                    <p class="mb-0 small">Please check your email and click the verification link</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alternative Options -->
+                        <div class="text-center">
+                            <p class="text-muted mb-3">Need help?</p>
+                            <div class="d-grid gap-2">
+                                <a href="#" class="btn btn-outline-secondary rounded-3" data-bs-toggle="modal" data-bs-target="#helpModal">
+                                    <i class="bi bi-question-circle me-2"></i>Troubleshooting Guide
+                                </a>
+                                <a asp-action="Login" class="btn btn-link text-decoration-none">
+                                    <i class="bi bi-arrow-left me-1"></i>Back to Login
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips -->
+                <div class="text-center mt-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-pill px-3 py-2">
+                                <i class="bi bi-clock text-primary me-2"></i>
+                                <small class="text-muted">Usually arrives in 1-2 minutes</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-pill px-3 py-2">
+                                <i class="bi bi-folder2 text-warning me-2"></i>
+                                <small class="text-muted">Check spam folder</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-pill px-3 py-2">
+                                <i class="bi bi-shield-check text-success me-2"></i>
+                                <small class="text-muted">Secure delivery</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <button type="submit" class="btn btn-primary mt-2">Send Verification Email</button>
-</form>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="helpModalLabel">
+                    <i class="bi bi-question-circle-fill text-primary me-2"></i>Email Verification Help
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="helpAccordion">
+                    <div class="accordion-item border-0 mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                                <i class="bi bi-envelope-x me-2 text-danger"></i>I didn't receive the email
+                            </button>
+                        </h2>
+                        <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Check your spam/junk folder</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Wait 5-10 minutes for delivery</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Verify your email address is correct</li>
+                                    <li><i class="bi bi-check text-success me-2"></i>Try requesting a new verification email</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item border-0 mb-3">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                                <i class="bi bi-link-45deg me-2 text-warning"></i>The verification link isn't working
+                            </button>
+                        </h2>
+                        <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Make sure you clicked the most recent link</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Links expire after 24 hours</li>
+                                    <li class="mb-2"><i class="bi bi-check text-success me-2"></i>Try copying the full URL into your browser</li>
+                                    <li><i class="bi bi-check text-success me-2"></i>Request a new verification email if the link is old</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item border-0">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed rounded-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                                <i class="bi bi-headset me-2 text-info"></i>I need more help
+                            </button>
+                        </h2>
+                        <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <p class="mb-3">If you're still having trouble, please contact our support team:</p>
+                                <div class="d-grid gap-2">
+                                    <a href="mailto:support@yourschool.edu" class="btn btn-outline-primary">
+                                        <i class="bi bi-envelope me-2"></i>Email Support
+                                    </a>
+                                    <a href="tel:+1234567890" class="btn btn-outline-primary">
+                                        <i class="bi bi-telephone me-2"></i>Call Support
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <style>
+        .min-vh-100 {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .input-group-text {
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus + .input-group-text,
+        .form-control:focus ~ .input-group-text {
+            background-color: #e3f2fd;
+            border-color: #0d6efd;
+        }
+
+        .form-control:valid ~ .input-group-text .bi-check-circle {
+            display: inline-block !important;
+        }
+
+        .form-control:invalid:not(:placeholder-shown) ~ .input-group-text .bi-exclamation-triangle {
+            display: inline-block !important;
+        }
+
+        .btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .input-group {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .input-group:focus-within {
+            box-shadow: 0 4px 20px rgba(13, 110, 253, 0.25);
+        }
+
+        .form-control {
+            border-left: none !important;
+            border-right: none !important;
+        }
+
+        .alert {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-content {
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .accordion-button {
+            border: 1px solid #dee2e6;
+            box-shadow: none;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #e3f2fd;
+            border-color: #0d6efd;
+        }
+
+        .validation-icon {
+            transition: all 0.3s ease;
+        }
+
+       
+
+        .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .bg-light.rounded-pill {
+            transition: all 0.3s ease;
+        }
+
+        .bg-light.rounded-pill:hover {
+            background-color: #f8f9fa !important;
+            transform: scale(1.05);
+        }
+    </style>
+
 

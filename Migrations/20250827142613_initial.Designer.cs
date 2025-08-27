@@ -12,7 +12,7 @@ using SchoolProject.Data;
 namespace SchoolProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250826145239_initial")]
+    [Migration("20250827142613_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -43,8 +43,14 @@ namespace SchoolProject.Migrations
                     b.Property<string>("EmailVerificationTokenHash")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("FailedLoginAttempts")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsTwoFactorEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LockoutEnd")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -95,6 +101,7 @@ namespace SchoolProject.Migrations
                         {
                             UserID = 1,
                             Email = "admin@school.com",
+                            FailedLoginAttempts = 0,
                             IsTwoFactorEnabled = false,
                             Name = "Admin",
                             Password = "admin123",
@@ -107,6 +114,7 @@ namespace SchoolProject.Migrations
                         {
                             UserID = 2,
                             Email = "lecturer@school.com",
+                            FailedLoginAttempts = 0,
                             IsTwoFactorEnabled = false,
                             Name = "lECTURE",
                             Password = "admin123",
@@ -119,6 +127,7 @@ namespace SchoolProject.Migrations
                         {
                             UserID = 3,
                             Email = "student@school.com",
+                            FailedLoginAttempts = 0,
                             IsTwoFactorEnabled = false,
                             Name = "Student",
                             Password = "admin123",
@@ -704,6 +713,43 @@ namespace SchoolProject.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SchoolProject.Models.RememberedDevice", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Revoked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RememberedDevices");
+                });
+
             modelBuilder.Entity("SchoolProject.Models.StudentModule", b =>
                 {
                     b.Property<int>("StudentModuleID")
@@ -780,6 +826,17 @@ namespace SchoolProject.Migrations
                     b.Navigation("Lecturer");
 
                     b.Navigation("Module");
+                });
+
+            modelBuilder.Entity("SchoolProject.Models.RememberedDevice", b =>
+                {
+                    b.HasOne("SchoolProject.Models.Account", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SchoolProject.Models.StudentModule", b =>

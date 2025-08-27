@@ -7,5 +7,8 @@ namespace SchoolProject.ViewModel
         [Required]
         [Display(Name = "Verification Code")]
         public string VerificationCode { get; set; }
+
+        public bool RememberThisDevice { get; set; }
+
     }
 }

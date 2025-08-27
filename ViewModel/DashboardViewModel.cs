@@ -1,5 +1,4 @@
 ﻿using SchoolProject.Models;
-using X.PagedList;
 
 namespace SchoolProject.ViewModel
 {
@@ -9,5 +8,7 @@ namespace SchoolProject.ViewModel
         public int ActiveModulesCount { get; set; }
         public int InactiveModulesCount { get; set; }
         public int TotalModules => ActiveModulesCount + InactiveModulesCount;
+
+        public List<Account> RecentAccounts { get; set; } = new();
     }
 }
