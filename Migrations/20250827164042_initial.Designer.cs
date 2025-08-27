@@ -12,7 +12,7 @@ using SchoolProject.Data;
 namespace SchoolProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250827142613_initial")]
+    [Migration("20250827164042_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -43,11 +43,20 @@ namespace SchoolProject.Migrations
                     b.Property<string>("EmailVerificationTokenHash")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExternalProvider")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExternalProviderId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsTwoFactorEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastExternalLogin")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("LockoutEnd")
                         .HasColumnType("datetime2");

@@ -58,6 +58,10 @@ namespace SchoolProject.Models
         public DateTime? LockoutEnd { get; set; }
 
 
+        public string? ExternalProvider { get; set; }
+        public string? ExternalProviderId { get; set; }
+        public DateTime? LastExternalLogin { get; set; }
+
 
         public DateTime? ResetPinExpiration { get; set; }
         public ICollection<LecturerModule> LecturerModules { get; set; }

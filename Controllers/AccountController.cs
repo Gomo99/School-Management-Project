@@ -1,20 +1,21 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using iTextSharp.text;
+using iTextSharp.text.pdf;
+using MailKit;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using SchoolProject.Data;
 using SchoolProject.Models;
-using SchoolProject.ViewModel;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using SchoolProject.Service;
-using MailKit;
+using SchoolProject.ViewModel;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authorization;
-using System.Text.RegularExpressions;
-using iTextSharp.text.pdf;
-using iTextSharp.text;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 namespace SchoolProject.Controllers
 {
@@ -128,6 +129,7 @@ namespace SchoolProject.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync("MyCookieAuth");
+            await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
             TempData["SuccessMessage"] = "You have successfully logged out.";
             TempData.Clear();
             return RedirectToAction("Login", "Account");
@@ -1164,7 +1166,258 @@ namespace SchoolProject.Controllers
 
 
 
-   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        [HttpPost]
+        [AllowAnonymous]
+        public IActionResult GoogleLogin(string returnUrl = "/")
+        {
+            var redirectUrl = Url.Action("GoogleResponse", "Account", new { ReturnUrl = returnUrl });
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet]
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GoogleResponse(string returnUrl = "/")
+        {
+            // Read the external authenticate result from Google's handler
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+
+            if (!result.Succeeded || result.Principal == null)
+            {
+                TempData["ErrorMessage"] = "Google authentication failed.";
+                return RedirectToAction("Login");
+            }
+
+            var claims = result.Principal.Claims;
+            // Try multiple claim types for compatibility
+            var email = GetFirstClaimValue(claims, ClaimTypes.Email, "email");
+            var name = GetFirstClaimValue(claims, ClaimTypes.Name, "name");
+            var givenName = GetFirstClaimValue(claims, ClaimTypes.GivenName, "given_name");
+            var surname = GetFirstClaimValue(claims, ClaimTypes.Surname, "family_name", "family-name");
+
+            if (string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "Could not retrieve email from Google.";
+                // Clear external cookie and redirect
+                await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
+                return RedirectToAction("Login");
+            }
+
+            // Normalize email for comparison
+            email = email.ToLowerInvariant();
+
+            // Attempt to find existing user
+            var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Email.ToLower() == email);
+
+            if (user == null)
+            {
+                // Create a new user from the Google claims
+                user = await CreateUserFromGoogleClaims(claims, email);
+                if (user == null)
+                {
+                    TempData["ErrorMessage"] = "Failed to create user account.";
+                    await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
+                    return RedirectToAction("Login");
+                }
+            }
+
+            if (user.UserStatus != UserStatus.Active)
+            {
+                TempData["ErrorMessage"] = "Your account is not active.";
+                await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
+                return RedirectToAction("Login");
+            }
+
+            // Sign in using your cookie auth
+            await SignInUser(user, isPersistent: true);
+
+       
+
+
+            // Redirect based on role using your helper method
+            return RedirectBasedOnRole(user.Role);
+        }
+
+
+
+
+        private async Task<Account> CreateUserFromGoogleClaims(IEnumerable<Claim> claims, string email)
+        {
+            // Grab best available name pieces
+            var fullName = GetFirstClaimValue(claims, ClaimTypes.Name, "name") ?? "";
+            var givenName = GetFirstClaimValue(claims, ClaimTypes.GivenName, "given_name");
+            var familyName = GetFirstClaimValue(claims, ClaimTypes.Surname, "family_name", "family-name");
+
+            string name = "User";
+            string surname = "";
+
+            if (!string.IsNullOrEmpty(givenName) || !string.IsNullOrEmpty(familyName))
+            {
+                name = string.IsNullOrEmpty(givenName) ? (fullName.Split(' ').FirstOrDefault() ?? "User") : givenName;
+                surname = familyName ?? (fullName.Contains(" ") ? fullName.Split(' ').Skip(1).FirstOrDefault() ?? "" : "");
+            }
+            else if (!string.IsNullOrEmpty(fullName))
+            {
+                var parts = fullName.Split(' ');
+                name = parts.FirstOrDefault() ?? "User";
+                surname = parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : "";
+            }
+
+            // Create a new account with safe defaults (no plaintext password needed for OAuth users)
+            var newUser = new Account
+            {
+                // Do NOT supply UserID; let the DB generate it (Identity)
+                Name = name,
+                Surname = surname,
+                Title = "",
+                Email = email,
+                // Provide a generated password value (not used for OAuth login) to avoid null problems elsewhere
+                Password = Guid.NewGuid().ToString("N"),
+                Role = UserRole.Student,          // default role for new SSO users - change as desired
+                UserStatus = UserStatus.Active,
+                IsTwoFactorEnabled = false,
+                TwoFactorSecretKey = null,
+                TwoFactorRecoveryCodes = null
+            };
+
+            try
+            {
+                _context.Accounts.Add(newUser);
+                await _context.SaveChangesAsync();
+                return newUser;
+            }
+            catch
+            {
+                return null; // caller will show an appropriate error
+            }
+        }
+
+
+
+
+        private string GenerateRandomPassword(int length = 16)
+        {
+            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
+            var random = new Random();
+            var chars = new char[length];
+
+            for (int i = 0; i < length; i++)
+            {
+                chars[i] = validChars[random.Next(validChars.Length)];
+            }
+
+            return new string(chars);
+        }
+
+
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> LinkGoogleAccount()
+        {
+            var userIdClaim = User.FindFirst("UserID");
+            if (userIdClaim == null) return RedirectToAction("Login");
+
+            var user = await _context.Accounts.FindAsync(int.Parse(userIdClaim.Value));
+            if (user == null) return RedirectToAction("Login");
+
+            // Store user ID in session for the callback
+            HttpContext.Session.SetInt32("LinkAccountUserId", user.UserID);
+
+            var redirectUrl = Url.Action("LinkGoogleResponse", "Account");
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> LinkGoogleResponse()
+        {
+            var userId = HttpContext.Session.GetInt32("LinkAccountUserId");
+            if (userId == null) return RedirectToAction("Login");
+
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = "Google authentication failed.";
+                return RedirectToAction("ViewProfile");
+            }
+
+            var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
+            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var externalId = claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            var user = await _context.Accounts.FindAsync(userId.Value);
+            if (user != null && user.Email == email)
+            {
+                user.ExternalProvider = "Google";
+                user.ExternalProviderId = externalId;
+                user.LastExternalLogin = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Google account linked successfully!";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Email doesn't match your account email.";
+            }
+
+            await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
+            return RedirectToAction("ViewProfile");
+        }
+
+
+
+        private string GetFirstClaimValue(IEnumerable<Claim> claims, params string[] claimTypes)
+        {
+            foreach (var t in claimTypes)
+            {
+                var c = claims.FirstOrDefault(x => string.Equals(x.Type, t, StringComparison.OrdinalIgnoreCase));
+                if (c != null && !string.IsNullOrEmpty(c.Value))
+                    return c.Value;
+            }
+            return null;
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         private static string HashToken(string token)
         {

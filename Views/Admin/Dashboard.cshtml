@@ -22,9 +22,7 @@
         <button id="refreshDashboard" class="btn btn-outline-primary btn-sm rounded-pill">
             <i class="bi bi-arrow-repeat me-1"></i>Refresh
         </button>
-        <button class="btn btn-outline-secondary btn-sm rounded-pill">
-            <i class="bi bi-filter me-1"></i>Filter
-        </button>
+       
     </div>
 </div>
 
@@ -45,7 +43,7 @@
                 <h3 class="fw-bold text-dark mb-1">@Model.ActiveModulesCount</h3>
                 <p class="text-muted mb-2">Active Modules</p>
                 <div class="progress mb-3" style="height: 4px;">
-                    <div class="progress-bar bg-success" style="width: 75%"></div>
+                    <div class="progress-bar bg-success" style="width: @Model.ActivePercentage%"></div>
                 </div>
                 <a href="@Url.Action("ManageModules", new { status = "Active" })"
                    class="stretched-link text-decoration-none">
@@ -70,7 +68,7 @@
                 <h3 class="fw-bold text-dark mb-1">@Model.InactiveModulesCount</h3>
                 <p class="text-muted mb-2">Inactive Modules</p>
                 <div class="progress mb-3" style="height: 4px;">
-                    <div class="progress-bar bg-danger" style="width: 25%"></div>
+                    <div class="progress-bar bg-danger" style="width: @Model.InactivePercentage%"></div>
                 </div>
                 <a href="@Url.Action("ManageModules", new { status = "Inactive" })"
                    class="stretched-link text-decoration-none">
@@ -95,7 +93,7 @@
                 <h3 class="fw-bold text-dark mb-1">@Model.TotalModules</h3>
                 <p class="text-muted mb-2">Total Modules</p>
                 <div class="progress mb-3" style="height: 4px;">
-                    <div class="progress-bar bg-primary" style="width: 60%"></div>
+                    <div class="progress-bar bg-primary" style="width: 100%"></div>
                 </div>
                 <a href="@Url.Action("ManageModules")"
                    class="stretched-link text-decoration-none">
@@ -116,20 +114,31 @@
                     <i class="bi bi-activity me-2 text-primary"></i>Recent Activity
                 </h5>
             </div>
-            <tbody>
-                @foreach (var account in Model.RecentAccounts)
-                {
-                    <tr>
-                        <td>@account.Name @account.Surname</td>
-                        <td>Registered</td>
-                        <td>-</td>
-                        <td>@DateTime.Now.ToShortTimeString()</td>
-                        <td><span class="badge bg-success">Active</span></td>
-                    </tr>
-                }
-            </tbody>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User</th>
+                                <th>-</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var account in Model.RecentAccounts)
+                            {
+                                <tr>
+                                    <td>@account.Name @account.Surname</td>
+                                    <td>Registered</td>
+                                    <td>@DateTime.Now.ToShortTimeString()</td>
+                                    <td><span class="badge bg-success">Active</span></td>
+                                </tr>
+                            }
+                        </tbody>
 
-             
+                    </table>
+                </div>
                 <a href="#" class="btn btn-outline-primary w-100 mt-3 rounded-pill">
                     <i class="bi bi-list-check me-2"></i>View Full Activity Log
                 </a>

@@ -42,11 +42,11 @@ namespace SchoolProject.Controllers
            .CountAsync(m => m.ModuleStatus == ModuleStatus.Inactive),
 
                 RecentAccounts = await _context.Accounts
-           .OrderByDescending(a => a.UserID) // latest accounts
-           .Take(5)
-           .ToListAsync()
+    .OrderByDescending(a => a.UserID)
+    .Take(5)
+    .Select(a => new Account { UserID = a.UserID, Name = a.Name, Surname = a.Surname })
+    .ToListAsync()
             };
-
 
             return View(model);
         }

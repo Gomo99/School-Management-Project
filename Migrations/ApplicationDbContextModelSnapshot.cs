@@ -40,11 +40,20 @@ namespace SchoolProject.Migrations
                     b.Property<string>("EmailVerificationTokenHash")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExternalProvider")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExternalProviderId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsTwoFactorEnabled")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastExternalLogin")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("LockoutEnd")
                         .HasColumnType("datetime2");

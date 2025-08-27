@@ -34,6 +34,9 @@ namespace SchoolProject.Migrations
                     EmailVerificationTokenExpires = table.Column<DateTime>(type: "datetime2", nullable: true),
                     FailedLoginAttempts = table.Column<int>(type: "int", nullable: false),
                     LockoutEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ExternalProvider = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ExternalProviderId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    LastExternalLogin = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ResetPinExpiration = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
@@ -192,12 +195,12 @@ namespace SchoolProject.Migrations
 
             migrationBuilder.InsertData(
                 table: "Accounts",
-                columns: new[] { "UserID", "Email", "EmailVerificationTokenExpires", "EmailVerificationTokenHash", "FailedLoginAttempts", "IsTwoFactorEnabled", "LockoutEnd", "Name", "Password", "ResetPin", "ResetPinExpiration", "Role", "Surname", "Title", "TwoFactorRecoveryCodes", "TwoFactorSecretKey", "UserStatus" },
+                columns: new[] { "UserID", "Email", "EmailVerificationTokenExpires", "EmailVerificationTokenHash", "ExternalProvider", "ExternalProviderId", "FailedLoginAttempts", "IsTwoFactorEnabled", "LastExternalLogin", "LockoutEnd", "Name", "Password", "ResetPin", "ResetPinExpiration", "Role", "Surname", "Title", "TwoFactorRecoveryCodes", "TwoFactorSecretKey", "UserStatus" },
                 values: new object[,]
                 {
-                    { 1, "admin@school.com", null, null, 0, false, null, "Admin", "admin123", null, null, "Administrator", "User", "System Admin", null, null, "Active" },
-                    { 2, "lecturer@school.com", null, null, 0, false, null, "lECTURE", "admin123", null, null, "Lecturer", "User", "System Lecturer", null, null, "Active" },
-                    { 3, "student@school.com", null, null, 0, false, null, "Student", "admin123", null, null, "Student", "User", "System Student", null, null, "Active" }
+                    { 1, "admin@school.com", null, null, null, null, 0, false, null, null, "Admin", "admin123", null, null, "Administrator", "User", "System Admin", null, null, "Active" },
+                    { 2, "lecturer@school.com", null, null, null, null, 0, false, null, null, "lECTURE", "admin123", null, null, "Lecturer", "User", "System Lecturer", null, null, "Active" },
+                    { 3, "student@school.com", null, null, null, null, 0, false, null, null, "Student", "admin123", null, null, "Student", "User", "System Student", null, null, "Active" }
                 });
 
             migrationBuilder.InsertData(
