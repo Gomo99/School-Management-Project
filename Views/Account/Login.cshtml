@@ -2,177 +2,384 @@
 
 @{
     ViewData["Title"] = "Login";
+    Layout = null; // We'll create a self-contained page
 }
-<partial name="_NotificationPartial" />
 
-<div class="d-flex justify-content-center align-items-center vh-100">
-    <form asp-action="Login" method="post" class="form_main shadow">
-        <p class="heading">Login</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SchoolProject</title>
 
-        <div asp-validation-summary="All" class="text-danger mb-2"></div>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-        <!-- Email -->
-        <div class="inputContainer">
-            <svg class="inputIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2e2e2e" viewBox="0 0 16 16">
-                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v.217l-8 4.8-8-4.8V4z" />
-                <path d="M0 6.383v5.634A2 2 0 0 0 2 14h12a2 2 0 0 0 2-2V6.383l-7.555 4.533a1 1 0 0 1-1.11 0L0 6.383z" />
-            </svg>
-            <input asp-for="Email" class="inputField" id="Email" placeholder="Email or Username" required />
-        </div>
-        <span asp-validation-for="Email" class="text-danger"></span>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-        <!-- Password -->
-        <div class="inputContainer" style="position: relative;">
-            <svg class="inputIcon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#2e2e2e" viewBox="0 0 16 16">
-                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
-            </svg>
-            <input asp-for="Password" type="password" class="inputField" id="Password" placeholder="Password" required />
-            <button type="button" id="togglePassword" style="position:absolute; right:5px; top:50%; transform:translateY(-50%); border:none; background:none; cursor:pointer; z-index:3;">
-                <i class="bi bi-eye-slash" id="eyeIcon"></i>
-            </button>
-        </div>
-        <span asp-validation-for="Password" class="text-danger"></span>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        <!-- Remember Me -->
-        <div class="form-check text-start w-100 mt-2">
-            <input asp-for="RememberMe" class="form-check-input" />
-            <label asp-for="RememberMe" class="form-check-label">Remember Me</label>
-        </div>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-        <!-- Submit -->
-        <button id="button" type="submit">Login</button>
+    <style>
+        :root {
+            --primary-color: #4e54c8;
+            --secondary-color: #8f94fb;
+            --accent-color: #6c63ff;
+            --light-bg: #f8f9fa;
+            --dark-text: #2d3748;
+        }
 
-        <!-- Forgot Password -->
-        <a class="forgotLink" href="/Account/ForgotPassword">Forgot your password?</a>
-        <div class="mt-2 text-center">
-            <small>Resend the email verification <a href="/Account/ResendVerificationEmail">Resend the email verification</a></small>
-        </div>
-    </form>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1000px;
+        }
 
-    <div class="col-md-6">
-        <h4>Or login with</h4>
+        .login-left {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
 
-        <form asp-controller="Account" asp-action="GoogleLogin" method="post">
-            <button type="submit" class="btn btn-outline-danger btn-lg w-100 mb-3">
-                <i class="fab fa-google me-2"></i>Sign in with Google
-            </button>
-        </form>
+        .brand-container {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
 
-        <!-- Add more providers if needed -->
-         <form asp-controller="Account" asp-action="MicrosoftLogin" method="post">
-            <button type="submit" class="btn btn-outline-primary btn-lg w-100">
-                <i class="fab fa-microsoft me-2"></i>Sign in with Microsoft
-            </button>
-        </form> 
+        .brand-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+        }
+
+            .feature-list li {
+                display: flex;
+                align-items: center;
+                margin-bottom: 1rem;
+                font-weight: 500;
+            }
+
+            .feature-list i {
+                background: rgba(255, 255, 255, 0.2);
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 12px;
+                font-size: 0.9rem;
+            }
+
+        .login-right {
+            padding: 3rem 2rem;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+            .form-control:focus {
+                border-color: var(--accent-color);
+                box-shadow: 0 0 0 0.25rem rgba(108, 99, 255, 0.2);
+            }
+
+        .input-group-text {
+            background: transparent;
+            border-radius: 8px 0 0 8px;
+            border: 1px solid #e2e8f0;
+            border-right: none;
+        }
+
+        .password-toggle {
+            cursor: pointer;
+            background: transparent;
+            border: 1px solid #e2e8f0;
+            border-left: none;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+            .btn-login:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(78, 84, 200, 0.4);
+            }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            color: #718096;
+        }
+
+            .divider::before,
+            .divider::after {
+                content: "";
+                flex: 1;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .divider span {
+                padding: 0 1rem;
+                font-size: 0.875rem;
+            }
+
+        .btn-google {
+            background-color: #fff;
+            color: #757575;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+            .btn-google:hover {
+                background-color: #f8f9fa;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+        .btn-microsoft {
+            background-color: #fff;
+            color: #757575;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+            .btn-microsoft:hover {
+                background-color: #f8f9fa;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+        .form-check-input:checked {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+
+        .forgot-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+            .forgot-link:hover {
+                color: var(--primary-color);
+                text-decoration: underline;
+            }
+
+       
+    </style>
+</head>
+<body>
+    <!-- Notification Toast -->
+    <div class="notification-toast">
+        <partial name="_NotificationPartial" />
     </div>
-</div>
 
-@section Scripts {
+    <div class="login-container">
+        <div class="row g-0">
+            <!-- Left Side - Brand/Info Section -->
+            <div class="col-lg-6 login-left">
+                <div class="brand-container">
+                    <div class="brand-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h2 class="fw-bold">SchoolProject</h2>
+                    <p class="mb-0">Modern Education Management System</p>
+                </div>
+
+                <ul class="feature-list">
+                    <li>
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure authentication system</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-users-cog"></i>
+                        <span>Role-based access control</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-lock"></i>
+                        <span>Two-factor authentication</span>
+                    </li>
+                    <li>
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Responsive design</span>
+                    </li>
+                </ul>
+
+                <div class="mt-auto">
+                    <p class="text-center mb-0 opacity-75">© 2023 SchoolProject. All rights reserved.</p>
+                </div>
+            </div>
+
+            <!-- Right Side - Login Form -->
+            <div class="col-lg-6 login-right">
+                <h3 class="fw-bold mb-4 text-center">Welcome Back</h3>
+                <p class="text-muted text-center mb-4">Sign in to access your account</p>
+
+                <form asp-action="Login" method="post">
+                    <div asp-validation-summary="All" class="alert alert-danger" role="alert"></div>
+
+                    <!-- Email Input -->
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label">Email or Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-envelope text-muted"></i>
+                            </span>
+                            <input asp-for="Email" class="form-control" placeholder="Enter your email or username" required />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Password Input -->
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock text-muted"></i>
+                            </span>
+                            <input asp-for="Password" type="password" class="form-control" id="password" placeholder="Enter your password" required />
+                            <button class="btn password-toggle" type="button" id="togglePassword">
+                                <i class="bi bi-eye-slash" id="eyeIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Remember Me & Forgot Password -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
+                            <label class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+                        <a asp-action="ForgotPassword" class="forgot-link">Forgot password?</a>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-login w-100 mb-4">Sign In</button>
+                </form>
+
+                <!-- Divider -->
+                <div class="divider">
+                    <span>Or continue with</span>
+                </div>
+
+                <!-- Social Login Buttons -->
+                <div class="d-grid gap-2">
+                    <form asp-controller="Account" asp-action="GoogleLogin" method="post">
+                        <button type="submit" class="btn btn-google w-100 mb-3">
+                            <i class="fab fa-google me-2"></i>Sign in with Google
+                        </button>
+                    </form>
+
+                    <form asp-controller="Account" asp-action="MicrosoftLogin" method="post">
+                        <button type="submit" class="btn btn-microsoft w-100">
+                            <i class="fab fa-microsoft me-2"></i>Sign in with Microsoft
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Additional Links -->
+                <div class="text-center mt-4">
+                    <p class="small text-muted">
+                        Need to verify your email?
+                        <a asp-action="ResendVerificationEmail" class="forgot-link">Resend verification</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap & jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Validation Scripts -->
     @await Html.PartialAsync("_ValidationScriptsPartial")
-    <script>
-        const togglePassword = document.getElementById("togglePassword");
-        const passwordField = document.getElementById("Password");
-        const eyeIcon = document.getElementById("eyeIcon");
 
-        togglePassword.addEventListener("click", function () {
-            const type = passwordField.type === "password" ? "text" : "password";
-            passwordField.type = type;
-            eyeIcon.classList.toggle("bi-eye-slash");
-            eyeIcon.classList.toggle("bi-eye");
+    <script>
+        // Password visibility toggle
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordField = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                eyeIcon.classList.remove('bi-eye-slash');
+                eyeIcon.classList.add('bi-eye');
+            } else {
+                passwordField.type = 'password';
+                eyeIcon.classList.remove('bi-eye');
+                eyeIcon.classList.add('bi-eye-slash');
+            }
+        });
+
+        // Auto-hide notifications after 5 seconds
+        $(document).ready(function() {
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
         });
     </script>
-}
-
-
-<style>
-    .form_main {
-        width: 320px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background-color: #fff;
-        padding: 30px;
-        border-radius: 12px;
-        box-shadow: 0px 0px 40px rgba(0, 0, 0, 0.062);
-        position: relative;
-        overflow: hidden;
-    }
-
-        .form_main::before {
-            position: absolute;
-            content: "";
-            width: 300px;
-            height: 300px;
-            background-color: rgb(209, 193, 255);
-            transform: rotate(45deg);
-            left: -180px;
-            bottom: 30px;
-            z-index: 1;
-            border-radius: 30px;
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.082);
-        }
-
-    .heading {
-        font-size: 1.8em;
-        color: #2e2e2e;
-        font-weight: 700;
-        margin-bottom: 20px;
-        z-index: 2;
-    }
-
-    .inputContainer {
-        width: 100%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        margin-bottom: 15px;
-        z-index: 2;
-    }
-
-    .inputIcon {
-        position: absolute;
-        left: 5px;
-    }
-
-    .inputField {
-        width: 100%;
-        height: 40px;
-        background-color: transparent;
-        border: none;
-        border-bottom: 2px solid #adadad;
-        padding-left: 30px;
-        font-size: .9em;
-        font-weight: 500;
-    }
-
-        .inputField:focus {
-            outline: none;
-            border-bottom: 2px solid #a268ff;
-        }
-
-    #button {
-        width: 100%;
-        border: none;
-        background-color: #a268ff;
-        height: 40px;
-        border-radius: 8px;
-        color: white;
-        font-size: 1em;
-        font-weight: 600;
-        margin: 15px 0;
-        cursor: pointer;
-    }
-
-        #button:hover {
-            background-color: #7e54ff;
-        }
-
-    .forgotLink {
-        font-size: .8em;
-        color: rgb(44, 24, 128);
-        text-decoration: none;
-        z-index: 2;
-    }
-
-</style>
+</body>
+</html>

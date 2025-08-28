@@ -128,10 +128,12 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            // Sign out your cookie auth (this is what keeps the user logged in)
             await HttpContext.SignOutAsync("MyCookieAuth");
-            await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
-            TempData["SuccessMessage"] = "You have successfully logged out.";
+
+            // Clear TempData if needed
             TempData.Clear();
+
             return RedirectToAction("Login", "Account");
         }
 
