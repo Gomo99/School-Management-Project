@@ -26,7 +26,7 @@ namespace SchoolProject.Controllers
         private readonly TwoFactorAuthService _twoFactorService;
         private const int MaxFailedAttempts = 5;
         private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
-        
+
 
         public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService
             )
@@ -34,13 +34,16 @@ namespace SchoolProject.Controllers
             _context = context;
             _emailService = emailService;
             _twoFactorService = twoFactorService;
-            
+
         }
 
         [HttpGet]
         public IActionResult Login()
         {
-            
+            // Clear any existing messages
+            TempData.Remove("SuccessMessage");
+            TempData.Remove("ErrorMessage");
+
             return View();
         }
 
@@ -50,8 +53,6 @@ namespace SchoolProject.Controllers
         {
             if (!ModelState.IsValid)
                 return View(model);
-
-         
 
             // Fetch user
             var user = await _context.Accounts
@@ -109,10 +110,12 @@ namespace SchoolProject.Controllers
                 if (await IsRememberedDeviceValidAsync(user.UserID))
                 {
                     await SignInUser(user, model.RememberMe);
+                    TempData["SuccessMessage"] = "Login successful!";
                     return RedirectBasedOnRole(user.Role);
                 }
 
                 HttpContext.Session.SetInt32("TwoFactorUserId", user.UserID);
+                TempData["InfoMessage"] = "Two-factor authentication required.";
                 return RedirectToAction("VerificationCodeLogin");
             }
 
@@ -120,6 +123,7 @@ namespace SchoolProject.Controllers
             var authProperties = new AuthenticationProperties { IsPersistent = model.RememberMe };
             await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
 
+            TempData["SuccessMessage"] = "Login successful!";
             return RedirectBasedOnRole(user.Role);
         }
 
@@ -134,12 +138,14 @@ namespace SchoolProject.Controllers
             // Clear TempData if needed
             TempData.Clear();
 
+            TempData["SuccessMessage"] = "You have been successfully logged out.";
             return RedirectToAction("Login", "Account");
         }
 
         [HttpGet]
         public IActionResult AccessDenied()
         {
+            TempData["ErrorMessage"] = "You don't have permission to access this resource.";
             return View();
         }
 
@@ -153,6 +159,12 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(string email)
         {
+            if (string.IsNullOrEmpty(email))
+            {
+                TempData["ErrorMessage"] = "Please enter your email address.";
+                return View();
+            }
+
             var user = await _context.Accounts.FirstOrDefaultAsync(u => u.Email == email);
 
             if (user != null)
@@ -192,9 +204,15 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(string pin, string newPassword)
         {
-            if (pin.Length != 6 || !pin.All(char.IsDigit))
+            if (string.IsNullOrEmpty(pin) || pin.Length != 6 || !pin.All(char.IsDigit))
             {
-                ModelState.AddModelError(string.Empty, "PIN must be a 6-digit code.");
+                TempData["ErrorMessage"] = "PIN must be a 6-digit code.";
+                return View();
+            }
+
+            if (string.IsNullOrEmpty(newPassword))
+            {
+                TempData["ErrorMessage"] = "Please enter a new password.";
                 return View();
             }
 
@@ -207,11 +225,14 @@ namespace SchoolProject.Controllers
             {
                 user.Password = newPassword;
                 user.ResetPin = null;
+                user.ResetPinExpiration = null;
                 await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Password reset successfully. You can now login with your new password.";
                 return RedirectToAction("Login");
             }
 
-            ModelState.AddModelError(string.Empty, "Invalid PIN or PIN has expired.");
+            TempData["ErrorMessage"] = "Invalid PIN or PIN has expired.";
             return View();
         }
 
@@ -276,7 +297,7 @@ namespace SchoolProject.Controllers
 
                 if (existingUser != null)
                 {
-                    ModelState.AddModelError("Email", "This email address is already in use.");
+                    TempData["ErrorMessage"] = "This email address is already in use.";
                     return View(model);
                 }
 
@@ -321,7 +342,8 @@ namespace SchoolProject.Controllers
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.UserID == userId);
             if (user == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
             }
 
             var model = new ViewProfileViewModel
@@ -374,19 +396,19 @@ namespace SchoolProject.Controllers
 
                 if (model.CurrentPassword != user.Password)
                 {
-                    ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+                    TempData["ErrorMessage"] = "Current password is incorrect.";
                     return View(model);
                 }
 
                 if (model.CurrentPassword == model.NewPassword)
                 {
-                    ModelState.AddModelError("NewPassword", "The new password cannot be the same as the current password.");
+                    TempData["ErrorMessage"] = "The new password cannot be the same as the current password.";
                     return View(model);
                 }
 
                 if (model.NewPassword != model.ConfirmPassword)
                 {
-                    ModelState.AddModelError("ConfirmPassword", "The new password and confirmation password do not match.");
+                    TempData["ErrorMessage"] = "The new password and confirmation password do not match.";
                     return View(model);
                 }
 
@@ -440,12 +462,15 @@ namespace SchoolProject.Controllers
             // Changed to async
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Name == userName);
             if (user == null)
-                return NotFound();
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             user.UserStatus = UserStatus.Inactive;
             await _context.SaveChangesAsync();
             await HttpContext.SignOutAsync("MyCookieAuth");
-            TempData["SuccessMessage"] = "Your account has been deactivated.";
+            TempData["SuccessMessage"] = "Your account has been deactivated successfully.";
             return RedirectToAction("Login", "Account");
         }
 
@@ -469,15 +494,16 @@ namespace SchoolProject.Controllers
             var user = await _context.Accounts.FindAsync(id);
             if (user == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("ReactivateAccount");
             }
 
             user.UserStatus = UserStatus.Active;
             _context.Update(user);
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"User {user.Name} has been reactivated.";
-            return RedirectToAction("ManageUsers");
+            TempData["SuccessMessage"] = $"User {user.Name} has been reactivated successfully.";
+            return RedirectToAction("ReactivateAccount");
         }
 
         [Authorize]
@@ -495,7 +521,8 @@ namespace SchoolProject.Controllers
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.UserID == userId);
             if (user == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
             }
 
             // Changed to async
@@ -513,7 +540,8 @@ namespace SchoolProject.Controllers
 
             if (userProfile == null)
             {
-                return NotFound();
+                TempData["ErrorMessage"] = "User profile not found.";
+                return RedirectToAction("ViewProfile");
             }
 
             var memoryStream = new MemoryStream();
@@ -540,6 +568,8 @@ namespace SchoolProject.Controllers
             memoryStream.Position = 0;
 
             var fileName = $"Profile_{user.Name}_{user.Surname}_{DateTime.Now:yyyyMMdd}.pdf";
+
+            TempData["SuccessMessage"] = "Profile downloaded successfully.";
             return File(memoryStream, "application/pdf", fileName);
         }
 
@@ -549,6 +579,7 @@ namespace SchoolProject.Controllers
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
             {
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
                 return RedirectToAction("Login");
             }
 
@@ -564,16 +595,22 @@ namespace SchoolProject.Controllers
 
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
+            {
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
                 return RedirectToAction("Login");
+            }
 
             var user = await _context.Accounts.FindAsync(userId.Value);
             if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
+            }
 
             // Check if account is locked
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
             {
-                ModelState.AddModelError("", $"Account is locked until {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.");
+                TempData["ErrorMessage"] = $"Account is locked until {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.";
                 return View(model);
             }
 
@@ -594,6 +631,8 @@ namespace SchoolProject.Controllers
 
                 HttpContext.Session.Remove("TwoFactorUserId");
                 await SignInUser(user, false);
+
+                TempData["SuccessMessage"] = "Two-factor authentication successful!";
                 return RedirectBasedOnRole(user.Role);
             }
 
@@ -602,11 +641,11 @@ namespace SchoolProject.Controllers
             if (user.FailedLoginAttempts >= MaxFailedAttempts)
             {
                 user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
-                ModelState.AddModelError("", $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.");
+                TempData["ErrorMessage"] = $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.";
             }
             else
             {
-                ModelState.AddModelError("", "Invalid verification code.");
+                TempData["ErrorMessage"] = "Invalid verification code.";
             }
             await _context.SaveChangesAsync();
 
@@ -620,6 +659,7 @@ namespace SchoolProject.Controllers
             var userIdClaim = User.FindFirst("UserID");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
@@ -627,6 +667,7 @@ namespace SchoolProject.Controllers
             var user = await _context.Accounts.FirstOrDefaultAsync(u => u.UserID == userId);
             if (user == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
@@ -656,19 +697,21 @@ namespace SchoolProject.Controllers
         {
             if (string.IsNullOrEmpty(model.VerificationCode))
             {
-                ModelState.AddModelError("VerificationCode", "Please enter the verification code from your authenticator app.");
+                TempData["ErrorMessage"] = "Please enter the verification code from your authenticator app.";
                 return View(model);
             }
 
             var userIdClaim = User.FindFirst("UserID");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
             var user = await _context.Accounts.FindAsync(userId);
             if (user == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
@@ -681,7 +724,7 @@ namespace SchoolProject.Controllers
 
             if (!_twoFactorService.ValidatePin(secretKey, model.VerificationCode))
             {
-                ModelState.AddModelError("VerificationCode", "Invalid verification code. Please try again.");
+                TempData["ErrorMessage"] = "Invalid verification code. Please try again.";
                 var setupCode = _twoFactorService.GenerateQrCode(user.Email, secretKey);
                 model.QrCodeImageUrl = setupCode.QrCodeSetupImageUrl;
                 model.ManualEntryKey = secretKey;
@@ -708,6 +751,7 @@ namespace SchoolProject.Controllers
             var userIdClaim = User.FindFirst("UserID");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
@@ -715,6 +759,7 @@ namespace SchoolProject.Controllers
             var user = await _context.Accounts.FirstOrDefaultAsync(u => u.UserID == userId);
             if (user == null || !user.IsTwoFactorEnabled)
             {
+                TempData["ErrorMessage"] = "Two-factor authentication is not enabled.";
                 return RedirectToAction("ViewProfile");
             }
 
@@ -732,24 +777,26 @@ namespace SchoolProject.Controllers
             var userIdClaim = User.FindFirst("UserID");
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
             var user = await _context.Accounts.FindAsync(userId);
             if (user == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
             if (user.Password != model.CurrentPassword)
             {
-                ModelState.AddModelError("CurrentPassword", "Current password is incorrect.");
+                TempData["ErrorMessage"] = "Current password is incorrect.";
                 return View(model);
             }
 
             if (!_twoFactorService.ValidatePin(user.TwoFactorSecretKey, model.VerificationCode))
             {
-                ModelState.AddModelError("VerificationCode", "Invalid verification code.");
+                TempData["ErrorMessage"] = "Invalid verification code.";
                 return View(model);
             }
 
@@ -758,19 +805,20 @@ namespace SchoolProject.Controllers
             user.TwoFactorRecoveryCodes = null;
 
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Two-factor authentication has been disabled.";
+            TempData["SuccessMessage"] = "Two-factor authentication has been disabled successfully.";
             await RevokeAllRememberedDevicesAsync(user.UserID);
             return RedirectToAction("ViewProfile");
         }
-
-
 
         [HttpGet]
         public async Task<IActionResult> VerifyEmail(int userId, string token)
         {
             var user = await _context.Accounts.FirstOrDefaultAsync(u => u.UserID == userId);
             if (user == null)
-                return NotFound("User not found");
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             if (user.UserStatus == UserStatus.Active)
             {
@@ -794,20 +842,11 @@ namespace SchoolProject.Controllers
             return RedirectToAction("Login");
         }
 
-
-
-
-
-
-
-
         [HttpGet]
         public IActionResult ResendVerificationEmail()
         {
             return View();
         }
-
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -871,28 +910,28 @@ namespace SchoolProject.Controllers
             return View();
         }
 
-
-
         [Authorize]
         public async Task<IActionResult> ManageDevices()
         {
             var userIdClaim = User.FindFirst("UserID")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized(); // fallback if claim missing
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             var userId = int.Parse(userIdClaim);
-
 
             var devices = await _context.RememberedDevices
                 .Where(d => d.UserId == userId && !d.Revoked)
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync();
 
-            return View(devices); // expects a Razor view with a table of devices
+            return View(devices);
         }
+
         [Authorize]
-        // POST: /Device/RevokeDevice/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RevokeDevice(int id)
@@ -900,7 +939,10 @@ namespace SchoolProject.Controllers
             var userIdClaim = User.FindFirst("UserID")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized(); // fallback if claim missing
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             var userId = int.Parse(userIdClaim);
             var device = await _context.RememberedDevices
@@ -919,9 +961,7 @@ namespace SchoolProject.Controllers
             return RedirectToAction(nameof(ViewProfile));
         }
 
-
         [Authorize]
-        // POST: /Device/RevokeAllDevices
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RevokeAllDevices()
@@ -929,10 +969,12 @@ namespace SchoolProject.Controllers
             var userIdClaim = User.FindFirst("UserID")?.Value;
 
             if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized(); // fallback if claim missing
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             var userId = int.Parse(userIdClaim);
-
 
             var devices = await _context.RememberedDevices
                 .Where(d => d.UserId == userId && !d.Revoked)
@@ -943,14 +985,9 @@ namespace SchoolProject.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "All remembered devices have been revoked.";
+            TempData["SuccessMessage"] = "All remembered devices have been revoked successfully.";
             return RedirectToAction(nameof(ViewProfile));
         }
-
-
-
-
-
 
         [HttpGet]
         public IActionResult RecoveryLogin()
@@ -959,14 +996,12 @@ namespace SchoolProject.Controllers
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
             {
-                // No user in session, redirect to login
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
                 return RedirectToAction("Login");
             }
 
             return View(new RecoveryLoginViewModel());
         }
-
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -977,16 +1012,22 @@ namespace SchoolProject.Controllers
 
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
+            {
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
                 return RedirectToAction("Login");
+            }
 
             var user = await _context.Accounts.FindAsync(userId.Value);
             if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
+            }
 
             // Check if account is locked
             if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
             {
-                ModelState.AddModelError("", $"Account is locked until {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.");
+                TempData["ErrorMessage"] = $"Account is locked until {user.LockoutEnd.Value.ToLocalTime():hh:mm tt}.";
                 return View(model);
             }
 
@@ -1015,19 +1056,16 @@ namespace SchoolProject.Controllers
             if (user.FailedLoginAttempts >= MaxFailedAttempts)
             {
                 user.LockoutEnd = DateTime.UtcNow.Add(LockoutDuration);
-                ModelState.AddModelError("", $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.");
+                TempData["ErrorMessage"] = $"Too many failed attempts. Account locked for {LockoutDuration.TotalMinutes} minutes.";
             }
             else
             {
-                ModelState.AddModelError("", "Invalid recovery code. Please try again.");
+                TempData["ErrorMessage"] = "Invalid recovery code. Please try again.";
             }
 
             await _context.SaveChangesAsync();
             return View(model);
         }
-
-
-
 
         [Authorize]
         [HttpGet]
@@ -1037,12 +1075,12 @@ namespace SchoolProject.Controllers
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
             {
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
                 return RedirectToAction("Login");
             }
 
             return View();
         }
-
 
         [Authorize]
         [HttpPost]
@@ -1052,12 +1090,14 @@ namespace SchoolProject.Controllers
             var userId = HttpContext.Session.GetInt32("TwoFactorUserId");
             if (userId == null)
             {
+                TempData["ErrorMessage"] = "Session expired. Please login again.";
                 return RedirectToAction("Login");
             }
 
             var user = await _context.Accounts.FindAsync(userId.Value);
             if (user == null)
             {
+                TempData["ErrorMessage"] = "User not found.";
                 return RedirectToAction("Login");
             }
 
@@ -1103,40 +1143,6 @@ namespace SchoolProject.Controllers
             return View("TwoFactorRecoveryCodes", new TwoFactorSetupViewModel { RecoveryCodes = recoveryCodes });
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         private async Task SignInUser(Account user, bool isPersistent)
         {
             var claims = new List<Claim>
@@ -1166,27 +1172,6 @@ namespace SchoolProject.Controllers
             };
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         [HttpPost]
         [AllowAnonymous]
         public IActionResult GoogleLogin(string returnUrl = "/")
@@ -1196,7 +1181,6 @@ namespace SchoolProject.Controllers
             return Challenge(properties, GoogleDefaults.AuthenticationScheme);
         }
 
-        [HttpGet]
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GoogleResponse(string returnUrl = "/")
@@ -1253,15 +1237,10 @@ namespace SchoolProject.Controllers
             // Sign in using your cookie auth
             await SignInUser(user, isPersistent: true);
 
-       
-
-
+            TempData["SuccessMessage"] = "Google login successful!";
             // Redirect based on role using your helper method
             return RedirectBasedOnRole(user.Role);
         }
-
-
-
 
         private async Task<Account> CreateUserFromGoogleClaims(IEnumerable<Claim> claims, string email)
         {
@@ -1314,9 +1293,6 @@ namespace SchoolProject.Controllers
             }
         }
 
-
-
-
         private string GenerateRandomPassword(int length = 16)
         {
             const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
@@ -1331,17 +1307,23 @@ namespace SchoolProject.Controllers
             return new string(chars);
         }
 
-
-
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> LinkGoogleAccount()
         {
             var userIdClaim = User.FindFirst("UserID");
-            if (userIdClaim == null) return RedirectToAction("Login");
+            if (userIdClaim == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             var user = await _context.Accounts.FindAsync(int.Parse(userIdClaim.Value));
-            if (user == null) return RedirectToAction("Login");
+            if (user == null)
+            {
+                TempData["ErrorMessage"] = "User not found.";
+                return RedirectToAction("Login");
+            }
 
             // Store user ID in session for the callback
             HttpContext.Session.SetInt32("LinkAccountUserId", user.UserID);
@@ -1356,7 +1338,11 @@ namespace SchoolProject.Controllers
         public async Task<IActionResult> LinkGoogleResponse()
         {
             var userId = HttpContext.Session.GetInt32("LinkAccountUserId");
-            if (userId == null) return RedirectToAction("Login");
+            if (userId == null)
+            {
+                TempData["ErrorMessage"] = "Session expired. Please try again.";
+                return RedirectToAction("ViewProfile");
+            }
 
             var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
             if (!result.Succeeded)
@@ -1388,8 +1374,6 @@ namespace SchoolProject.Controllers
             return RedirectToAction("ViewProfile");
         }
 
-
-
         private string GetFirstClaimValue(IEnumerable<Claim> claims, params string[] claimTypes)
         {
             foreach (var t in claimTypes)
@@ -1400,26 +1384,6 @@ namespace SchoolProject.Controllers
             }
             return null;
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         private static string HashToken(string token)
         {
@@ -1433,11 +1397,6 @@ namespace SchoolProject.Controllers
         {
             return Guid.NewGuid().ToString("N"); // 32 chars, no dashes
         }
-
-
-
-
-
 
         private const string TwoFactorRememberCookie = "SP.2FA.Remember";
         private static readonly TimeSpan RememberDuration = TimeSpan.FromDays(30);
@@ -1509,13 +1468,5 @@ namespace SchoolProject.Controllers
             // Delete cookie on this browser (other browsers still hold their own cookies)
             Response.Cookies.Delete(TwoFactorRememberCookie);
         }
-
-
-
-
-
-
-
-
     }
 }
