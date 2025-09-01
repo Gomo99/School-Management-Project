@@ -1,5 +1,4 @@
 ﻿@model SchoolProject.ViewModel.EditProfileViewModel
-
 @{
     ViewData["Title"] = "Edit Profile";
 }
@@ -7,105 +6,264 @@
     @await Html.PartialAsync("_SidebarPartial")
 }
 
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-lg-8 offset-lg-2 col-md-10 offset-md-1">
-            <div class="card shadow-sm">
-                <div class="card-header text-center">
-                    <h4>Edit Your Profile</h4>
+<partial name="_NotificationPartial" />
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <!-- Header -->
+                <div class="card-header bg-gradient-primary text-white py-4 border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="bi bi-person-gear display-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-1">Edit Your Profile</h2>
+                            <p class="mb-0 opacity-75">Update your personal information</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form asp-action="EditProfile" method="post" class="needs-validation" novalidate>
-                        <div class="mb-4">
-                            <label for="Name" class="form-label">Name</label>
-                            <input type="text" class="form-control form-control-lg" id="Name" name="Name" value="@Model.Name" required />
-                            <div class="invalid-feedback">
-                                Please enter your name.
+
+                <!-- Body -->
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="EditProfile" method="post" class="needs-validation" novalidate id="profileForm">
+                        <div class="row">
+                            <!-- Title Field -->
+                            <div class="col-md-3 mb-4">
+                                <label asp-for="Title" class="form-label fw-semibold">Title</label>
+                                @Html.DropDownListFor(model => model.Title,
+                                    new SelectList(new[] { "Mr", "Mrs", "Ms", "Dr", "Prof" }),
+                                    "Select Title",
+                                    new { @class = "form-select form-select-lg", required = "required" })
+                                <div class="invalid-feedback">
+                                    Please select a title.
+                                </div>
+                                <span asp-validation-for="Title" class="text-danger"></span>
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <label for="Surname" class="form-label">Surname</label>
-                            <input type="text" class="form-control form-control-lg" id="Surname" name="Surname" value="@Model.Surname" required />
-                            <div class="invalid-feedback">
-                                Please enter your surname.
+                        <div class="row">
+                            <!-- Name Field -->
+                            <div class="col-md-6 mb-4">
+                                <label for="Name" class="form-label fw-semibold">First Name</label>
+                                <div class="input-group has-validation">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-person-fill text-secondary"></i>
+                                    </span>
+                                    <input type="text" class="form-control form-control-lg" id="Name" name="Name" 
+                                           value="@Model.Name" placeholder="Enter your first name" required />
+                                    <div class="invalid-feedback">
+                                        Please enter your first name.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Surname Field -->
+                            <div class="col-md-6 mb-4">
+                                <label for="Surname" class="form-label fw-semibold">Last Name</label>
+                                <div class="input-group has-validation">
+                                    <span class="input-group-text bg-light">
+                                        <i class="bi bi-person-fill text-secondary"></i>
+                                    </span>
+                                    <input type="text" class="form-control form-control-lg" id="Surname" name="Surname" 
+                                           value="@Model.Surname" placeholder="Enter your last name" required />
+                                    <div class="invalid-feedback">
+                                        Please enter your last name.
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="md-4">
-                            <label asp-for="Title" class="form-label fw-bold"></label>
-                            @Html.DropDownListFor(model => model.Title,
-                                     new SelectList(new[] { "Mr", "Mrs", "Ms", "Dr", "Prof" }),
-                                     "Select Title",
-                                     new { @class = "form-control", required = "required" })
-                            <span asp-validation-for="Title" class="text-danger"></span>
-                        </div>
-
+                        <!-- Email Field -->
                         <div class="mb-4">
-                            <label for="Email" class="form-label">Email</label>
-                            <input type="email" class="form-control form-control-lg" id="Email" name="Email" value="@Model.Email" required />
-                            <div class="invalid-feedback">
-                                Please enter a valid email address.
+                            <label for="Email" class="form-label fw-semibold">Email Address</label>
+                            <div class="input-group has-validation">
+                                <span class="input-group-text bg-light">
+                                    <i class="bi bi-envelope-fill text-secondary"></i>
+                                </span>
+                                <input type="email" class="form-control form-control-lg" id="Email" name="Email" 
+                                       value="@Model.Email" placeholder="Enter your email address" required 
+                                       />
+                                <div class="invalid-feedback">
+                                    Please enter a valid email address.
+                                </div>
                             </div>
                         </div>
 
-                      
-
-                       
-
-                        <div class="mb-4 text-center">
-                            <button type="submit" class="btn btn-primary btn-lg px-4">Save Changes</button>
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-3 d-md-flex justify-content-md-end mt-5 pt-3 border-top">
+                            <!-- Back to Dashboard Button -->
+                            @if (User.IsInRole("Administrator"))
+                            {
+                                <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-outline-secondary btn-lg px-4 rounded-pill me-md-2">
+                                    <i class="bi bi-arrow-left-circle me-2"></i>Back to Dashboard
+                                </a>
+                            }
+                            else if (User.IsInRole("Lecturer"))
+                            {
+                                <a href="@Url.Action("Dashboard", "Lecturer")" class="btn btn-outline-secondary btn-lg px-4 rounded-pill me-md-2">
+                                    <i class="bi bi-arrow-left-circle me-2"></i>Back to Dashboard
+                                </a>
+                            }
+                            else if (User.IsInRole("Student"))
+                            {
+                                <a href="@Url.Action("Dashboard", "Student")" class="btn btn-outline-secondary btn-lg px-4 rounded-pill me-md-2">
+                                    <i class="bi bi-arrow-left-circle me-2"></i>Back to Dashboard
+                                </a>
+                            }
+                            
+                            <!-- Save Changes Button -->
+                            <button type="submit" class="btn btn-primary btn-lg px-4 rounded-pill">
+                                <span class="submit-text">
+                                    <i class="bi bi-check-circle me-2"></i>Save Changes
+                                </span>
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
                         </div>
                     </form>
-
-                    <div class="mt-4 text-center">
-                        @if (User.IsInRole("Administrator"))
-                        {
-                            <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-link">Back to Dashboard</a>
-                        }
-                        else if (User.IsInRole("Lecturer"))
-                        {
-                            <a href="@Url.Action("Dashboard", "Lecturer")" class="btn btn-link">Back to Dashboard</a>
-                        }
-                        else if (User.IsInRole("Student"))
-                        {
-                            <a href="@Url.Action("Dashboard", "Student")" class="btn btn-link">Back to Dashboard</a>
-                        }
-                       
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-@section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.8/jquery.inputmask.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            // Apply input mask
-            $("#PhoneNumber").inputmask("+27 (99) 999-9999");
 
-            // Update input styles based on validity
-            function updateInputStyles(inputElement) {
-                if (inputElement.val().trim() === "") {
-                    inputElement.removeClass("is-valid");
-                    inputElement.addClass("is-invalid");
-                    inputElement.css("border-color", "red");
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            border-color: #0d6efd;
+        }
+        
+        .input-group-text {
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus + .input-group-text,
+        .form-select:focus + .input-group-text {
+            background-color: #e9ecef;
+            border-color: #0d6efd;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, #0d6efd, #0a58ca);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-outline-secondary {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-secondary:hover {
+            transform: translateY(-2px);
+        }
+        
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+        }
+        
+        /* Floating labels effect */
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+        
+        /* Custom validation styles */
+        .was-validated .form-control:valid,
+        .was-validated .form-select:valid {
+            border-color: #198754;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73.6 4.53c-.4-1.04.46-1.14 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+        }
+        
+        .was-validated .form-control:invalid,
+        .was-validated .form-select:invalid {
+            border-color: #dc3545;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6.4.4.4-.4'/%3e%3cpath d='M6 7v2'/%3e%3c/svg%3e");
+        }
+    </style>
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('profileForm');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const submitText = submitButton.querySelector('.submit-text');
+            const spinner = submitButton.querySelector('.spinner-border');
+            
+            // Form submission handler
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    form.classList.add('was-validated');
+                    return;
+                }
+                
+                // Show loading state
+                submitText.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                submitButton.disabled = true;
+            });
+            
+            // Real-time validation
+            const inputs = form.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    validateField(this);
+                });
+                
+                input.addEventListener('blur', function() {
+                    validateField(this);
+                });
+            });
+            
+            function validateField(field) {
+                if (field.checkValidity()) {
+                    field.classList.add('is-valid');
+                    field.classList.remove('is-invalid');
                 } else {
-                    inputElement.removeClass("is-invalid");
-                    inputElement.addClass("is-valid");
-                    inputElement.css("border-color", "green");
+                    field.classList.add('is-invalid');
+                    field.classList.remove('is-valid');
                 }
             }
-
-            $("input, select").on("input", function () {
-                updateInputStyles($(this));
+            
+            // Initialize validation on page load for pre-filled fields
+            inputs.forEach(input => {
+                if (input.value) {
+                    validateField(input);
+                }
             });
-
-            $("input, select").each(function () {
-                updateInputStyles($(this));
+            
+            // Add animation to form elements on focus
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focus');
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focus');
+                });
             });
         });
     </script>

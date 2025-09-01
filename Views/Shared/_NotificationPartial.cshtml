@@ -1,37 +1,334 @@
 ﻿@using Microsoft.AspNetCore.Mvc.TagHelpers
 
+<!-- Modern Notification System -->
+<div id="notification-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <!-- Notifications will be inserted here -->
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<!-- Notyf for fallback/alternative notifications -->
 <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
 
+<style>
+    /* Custom Notification Styles */
+    .custom-notification {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        padding: 1rem 1.25rem;
+        margin-bottom: 1rem;
+        max-width: 400px;
+        border-left: 4px solid;
+        animation: slideInRight 0.3s ease-out, fadeOut 0.5s ease-in 4.5s forwards;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+
+        .custom-notification:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .custom-notification.success {
+            border-left-color: #198754;
+            background: linear-gradient(90deg, rgba(25, 135, 84, 0.05) 0%, rgba(255, 255, 255, 1) 30%);
+        }
+
+        .custom-notification.error {
+            border-left-color: #dc3545;
+            background: linear-gradient(90deg, rgba(220, 53, 69, 0.05) 0%, rgba(255, 255, 255, 1) 30%);
+        }
+
+        .custom-notification.warning {
+            border-left-color: #ffc107;
+            background: linear-gradient(90deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 255, 255, 1) 30%);
+        }
+
+        .custom-notification.info {
+            border-left-color: #0dcaf0;
+            background: linear-gradient(90deg, rgba(13, 202, 240, 0.05) 0%, rgba(255, 255, 255, 1) 30%);
+        }
+
+    .notification-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        margin-top: 0.125rem;
+    }
+
+    .success .notification-icon {
+        color: #198754;
+    }
+
+    .error .notification-icon {
+        color: #dc3545;
+    }
+
+    .warning .notification-icon {
+        color: #ffc107;
+    }
+
+    .info .notification-icon {
+        color: #0dcaf0;
+    }
+
+    .notification-content {
+        flex-grow: 1;
+    }
+
+    .notification-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        color: #212529;
+    }
+
+    .notification-message {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .notification-close {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        font-size: 1.1rem;
+        padding: 0;
+        margin-left: 0.5rem;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+        flex-shrink: 0;
+    }
+
+        .notification-close:hover {
+            opacity: 1;
+        }
+
+    .progress-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            animation: progressBar 5s linear forwards;
+        }
+
+    .success .progress-bar::after {
+        background: #198754;
+    }
+
+    .error .progress-bar::after {
+        background: #dc3545;
+    }
+
+    .warning .progress-bar::after {
+        background: #ffc107;
+    }
+
+    .info .progress-bar::after {
+        background: #0dcaf0;
+    }
+
+    @@keyframes slideInRight {
+        from
+
+    {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    }
+
+    @@keyframes fadeOut {
+        from
+
+    {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+
+    }
+
+    @@keyframes progressBar {
+        from
+
+    {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 576px) {
+        #notification-container {
+            padding: 1rem;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .custom-notification {
+            max-width: 100%;
+            border-left-width: 3px;
+        }
+    }
+</style>
+
 <script>
-    // Initialize Notyf ONCE (globally)
+    // Initialize Notyf as fallback
     const notyf = new Notyf({
         duration: 5000,
         position: { x: 'right', y: 'top' },
+        ripple: true,
         types: [
             {
                 type: 'success',
-                background: '#28a745',
+                background: '#198754',
+                icon: {
+                    className: 'bi bi-check-circle-fill',
+                    tagName: 'i',
+                    text: ''
+                },
                 dismissible: true
             },
             {
                 type: 'error',
                 background: '#dc3545',
+                icon: {
+                    className: 'bi bi-exclamation-circle-fill',
+                    tagName: 'i',
+                    text: ''
+                },
                 dismissible: true
-            }
+            },
+           
         ]
     });
 
-    // Show notifications if TempData exists
-    document.addEventListener('DOMContentLoaded', function () {
-    @if (TempData["SuccessMessage"] != null)
-    {
-        @:notyf.success('@Html.Raw(TempData["SuccessMessage"])');
+    // Custom notification function
+    function showCustomNotification(type, title, message, duration = 5000) {
+        const container = document.getElementById('notification-container');
+        const notificationId = 'notification-' + Date.now();
+
+        const icons = {
+            success: 'bi-check-circle-fill',
+            error: 'bi-exclamation-circle-fill',
+            warning: 'bi-exclamation-triangle-fill',
+            info: 'bi-info-circle-fill'
+        };
+
+        const notification = document.createElement('div');
+        notification.id = notificationId;
+        notification.className = `custom-notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-icon">
+                <i class="bi ${icons[type]}"></i>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title">${title}</div>
+                <p class="notification-message">${message}</p>
+            </div>
+            <button class="notification-close" onclick="removeNotification('${notificationId}')">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <div class="progress-bar"></div>
+        `;
+
+        container.appendChild(notification);
+
+        // Auto-remove after duration
+        setTimeout(() => {
+            removeNotification(notificationId);
+        }, duration);
+
+        return notificationId;
     }
 
-    @if (TempData["ErrorMessage"] != null)
-    {
-        @:notyf.error('@Html.Raw(TempData["ErrorMessage"])');
+    function removeNotification(id) {
+        const notification = document.getElementById(id);
+        if (notification) {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }
     }
+
+    // Show notifications on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        // Show custom notifications for TempData messages
+        @if (TempData["SuccessMessage"] != null)
+        {
+                @:showCustomNotification('success', 'Success', '@Html.Raw(TempData["SuccessMessage"])');
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+                @:showCustomNotification('error', 'Error', '@Html.Raw(TempData["ErrorMessage"])');
+        }
+
+      
+        // Fallback to Notyf for any programmatic notifications
+        @if (TempData["SuccessMessage"] != null)
+        {
+                @:notyf.success('@Html.Raw(TempData["SuccessMessage"])');
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+                @:notyf.error('@Html.Raw(TempData["ErrorMessage"])');
+        }
     });
+
+    // Global function to show notifications from other scripts
+    window.showNotification = function(type, message, title = null) {
+        const titles = {
+            success: title || 'Success',
+            error: title || 'Error',
+            warning: title || 'Warning',
+            info: title || 'Information'
+        };
+
+        showCustomNotification(type, titles[type], message);
+        notyf.open({
+            type: type,
+            message: message
+        });
+    };
 </script>

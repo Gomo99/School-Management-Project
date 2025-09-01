@@ -2,6 +2,10 @@
     ViewData["Title"] = "Resend Verification Email";
 }
 
+<partial name="_NotificationPartial" />
+
+
+
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light py-5">
     <div class="container">
         <div class="row justify-content-center">
@@ -72,16 +76,7 @@
                             </button>
                         </form>
 
-                        <!-- Success Message (hidden by default) -->
-                        <div class="alert alert-success border-0 rounded-3 d-none" id="successMessage">
-                            <div class="d-flex">
-                                <i class="bi bi-check-circle-fill text-success me-2 fs-5"></i>
-                                <div>
-                                    <h6 class="alert-heading mb-1">Verification email sent!</h6>
-                                    <p class="mb-0 small">Please check your email and click the verification link</p>
-                                </div>
-                            </div>
-                        </div>
+                       
 
                         <!-- Alternative Options -->
                         <div class="text-center">

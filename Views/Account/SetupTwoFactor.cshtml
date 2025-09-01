@@ -6,43 +6,291 @@
     @await Html.PartialAsync("_SidebarPartial")
 }
 
+<partial name="_NotificationPartial" />
 
-
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4>Setup Two-Factor Authentication</h4>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h5>1. Scan QR Code</h5>
-                        <p>Scan this QR code with your Google Authenticator app:</p>
-                        <img src="@Model.QrCodeImageUrl" alt="QR Code" class="img-fluid" />
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <!-- Header -->
+                <div class="card-header bg-gradient-primary text-white py-4 border-0">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                            <i class="bi bi-shield-check display-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="h3 mb-1">Two-Factor Authentication Setup</h2>
+                            <p class="mb-0 opacity-75">Add an extra layer of security to your account</p>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <h5>2. Manual Entry</h5>
-                        <p>Or enter this key manually:</p>
-                        <code>@Model.ManualEntryKey</code>
+                </div>
 
-                        <hr />
+                <!-- Body -->
+                <div class="card-body p-4 p-md-5">
+                    <div class="row g-4">
+                        <!-- QR Code Section -->
+                        <div class="col-md-6">
+                            <div class="h-100 d-flex flex-column">
+                                <h5 class="mb-3 d-flex align-items-center">
+                                    <span class="badge bg-primary rounded-pill me-2">1</span>
+                                    Scan QR Code
+                                </h5>
+                                <p class="text-muted mb-3">Open your authenticator app and scan this QR code:</p>
 
-                        <h5>3. Verify Setup</h5>
-                        <form asp-action="SetupTwoFactor" method="post">
-                            <div asp-validation-summary="All" class="text-danger"></div>
+                                <div class="text-center mb-4">
+                                    <div class="qr-container position-relative d-inline-block p-3 bg-white border rounded-3 shadow-sm">
+                                        <img src="@Model.QrCodeImageUrl" alt="QR Code" class="img-fluid" width="200" height="200" />
+                                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center qr-overlay">
+                                            <div class="spinner-border text-primary" role="status" style="display: none;">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                            <div class="form-group mb-3">
-                                <label asp-for="VerificationCode"></label>
-                                <input asp-for="VerificationCode" class="form-control" placeholder="Enter 6-digit code" />
-                                <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                                <div class="mt-auto">
+                                    <div class="d-flex align-items-center text-muted mb-2">
+                                        <i class="bi bi-phone me-2"></i>
+                                        <small>Recommended apps: Google Authenticator, Authy, or Microsoft Authenticator</small>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
 
-                            <button type="submit" class="btn btn-success">Enable 2FA</button>
-                        </form>
+                        <!-- Manual Entry & Verification Section -->
+                        <div class="col-md-6">
+                            <div class="h-100 d-flex flex-column">
+                                <h5 class="mb-3 d-flex align-items-center">
+                                    <span class="badge bg-primary rounded-pill me-2">2</span>
+                                    Manual Setup
+                                </h5>
+                                <p class="text-muted">Can't scan the QR code? Enter this key manually:</p>
+
+                                <div class="mb-4">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control font-monospace" id="manualKey"
+                                               value="@Model.ManualEntryKey" readonly>
+                                        <button class="btn btn-outline-secondary" type="button" id="copyKeyBtn"
+                                                data-bs-toggle="tooltip" data-bs-placement="top" title="Copy to clipboard">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Use this code if you prefer to set up 2FA manually</small>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <h5 class="mb-3 d-flex align-items-center">
+                                    <span class="badge bg-primary rounded-pill me-2">3</span>
+                                    Verify Setup
+                                </h5>
+                                <p class="text-muted">Enter the 6-digit code from your authenticator app to complete setup:</p>
+
+                                <form asp-action="SetupTwoFactor" method="post" id="verifyForm">
+                                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                                    <div class="mb-4">
+                                        <label asp-for="VerificationCode" class="form-label fw-semibold">Verification Code</label>
+                                        <div class="input-group has-validation">
+                                            <span class="input-group-text bg-light">
+                                                <i class="bi bi-key-fill text-primary"></i>
+                                            </span>
+                                            <input asp-for="VerificationCode" class="form-control form-control-lg text-center tracking-wide"
+                                                   placeholder="000000" maxlength="6" pattern="\d{6}"
+                                                   required aria-describedby="codeHelp" />
+                                            <div class="invalid-feedback">Please enter a valid 6-digit code</div>
+                                        </div>
+                                        <div id="codeHelp" class="form-text mt-2">
+                                            <i class="bi bi-info-circle"></i> Enter the 6-digit code from your authenticator app
+                                        </div>
+                                        <span asp-validation-for="VerificationCode" class="text-danger"></span>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-success btn-lg rounded-pill fw-semibold py-3">
+                                            <span class="submit-text">
+                                                <i class="bi bi-shield-check me-2"></i>Enable Two-Factor Authentication
+                                            </span>
+                                            <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="card-footer bg-light py-3 border-0">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-info-circle-fill text-primary me-2"></i>
+                                <small class="text-muted">
+                                    After enabling 2FA, you'll need to enter a verification code each time you sign in.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <a href="#" class="btn btn-link text-decoration-none p-0" data-bs-toggle="modal" data-bs-target="#helpModal">
+                                <small>Need help?</small>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title" id="helpModalLabel">Two-Factor Authentication Help</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>How to set up 2FA:</h6>
+                <ol>
+                    <li>Install an authenticator app on your phone (Google Authenticator, Authy, Microsoft Authenticator)</li>
+                    <li>Open the app and either scan the QR code or manually enter the provided key</li>
+                    <li>Enter the 6-digit code generated by the app to verify the setup</li>
+                </ol>
+
+                <h6>What if I lose access to my authenticator app?</h6>
+                <p>Make sure to save your recovery codes in a secure place. You can generate new codes from your security settings.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+    <style>
+        .bg-gradient-primary {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        }
+
+        .qr-container {
+            transition: all 0.3s ease;
+        }
+
+            .qr-container:hover {
+                transform: scale(1.02);
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            }
+
+        .tracking-wide {
+            letter-spacing: 0.5em;
+            padding-right: 0.5em;
+            font-weight: 600;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            border-color: #0d6efd;
+        }
+
+        .btn-success {
+            background: linear-gradient(to right, #198754, #0f5132);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+            .btn-success:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(25, 135, 84, 0.4);
+            }
+
+            .btn-success:active {
+                transform: translateY(0);
+            }
+
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+            }
+    </style>
+
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Copy to clipboard functionality
+            const copyKeyBtn = document.getElementById('copyKeyBtn');
+            const manualKey = document.getElementById('manualKey');
+
+            copyKeyBtn.addEventListener('click', function() {
+                manualKey.select();
+                manualKey.setSelectionRange(0, 99999); // For mobile devices
+
+                navigator.clipboard.writeText(manualKey.value).then(() => {
+                    // Update tooltip to show success
+                    const tooltip = bootstrap.Tooltip.getInstance(copyKeyBtn);
+                    copyKeyBtn.querySelector('i').classList.remove('bi-clipboard');
+                    copyKeyBtn.querySelector('i').classList.add('bi-clipboard-check', 'text-success');
+
+                    // Revert after 2 seconds
+                    setTimeout(() => {
+                        copyKeyBtn.querySelector('i').classList.remove('bi-clipboard-check', 'text-success');
+                        copyKeyBtn.querySelector('i').classList.add('bi-clipboard');
+                    }, 2000);
+                });
+            });
+
+            // Form validation and submission
+            const verifyForm = document.getElementById('verifyForm');
+            const verificationInput = document.getElementById('VerificationCode');
+            const submitButton = verifyForm.querySelector('button[type="submit"]');
+            const submitText = submitButton.querySelector('.submit-text');
+            const spinner = submitButton.querySelector('.spinner-border');
+
+            verifyForm.addEventListener('submit', function(event) {
+                if (!verifyForm.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    verifyForm.classList.add('was-validated');
+                    return;
+                }
+
+                // Show loading state
+                submitText.classList.add('d-none');
+                spinner.classList.remove('d-none');
+                submitButton.disabled = true;
+            });
+
+            // Format verification code input
+            verificationInput.addEventListener('input', function() {
+                this.value = this.value.replace(/\D/g, '').substring(0, 6);
+
+                if (this.value.length === 6) {
+                    this.classList.add('is-valid');
+                    this.classList.remove('is-invalid');
+                } else if (this.value.length > 0) {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-valid', 'is-invalid');
+                }
+            });
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+}
