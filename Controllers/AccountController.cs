@@ -72,7 +72,21 @@ namespace SchoolProject.Controllers
                 return View(model);
             }
 
-            if (user.Password != model.Password)
+            bool isPasswordValid;
+
+            // Check if password is bcrypt-hashed
+            if (user.Password.StartsWith("$2a$") || user.Password.StartsWith("$2b$") || user.Password.StartsWith("$2y$"))
+            {
+                // Verify with bcrypt
+                isPasswordValid = BCrypt.Net.BCrypt.Verify(model.Password, user.Password);
+            }
+            else
+            {
+                // Compare plain text (legacy accounts)
+                isPasswordValid = (user.Password == model.Password);
+            }
+
+            if (!isPasswordValid)
             {
                 // Increment failed attempts
                 user.FailedLoginAttempts++;
@@ -92,9 +106,16 @@ namespace SchoolProject.Controllers
                 return View(model);
             }
 
-            // Reset failed attempts on successful login
+            // ✅ Successful login
             user.FailedLoginAttempts = 0;
             user.LockoutEnd = null;
+
+            // (Optional Migration) If plain password was used, upgrade it to bcrypt
+            if (!user.Password.StartsWith("$2"))
+            {
+                user.Password = BCrypt.Net.BCrypt.HashPassword(model.Password);
+            }
+
             await _context.SaveChangesAsync();
 
             // Successful login logic (2FA handling, cookie auth)
@@ -127,7 +148,6 @@ namespace SchoolProject.Controllers
             return RedirectBasedOnRole(user.Role);
         }
 
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -155,6 +175,8 @@ namespace SchoolProject.Controllers
             return View();
         }
 
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(string email)
@@ -171,11 +193,11 @@ namespace SchoolProject.Controllers
             {
                 string resetPin = new Random().Next(100000, 999999).ToString();
                 var placeholders = new Dictionary<string, string>
-                {
-                    { "Name", user.Name },
-                    { "Email", email },
-                    { "ResetPin", resetPin }
-                };
+        {
+            { "Name", user.Name },
+            { "Email", email },
+            { "ResetPin", resetPin }
+        };
 
                 try
                 {
@@ -216,14 +238,15 @@ namespace SchoolProject.Controllers
                 return View();
             }
 
-            // Changed to async
             var user = await _context.Accounts.FirstOrDefaultAsync(a =>
                 a.ResetPin == pin &&
                 a.ResetPinExpiration > DateTime.Now);
 
             if (user != null)
             {
-                user.Password = newPassword;
+                // 🔐 Hash the new password with bcrypt
+                user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
                 user.ResetPin = null;
                 user.ResetPinExpiration = null;
                 await _context.SaveChangesAsync();
@@ -235,6 +258,11 @@ namespace SchoolProject.Controllers
             TempData["ErrorMessage"] = "Invalid PIN or PIN has expired.";
             return View();
         }
+
+
+
+
+
 
         [Authorize]
         [HttpGet]
@@ -360,6 +388,11 @@ namespace SchoolProject.Controllers
             return View(model);
         }
 
+
+
+
+
+
         [Authorize]
         [HttpGet]
         public IActionResult ChangePassword()
@@ -386,7 +419,6 @@ namespace SchoolProject.Controllers
                     return RedirectToAction("Login");
                 }
 
-                // Changed to async
                 var user = await _context.Accounts.FirstOrDefaultAsync(a => a.UserID == userId);
                 if (user == null)
                 {
@@ -394,7 +426,17 @@ namespace SchoolProject.Controllers
                     return RedirectToAction("Login");
                 }
 
-                if (model.CurrentPassword != user.Password)
+                // ✅ Only allow bcrypt hashed passwords
+                if (!user.Password.StartsWith("$2a$") &&
+                    !user.Password.StartsWith("$2b$") &&
+                    !user.Password.StartsWith("$2y$"))
+                {
+                    TempData["ErrorMessage"] = "Your account is using an outdated password format. Please reset your password.";
+                    return RedirectToAction("ForgotPassword");
+                }
+
+                // 🔐 Verify current password with bcrypt
+                if (!BCrypt.Net.BCrypt.Verify(model.CurrentPassword, user.Password))
                 {
                     TempData["ErrorMessage"] = "Current password is incorrect.";
                     return View(model);
@@ -412,14 +454,15 @@ namespace SchoolProject.Controllers
                     return View(model);
                 }
 
-                user.Password = model.NewPassword;
+                // ✅ Always hash new password
+                user.Password = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
                 await _context.SaveChangesAsync();
 
                 var placeholders = new Dictionary<string, string>
-                {
-                    { "Name", user.Name },
-                    { "ChangeDate", DateTime.Now.ToString("dddd, MMMM dd, yyyy hh:mm tt") }
-                };
+        {
+            { "Name", user.Name },
+            { "ChangeDate", DateTime.Now.ToString("dddd, MMMM dd, yyyy hh:mm tt") }
+        };
 
                 await _emailService.SendEmailWithTemplateAsync(
                     user.Email,
@@ -439,12 +482,16 @@ namespace SchoolProject.Controllers
                     _ => RedirectToAction("Index", "Home"),
                 };
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 TempData["ErrorMessage"] = "An error occurred while changing your password. Please try again.";
                 return View(model);
             }
         }
+
+
+
+
 
         [Authorize]
         [HttpGet]
@@ -572,6 +619,10 @@ namespace SchoolProject.Controllers
             TempData["SuccessMessage"] = "Profile downloaded successfully.";
             return File(memoryStream, "application/pdf", fileName);
         }
+
+
+
+
 
         [HttpGet]
         public IActionResult VerificationCodeLogin()
