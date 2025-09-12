@@ -16,7 +16,8 @@ builder.Services.AddScoped<EmailService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TwoFactorAuthService>();
 
-
+// Program.cs
+builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddDataProtection()
     .UseEphemeralDataProtectionProvider();
 

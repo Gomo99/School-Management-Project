@@ -213,6 +213,13 @@
                                         <i class="bi bi-person-badge"></i>
                                         <span>View Profile</span>
                                     </a>
+
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="@Url.Action("Inbox", "Account")">
+                                            Messages
+                                            <span class="badge bg-primary" id="navUnreadCount"></span>
+                                        </a>
+                                    </li>
                                     <a href="@Url.Action("EditProfile", "Account")" class="submenu-link">
                                         <i class="bi bi-person-gear"></i>
                                         <span>Edit Profile</span>
@@ -225,6 +232,7 @@
                                         <i class="bi bi-person-x"></i>
                                         <span>Delete Account</span>
                                     </a>
+
                                 </div>
                             </div>
                         </div>

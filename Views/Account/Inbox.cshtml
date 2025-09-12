@@ -1,0 +1,540 @@
+﻿@using SchoolProject.ViewModel
+@model List<MessageViewModel>
+@{
+    ViewData["Title"] = "Inbox";
+}
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container-fluid py-4 bg-light min-vh-100">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <!-- Enhanced Header Section -->
+            <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden">
+                <div class="card-header bg-gradient border-0 p-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 120px;">
+                    <div class="position-relative h-100 d-flex align-items-center">
+                        <!-- Background Pattern -->
+                        <div class="position-absolute w-100 h-100 opacity-10">
+                            <div class="d-flex justify-content-around align-items-center h-100">
+                                <i class="bi bi-envelope display-1"></i>
+                                <i class="bi bi-chat-dots display-1"></i>
+                                <i class="bi bi-inbox display-1"></i>
+                            </div>
+                        </div>
+
+                        <!-- Header Content -->
+                        <div class="container-fluid position-relative">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-white bg-opacity-20 rounded-3 p-3 me-3">
+                                            <i class="bi bi-inbox text-white fs-2"></i>
+                                        </div>
+                                        <div>
+                                            <h1 class="text-white mb-1 fw-bold display-6">Inbox</h1>
+                                            <p class="text-white-50 mb-0">Manage your messages and communications</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="bg-white bg-opacity-10 rounded-4 p-3 d-inline-block backdrop-blur">
+                                        <div class="d-flex align-items-center">
+                                            <div class="text-center">
+                                                <div class="text-white display-4 fw-bold lh-1" id="unreadCount">@(ViewBag.UnreadCount)</div>
+                                                <small class="text-white-50">Unread</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons Section -->
+            <div class="card border-0 rounded-4 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-auto">
+                            <a href="@Url.Action("Compose")" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
+                                <i class="bi bi-pencil-square me-2"></i>Compose Message
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <a href="@Url.Action("Sent")" class="btn btn-outline-secondary btn-lg rounded-pill px-4">
+                                <i class="bi bi-send me-2"></i>Sent Messages
+                            </a>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-outline-info btn-lg rounded-pill px-4" id="refreshBtn">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                            </button>
+                        </div>
+                        <div class="col-auto ms-auto">
+                            <div class="btn-group rounded-pill" role="group">
+                                <button type="button" class="btn btn-outline-primary active" id="allMessages">
+                                    <i class="bi bi-inbox me-1"></i>All
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="unreadMessages">
+                                    <i class="bi bi-envelope me-1"></i>Unread
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" id="readMessages">
+                                    <i class="bi bi-envelope-open me-1"></i>Read
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Section -->
+            @if (Model.Any())
+            {
+                <div class="card border-0 rounded-4 shadow-sm">
+                    <div class="card-header bg-transparent border-0 p-4 pb-2">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h5 class="mb-0 text-primary fw-bold">
+                                    <i class="bi bi-chat-left-dots me-2"></i>Messages
+                                </h5>
+                            </div>
+                            <div class="col-auto">
+                                <div class="input-group rounded-pill border">
+                                    <span class="input-group-text bg-transparent border-0">
+                                        <i class="bi bi-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-0 rounded-pill" placeholder="Search messages..." id="searchInput">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="message-list" id="messageList">
+                            @foreach (var message in Model)
+                            {
+                                <div class="message-item border-0 position-relative" data-read="@message.IsRead.ToString().ToLower()" data-content="@message.Content.ToLower()" data-sender="@message.SenderName.ToLower()">
+                                    <a href="@Url.Action("ViewMessage", new { id = message.MessageId })"
+                                       class="d-block text-decoration-none message-link p-4 border-bottom border-light position-relative overflow-hidden">
+
+                                        <!-- Hover Effect Background -->
+                                        <div class="position-absolute top-0 start-0 w-100 h-100 bg-primary bg-opacity-5 opacity-0 transition-opacity hover-bg"></div>
+
+                                        <!-- Message Content -->
+                                        <div class="position-relative">
+                                            <div class="row align-items-center">
+                                                <div class="col-auto">
+                                                    <div class="position-relative">
+                                                        <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                            <i class="bi bi-person text-primary fs-5"></i>
+                                                        </div>
+                                                        @if (!message.IsRead)
+                                                        {
+                                                            <div class="position-absolute top-0 end-0 bg-primary rounded-circle" style="width: 12px; height: 12px; border: 2px solid white;"></div>
+                                                        }
+                                                    </div>
+                                                </div>
+
+                                                <div class="col">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <h6 class="mb-0 fw-bold text-dark">@message.SenderName</h6>
+                                                        <div class="d-flex align-items-center">
+                                                            @if (!message.IsRead)
+                                                            {
+                                                                <span class="badge bg-primary rounded-pill me-2 px-2 py-1">New</span>
+                                                            }
+                                                            <small class="text-muted fw-medium">@message.SentAt.ToString("MMM dd, HH:mm")</small>
+                                                        </div>
+                                                    </div>
+
+                                                    <p class="mb-0 text-muted message-preview" style="line-height: 1.4;">
+                                                        @if (message.Content.Length > 120)
+                                                        {
+                                                            @(message.Content.Substring(0, 120))
+                                                           
+                                                                                                }
+                                                        else
+                                                        {
+                                                            @message.Content
+                                                        }
+                                                    </p>
+
+                                                    @if (!message.IsRead)
+                                                    {
+                                                        <div class="mt-2">
+                                                            <small class="text-primary fw-semibold">
+                                                                <i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i>Unread message
+                                                            </small>
+                                                        </div>
+                                                    }
+                                                </div>
+
+                                                <div class="col-auto">
+                                                    <i class="bi bi-chevron-right text-muted fs-6 message-arrow"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="card-footer bg-transparent border-0 p-4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">
+                                Showing <span class="fw-semibold" id="messageCount">@Model.Count</span> messages
+                            </div>
+                            <nav aria-label="Message pagination">
+                                <ul class="pagination pagination-sm mb-0 rounded-pill">
+                                    <li class="page-item">
+                                        <a class="page-link rounded-start-pill" href="#" aria-label="Previous">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">1</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="#">2</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="#">3</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link rounded-end-pill" href="#" aria-label="Next">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Empty State -->
+                <div class="card border-0 rounded-4 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 120px; height: 120px;">
+                                <i class="bi bi-inbox display-3 text-muted"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-muted mb-3">Your inbox is empty</h4>
+                        <p class="text-muted mb-4">No messages to display. When you receive messages, they'll appear here.</p>
+                        <a href="@Url.Action("Compose")" class="btn btn-primary btn-lg rounded-pill px-4">
+                            <i class="bi bi-pencil-square me-2"></i>Send your first message
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- Quick Actions Floating Button -->
+            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+                <div class="dropup">
+                    <button class="btn btn-primary rounded-circle shadow-lg p-3" type="button" data-bs-toggle="dropdown" style="width: 56px; height: 56px;">
+                        <i class="bi bi-plus-lg fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end rounded-3 border-0 shadow-lg mb-2">
+                        <li>
+                            <a class="dropdown-item rounded-2" href="@Url.Action("Compose")">
+                                <i class="bi bi-pencil-square me-2 text-primary"></i>Compose Message
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-2" href="@Url.Action("Sent")">
+                                <i class="bi bi-send me-2 text-success"></i>Sent Messages
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item rounded-2" href="#" onclick="markAllAsRead()">
+                                <i class="bi bi-check-all me-2 text-info"></i>Mark All Read
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
+    <div id="refreshToast" class="toast bg-success text-white border-0 rounded-3" role="alert">
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                Messages refreshed successfully!
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const messageItems = document.querySelectorAll('.message-item');
+        const messageCountSpan = document.getElementById('messageCount');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            let visibleCount = 0;
+
+            messageItems.forEach(item => {
+                const content = item.getAttribute('data-content');
+                const sender = item.getAttribute('data-sender');
+
+                if (content.includes(searchTerm) || sender.includes(searchTerm) || searchTerm === '') {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            messageCountSpan.textContent = visibleCount;
+        });
+
+        // Filter functionality
+        const allBtn = document.getElementById('allMessages');
+        const unreadBtn = document.getElementById('unreadMessages');
+        const readBtn = document.getElementById('readMessages');
+
+        function filterMessages(filter) {
+            let visibleCount = 0;
+
+            messageItems.forEach(item => {
+                const isRead = item.getAttribute('data-read') === 'true';
+                let show = false;
+
+                switch(filter) {
+                    case 'all':
+                        show = true;
+                        break;
+                    case 'unread':
+                        show = !isRead;
+                        break;
+                    case 'read':
+                        show = isRead;
+                        break;
+                }
+
+                if (show) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            messageCountSpan.textContent = visibleCount;
+        }
+
+        allBtn.addEventListener('click', function() {
+            setActiveFilter(this);
+            filterMessages('all');
+        });
+
+        unreadBtn.addEventListener('click', function() {
+            setActiveFilter(this);
+            filterMessages('unread');
+        });
+
+        readBtn.addEventListener('click', function() {
+            setActiveFilter(this);
+            filterMessages('read');
+        });
+
+        function setActiveFilter(activeBtn) {
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            activeBtn.classList.add('active');
+        }
+
+        // Refresh functionality
+        const refreshBtn = document.getElementById('refreshBtn');
+        const refreshToast = new bootstrap.Toast(document.getElementById('refreshToast'));
+
+        refreshBtn.addEventListener('click', function() {
+            const icon = this.querySelector('i');
+            icon.classList.add('rotating');
+
+            // Simulate refresh
+            setTimeout(() => {
+                icon.classList.remove('rotating');
+                refreshToast.show();
+            }, 1500);
+        });
+
+        // Message hover effects
+        const messageLinks = document.querySelectorAll('.message-link');
+        messageLinks.forEach(link => {
+            link.addEventListener('mouseenter', function() {
+                const hoverBg = this.querySelector('.hover-bg');
+                const arrow = this.querySelector('.message-arrow');
+
+                if (hoverBg) hoverBg.style.opacity = '1';
+                if (arrow) arrow.style.transform = 'translateX(3px)';
+            });
+
+            link.addEventListener('mouseleave', function() {
+                const hoverBg = this.querySelector('.hover-bg');
+                const arrow = this.querySelector('.message-arrow');
+
+                if (hoverBg) hoverBg.style.opacity = '0';
+                if (arrow) arrow.style.transform = 'translateX(0)';
+            });
+        });
+
+        // Animate unread count
+        const unreadCountElement = document.getElementById('unreadCount');
+        if (unreadCountElement && parseInt(unreadCountElement.textContent) > 0) {
+            unreadCountElement.style.animation = 'pulse 2s infinite';
+        }
+    });
+
+    // Mark all as read function
+    function markAllAsRead() {
+        // This would typically make an AJAX call to your server
+        console.log('Mark all messages as read');
+
+        // Update UI immediately for demo purposes
+        document.querySelectorAll('.message-item').forEach(item => {
+            item.setAttribute('data-read', 'true');
+            const newBadge = item.querySelector('.badge');
+            const unreadText = item.querySelector('.text-primary.fw-semibold');
+            const statusDot = item.querySelector('.bg-primary.rounded-circle');
+
+            if (newBadge) newBadge.remove();
+            if (unreadText) unreadText.remove();
+            if (statusDot) statusDot.remove();
+        });
+
+        document.getElementById('unreadCount').textContent = '0';
+    }
+</script>
+
+<style>
+    .backdrop-blur {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .transition-opacity {
+        transition: opacity 0.3s ease;
+    }
+
+    .message-arrow {
+        transition: transform 0.3s ease;
+    }
+
+    .message-link {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+        .message-link:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+        }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+    @@keyframes pulse {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+    }
+
+    @@keyframes rotating {
+        from
+
+    {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+    }
+
+    .rotating {
+        animation: rotating 1.5s linear infinite;
+    }
+
+    .message-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Custom scrollbar */
+    .message-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .message-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    .message-list::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+        .message-list::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+    /* Mobile optimizations */
+    @@media (max-width: 768px) {
+        .card-header .row .col-auto
+
+    {
+        margin-top: 1rem;
+    }
+
+    .message-item .col-auto:first-child {
+        display: none;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    }
+</style>

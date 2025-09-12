@@ -1,0 +1,535 @@
+﻿@using SchoolProject.ViewModel
+@model SendMessageViewModel
+@{
+    ViewData["Title"] = "Compose Message";
+    var isReply = ViewBag.IsReply != null && (bool)ViewBag.IsReply;
+    var isForward = ViewBag.ForwardMessageId != null;
+    var pageTitle = isReply ? "Reply to Message" : isForward ? "Forward Message" : "Compose Message";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container-fluid py-4 bg-light min-vh-100">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10 col-xl-8">
+            <!-- Header Section -->
+            <div class="card border-0 rounded-4 shadow-sm mb-4 overflow-hidden">
+                <div class="card-header bg-gradient border-0 p-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 120px;">
+                    <div class="position-relative h-100 d-flex align-items-center">
+                        <!-- Header Content -->
+                        <div class="container-fluid position-relative">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-white bg-opacity-20 rounded-3 p-3 me-3">
+                                            <i class="bi @(isReply ? "bi-reply" : isForward ? "bi-forward" : "bi-pencil-square") text-white fs-2"></i>
+                                        </div>
+                                        <div>
+                                            <h1 class="text-white mb-1 fw-bold display-6">@pageTitle</h1>
+                                            <p class="text-white-50 mb-0">@(isReply ? "Reply to this message" : isForward ? "Forward this message" : "Send a message to other users")</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <a href="@Url.Action("Inbox", "Account")" class="btn btn-light btn-sm rounded-pill">
+                                        <i class="bi bi-arrow-left me-1"></i> Back to Inbox
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compose Form -->
+            <div class="card border-0 rounded-4 shadow-sm">
+                <div class="card-body p-4">
+                    <form asp-action="Compose" method="post" id="composeForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Hidden field for reply/forward -->
+                        @if (isReply)
+                        {
+                            <input type="hidden" name="replyToMessageId" value="@ViewBag.ReplyToMessageId" />
+                        }
+                        else if (isForward)
+                        {
+                            <input type="hidden" name="forwardMessageId" value="@ViewBag.ForwardMessageId" />
+                        }
+
+                        <!-- Alert Messages -->
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
+                                <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
+                                <i class="bi bi-exclamation-circle-fill me-2"></i> @TempData["ErrorMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <!-- Recipient Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-semibold text-primary">
+                                <i class="bi bi-person me-1"></i> Recipient
+                            </label>
+
+                            @if (isReply)
+                            {
+                                <!-- Display recipient as read-only for replies -->
+                                <div class="form-control bg-light" readonly>
+                                    @{
+                                        var originalMessage = ViewBag.OriginalMessage as dynamic;
+                                        @($"{originalMessage?.SenderName} (Replying to original sender)")
+                                    }
+                                </div>
+                                <input type="hidden" asp-for="ReceiverId" />
+                                <div class="form-text text-info">
+                                    <i class="bi bi-info-circle me-1"></i> You are replying to the original sender
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Normal recipient selection for new messages -->
+                                <select asp-for="ReceiverId" class="form-select form-select-lg rounded-3 border-2 shadow-sm"
+                                        data-choices data-choices-searchEnabled="true" required>
+                                    <option value="">Select a recipient...</option>
+                                    @foreach (var user in ViewBag.Users)
+                                    {
+                                        <option value="@user.UserID">@user.FullName</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="ReceiverId" class="text-danger small"></span>
+                                <div class="form-text">Start typing to search for recipients</div>
+                            }
+                        </div>
+
+                        <!-- Original Message Display (for replies) -->
+                        <!-- Original Message Display (for replies and forwards) -->
+                        @if (isReply || isForward)
+                        {
+                            var originalMessage = ViewBag.OriginalMessage as dynamic;
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-primary">
+                                    <i class="bi bi-chat-left-quote me-1"></i>
+                                    @(isReply ? "Original Message" : "Message to Forward")
+                                </label>
+                                <div class="card bg-light border-0 rounded-3">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">
+                                                <strong>From:</strong> @originalMessage?.SenderName
+                                            </small>
+                                            <small class="text-muted">
+                                                <strong>Date:</strong> @originalMessage?.SentAt.ToString("MMM dd, yyyy at h:mm tt")
+                                            </small>
+                                        </div>
+                                        <div class="original-message-content" style="white-space: pre-wrap; line-height: 1.6; background-color: #f8f9fa; padding: 1rem; border-radius: 0.5rem;">
+                                            @originalMessage?.Content
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Message Content (for user's new message) -->
+                        <div class="mb-4">
+                            <label asp-for="Content" class="form-label fw-semibold text-primary">
+                                <i class="bi bi-chat-text me-1"></i>
+                                @(isReply ? "Your Reply" : "Message")
+                            </label>
+                            <textarea asp-for="Content" class="form-control rounded-3 border-2 shadow-sm"
+                                      rows="6" placeholder="@(isReply ? "Type your reply here..." : "Type your message here...")"
+                                      maxlength="500" required></textarea>
+                            <span asp-validation-for="Content" class="text-danger small"></span>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <div class="form-text">
+                                    <span id="charCount">0</span>/500 characters
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-format="bold">
+                                        <i class="bi bi-type-bold"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-format="italic">
+                                        <i class="bi bi-type-italic"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-format="underline">
+                                        <i class="bi bi-type-underline"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary rounded-pill me-2" id="saveDraftBtn">
+                                    <i class="bi bi-file-earmark me-1"></i> Save Draft
+                                </button>
+                                <button type="reset" class="btn btn-outline-danger rounded-pill">
+                                    <i class="bi bi-x-circle me-1"></i> Discard
+                                </button>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm" id="sendBtn">
+                                    <i class="bi bi-send me-2"></i> @(isReply ? "Send Reply" : isForward ? "Forward Message" : "Send Message")
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Tips Card -->
+            <div class="card border-0 rounded-4 shadow-sm mt-4">
+                <div class="card-header bg-transparent border-0">
+                    <h6 class="mb-0 text-primary">
+                        <i class="bi bi-lightbulb me-2"></i> Message Tips
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Be clear and concise in your message
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Double-check the recipient before sending
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Keep messages professional and respectful
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rest of your HTML and scripts remain the same -->
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<!-- Choices.js for enhanced select -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+<script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+
+<style>
+    .form-control, .form-select {
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+    .btn {
+        transition: all 0.3s ease;
+    }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+    .choices__inner {
+        border: 2px solid #e9ecef;
+        border-radius: 0.75rem;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+    }
+
+    .choices__list--dropdown {
+        border: 2px solid #e9ecef;
+        border-radius: 0.75rem;
+        margin-top: 4px;
+    }
+
+    textarea {
+        resize: none;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+    }
+
+    .alert {
+        border: none;
+        border-radius: 0.75rem;
+    }
+
+    /* Custom scrollbar */
+    textarea::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    textarea::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    textarea::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Choices.js for recipient selection
+            const recipientSelect = document.querySelector('select[data-choices]');
+            if (recipientSelect) {
+                new Choices(recipientSelect, {
+                    placeholder: true,
+                    placeholderValue: 'Select a recipient...',
+                    searchPlaceholderValue: 'Search recipients...',
+                    itemSelectText: '',
+                    shouldSort: false,
+                });
+            }
+
+            // Character counter
+            const contentTextarea = document.getElementById('Content');
+            const charCount = document.getElementById('charCount');
+
+            if (contentTextarea && charCount) {
+                contentTextarea.addEventListener('input', function() {
+                    charCount.textContent = this.value.length;
+
+                    // Change color when approaching limit
+                    if (this.value.length > 450) {
+                        charCount.classList.add('text-warning');
+                    } else if (this.value.length > 480) {
+                        charCount.classList.remove('text-warning');
+                        charCount.classList.add('text-danger');
+                    } else {
+                        charCount.classList.remove('text-warning', 'text-danger');
+                    }
+                });
+
+                // Initialize count
+                charCount.textContent = contentTextarea.value.length;
+            }
+
+            // Text formatting buttons
+            const formatButtons = document.querySelectorAll('[data-format]');
+            formatButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const format = this.getAttribute('data-format');
+                    formatText(format);
+                });
+            });
+
+            function formatText(format) {
+                const textarea = contentTextarea;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = textarea.value.substring(start, end);
+
+                let formattedText = '';
+
+                switch(format) {
+                    case 'bold':
+                        formattedText = `**${selectedText}**`;
+                        break;
+                    case 'italic':
+                        formattedText = `_${selectedText}_`;
+                        break;
+                    case 'underline':
+                        formattedText = `__${selectedText}__`;
+                        break;
+                }
+
+                // Replace selected text with formatted text
+                textarea.value = textarea.value.substring(0, start) +
+                                formattedText +
+                                textarea.value.substring(end);
+
+                // Set cursor position after formatted text
+                textarea.selectionStart = start + formattedText.length;
+                textarea.selectionEnd = start + formattedText.length;
+                textarea.focus();
+
+                // Trigger input event to update character count
+                const event = new Event('input');
+                textarea.dispatchEvent(event);
+            }
+
+            // Form submission handling
+            const composeForm = document.getElementById('composeForm');
+            const sendBtn = document.getElementById('sendBtn');
+            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+
+            if (composeForm) {
+                composeForm.addEventListener('submit', function(e) {
+                    // Basic validation
+                    const recipient = document.getElementById('ReceiverId');
+                    const content = document.getElementById('Content');
+
+                    // For replies, we don't have a recipient dropdown but a hidden field
+                    const isReply = @(isReply.ToString().ToLower());
+
+                    if (!isReply && !recipient?.value) {
+                        e.preventDefault();
+                        recipient?.focus();
+                        showToast('Please select a recipient', 'danger');
+                        return;
+                    }
+
+                    if (!content.value.trim()) {
+                        e.preventDefault();
+                        content.focus();
+                        showToast('Please enter a message', 'danger');
+                        return;
+                    }
+
+                    // For replies, check if user just copied the original message
+                    if (isReply) {
+                        const originalContent = "@Html.Raw(ViewBag.OriginalMessage?.Content?.Replace("\"", "\\\"").Replace("\r\n", "\\n").Replace("\n", "\\n") ?? "")";
+                        const userContent = content.value.trim();
+
+                        if (userContent === originalContent.trim().replace(/\\n/g, '\n')) {
+                            e.preventDefault();
+                            content.focus();
+                            showToast('Please write a new reply message, not just the original content', 'warning');
+                            return;
+                        }
+                    }
+
+                    // Show loading modal
+                    loadingModal.show();
+
+                    // Change button state
+                    sendBtn.disabled = true;
+                    sendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Sending...';
+                });
+            }
+
+            // Save draft functionality
+            const saveDraftBtn = document.getElementById('saveDraftBtn');
+            if (saveDraftBtn) {
+                saveDraftBtn.addEventListener('click', function() {
+                    // This would typically save to local storage or make an API call
+                    const recipient = document.getElementById('ReceiverId')?.value || '';
+                    const content = document.getElementById('Content').value;
+
+                    if (!recipient && !content) {
+                        showToast('No content to save as draft', 'info');
+                        return;
+                    }
+
+                    // Simulate saving to localStorage
+                    const draft = {
+                        recipient: recipient,
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    localStorage.setItem('messageDraft', JSON.stringify(draft));
+                    showToast('Draft saved successfully', 'success');
+                });
+            }
+
+            // Load draft on page load
+            function loadDraft() {
+                const draft = localStorage.getItem('messageDraft');
+                if (draft) {
+                    try {
+                        const draftData = JSON.parse(draft);
+                        if (draftData.recipient) {
+                            const recipientSelect = document.getElementById('ReceiverId');
+                            if (recipientSelect) {
+                                recipientSelect.value = draftData.recipient;
+                            }
+                        }
+                        if (draftData.content) {
+                            document.getElementById('Content').value = draftData.content;
+                            // Trigger input event to update character count
+                            const event = new Event('input');
+                            document.getElementById('Content').dispatchEvent(event);
+                        }
+                    } catch (e) {
+                        console.error('Error loading draft:', e);
+                    }
+                }
+            }
+
+            // Load any saved draft
+            loadDraft();
+
+            // Toast notification function
+            function showToast(message, type = 'success') {
+                // Create toast element
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-white bg-${type} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi ${type === 'success' ? 'bi-check-circle' : type === 'danger' ? 'bi-exclamation-circle' : 'bi-info-circle'} me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+
+                // Add to container
+                const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+                toastContainer.appendChild(toast);
+
+                // Initialize and show
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+
+                // Remove after hide
+                toast.addEventListener('hidden.bs.toast', function() {
+                    toast.remove();
+                });
+            }
+
+            function createToastContainer() {
+                const container = document.createElement('div');
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                container.style.zIndex = '1060';
+                document.body.appendChild(container);
+                return container;
+            }
+
+            // Auto-save draft every 30 seconds
+            setInterval(() => {
+                const recipient = document.getElementById('ReceiverId')?.value || '';
+                const content = document.getElementById('Content').value;
+
+                if (recipient || content) {
+                    const draft = {
+                        recipient: recipient,
+                        content: content,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    localStorage.setItem('messageDraft', JSON.stringify(draft));
+                    console.log('Auto-saved draft');
+                }
+            }, 30000);
+        });
+    </script>
+}

@@ -26,15 +26,15 @@ namespace SchoolProject.Controllers
         private readonly TwoFactorAuthService _twoFactorService;
         private const int MaxFailedAttempts = 5;
         private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
-
+        private readonly IMessageService _messageService;
 
         public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService
-            )
+, IMessageService messageService )
         {
             _context = context;
             _emailService = emailService;
             _twoFactorService = twoFactorService;
-
+            _messageService = messageService;
         }
 
         [HttpGet]
@@ -1424,6 +1424,316 @@ namespace SchoolProject.Controllers
             await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
             return RedirectToAction("ViewProfile");
         }
+
+
+
+
+
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("UserID");
+            return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
+        }
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Inbox()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            var messages = await _messageService.GetInboxAsync(userId);
+            ViewBag.UnreadCount = await _messageService.GetUnreadCountAsync(userId);
+
+            return View(messages);
+        }
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Sent()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            var messages = await _messageService.GetSentMessagesAsync(userId);
+            return View(messages);
+        }
+
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> ViewMessage(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            var message = await _messageService.GetMessageAsync(id, userId);
+            if (message == null)
+            {
+                TempData["ErrorMessage"] = "Message not found.";
+                return RedirectToAction("Inbox");
+            }
+
+            return View(message);
+        }
+
+        [Authorize]
+        [HttpGet]
+        public IActionResult Compose(int? replyTo = null, int? forward = null)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            var model = new SendMessageViewModel();
+
+            // Handle reply functionality
+            if (replyTo.HasValue)
+            {
+                var originalMessage = _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefault(m => m.MessageId == replyTo.Value && m.ReceiverId == userId);
+
+                if (originalMessage != null)
+                {
+                    // Pre-fill recipient (original sender) - will be read-only in view
+                    model.ReceiverId = originalMessage.SenderId;
+
+                    // Store original message details for display (not editable)
+                    ViewBag.OriginalMessage = new
+                    {
+                        SenderName = $"{originalMessage.Sender.Name} {originalMessage.Sender.Surname}",
+                        SentAt = originalMessage.SentAt,
+                        Content = originalMessage.Content,
+                        IsForward = false // Add this flag to distinguish
+                    };
+
+                    ViewBag.ReplyToMessageId = originalMessage.MessageId;
+                    ViewBag.IsReply = true;
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Message not found or you don't have permission to reply to this message.";
+                }
+            }
+            // Handle forward functionality
+            else if (forward.HasValue)
+            {
+                var originalMessage = _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefault(m => m.MessageId == forward.Value && (m.SenderId == userId || m.ReceiverId == userId));
+
+                if (originalMessage != null)
+                {
+                    // For forwarding, use the same object structure but don't pre-fill recipient
+                    ViewBag.OriginalMessage = new
+                    {
+                        SenderName = $"{originalMessage.Sender.Name} {originalMessage.Sender.Surname}",
+                        SentAt = originalMessage.SentAt,
+                        Content = originalMessage.Content,
+                        IsForward = true // Add this flag to distinguish
+                    };
+
+                    ViewBag.ForwardMessageId = originalMessage.MessageId;
+                    ViewBag.IsForward = true;
+
+                    // Pre-fill the content with forward format
+                    model.Content = $"\n\n--- Forwarded Message ---\n" +
+                                   $"From: {originalMessage.Sender.Name} {originalMessage.Sender.Surname}\n" +
+                                   $"Date: {originalMessage.SentAt:MMM dd, yyyy at h:mm tt}\n\n" +
+                                   $"{originalMessage.Content}";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Message not found or you don't have permission to forward this message.";
+                }
+            }
+
+            ViewBag.Users = _context.Accounts
+                .Where(u => u.UserID != userId && u.UserStatus == UserStatus.Active)
+                .Select(u => new { u.UserID, FullName = $"{u.Name} {u.Surname} ({u.Email})" })
+                .ToList();
+
+            return View(model);
+        }
+
+
+
+
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Compose(SendMessageViewModel model, int? replyToMessageId = null, int? forwardMessageId = null)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Users = _context.Accounts
+                    .Where(u => u.UserID != userId && u.UserStatus == UserStatus.Active)
+                    .Select(u => new { u.UserID, FullName = $"{u.Name} {u.Surname} ({u.Email})" })
+                    .ToList();
+
+                // Preserve reply/forward context for the view
+                if (replyToMessageId.HasValue)
+                {
+                    ViewBag.IsReply = true;
+                    var originalMessage = _context.Messages
+                        .Include(m => m.Sender)
+                        .FirstOrDefault(m => m.MessageId == replyToMessageId.Value);
+
+                    if (originalMessage != null)
+                    {
+                        ViewBag.OriginalMessage = new
+                        {
+                            SenderName = $"{originalMessage.Sender.Name} {originalMessage.Sender.Surname}",
+                            SentAt = originalMessage.SentAt,
+                            Content = originalMessage.Content,
+                            IsForward = false
+                        };
+                        ViewBag.ReplyToMessageId = replyToMessageId;
+                    }
+                }
+                else if (forwardMessageId.HasValue)
+                {
+                    ViewBag.IsForward = true;
+                    var originalMessage = _context.Messages
+                        .Include(m => m.Sender)
+                        .FirstOrDefault(m => m.MessageId == forwardMessageId.Value);
+
+                    if (originalMessage != null)
+                    {
+                        ViewBag.OriginalMessage = new
+                        {
+                            SenderName = $"{originalMessage.Sender.Name} {originalMessage.Sender.Surname}",
+                            SentAt = originalMessage.SentAt,
+                            Content = originalMessage.Content,
+                            IsForward = true
+                        };
+                        ViewBag.ForwardMessageId = forwardMessageId;
+                    }
+                }
+
+                return View(model);
+            }
+
+            // Handle reply logic
+            if (replyToMessageId.HasValue)
+            {
+                // Verify the user has permission to reply to this message
+                var originalMessage = await _context.Messages
+                    .FirstOrDefaultAsync(m => m.MessageId == replyToMessageId.Value && m.ReceiverId == userId);
+
+                if (originalMessage == null)
+                {
+                    TempData["ErrorMessage"] = "Cannot reply to this message.";
+                    return RedirectToAction("Inbox");
+                }
+
+                // For replies, we use the original sender as recipient
+                model.ReceiverId = originalMessage.SenderId;
+            }
+
+            var success = await _messageService.SendMessageAsync(userId, model.ReceiverId, model.Content);
+
+            if (success)
+            {
+                string successMessage = replyToMessageId.HasValue ? "Reply sent successfully!" :
+                                      forwardMessageId.HasValue ? "Message forwarded successfully!" :
+                                      "Message sent successfully!";
+
+                TempData["SuccessMessage"] = successMessage;
+                return RedirectToAction("Sent");
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "Failed to send message. Please try again.";
+                return View(model);
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMessage(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            var success = await _messageService.DeleteMessageAsync(id, userId);
+
+            if (success)
+                TempData["SuccessMessage"] = "Message deleted successfully!";
+            else
+                TempData["ErrorMessage"] = "Failed to delete message.";
+
+            return RedirectToAction("Inbox");
+        }
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsRead(int id)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return RedirectToAction("Login", "Account");
+
+            await _messageService.MarkAsReadAsync(id, userId);
+            return Ok();
+        }
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetUnreadCount()
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return Json(0);
+
+            var count = await _messageService.GetUnreadCountAsync(userId);
+            return Json(count);
+        }
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         private string GetFirstClaimValue(IEnumerable<Claim> claims, params string[] claimTypes)
         {

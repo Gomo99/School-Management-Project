@@ -43,7 +43,7 @@ namespace SchoolProject.Controllers
         public async Task<IActionResult> ManageAssessmentType()
         {
             // Only show active types
-            var activeTypes = await _context.assessmentTypes
+            var activeTypes = await _context.AssessmentTypes
                 .Where(a => a.AssessmentTypeStatus == AssessmentTypeStatus.Active)
                 .ToListAsync();
 
@@ -55,7 +55,7 @@ namespace SchoolProject.Controllers
         {
             if (id == null) return NotFound();
 
-            var type = await _context.assessmentTypes
+            var type = await _context.AssessmentTypes
                 .FirstOrDefaultAsync(m => m.AssessmentTypeID == id);
 
             if (type == null || type.AssessmentTypeStatus == AssessmentTypeStatus.Inactive)
@@ -90,7 +90,7 @@ namespace SchoolProject.Controllers
         {
             if (id == null) return NotFound();
 
-            var type = await _context.assessmentTypes.FindAsync(id);
+            var type = await _context.AssessmentTypes.FindAsync(id);
             if (type == null || type.AssessmentTypeStatus == AssessmentTypeStatus.Inactive)
                 return NotFound();
 
@@ -108,7 +108,7 @@ namespace SchoolProject.Controllers
             {
                 try
                 {
-                    var existing = await _context.assessmentTypes.FindAsync(id);
+                    var existing = await _context.AssessmentTypes.FindAsync(id);
                     if (existing == null || existing.AssessmentTypeStatus == AssessmentTypeStatus.Inactive)
                         return NotFound();
 
@@ -131,7 +131,7 @@ namespace SchoolProject.Controllers
         {
             if (id == null) return NotFound();
 
-            var type = await _context.assessmentTypes
+            var type = await _context.AssessmentTypes
                 .FirstOrDefaultAsync(m => m.AssessmentTypeID == id);
 
             if (type == null || type.AssessmentTypeStatus == AssessmentTypeStatus.Inactive)
@@ -145,7 +145,7 @@ namespace SchoolProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var type = await _context.assessmentTypes.FindAsync(id);
+            var type = await _context.AssessmentTypes.FindAsync(id);
             if (type != null && type.AssessmentTypeStatus == AssessmentTypeStatus.Active)
             {
                 type.AssessmentTypeStatus = AssessmentTypeStatus.Inactive;
@@ -195,7 +195,7 @@ namespace SchoolProject.Controllers
             ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName");
 
             ViewData["AssessmentTypeID"] = new SelectList(
-                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                _context.AssessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
                 "AssessmentTypeID",
                 "AssessmentTypeDescription"
             );
@@ -231,7 +231,7 @@ namespace SchoolProject.Controllers
             ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName", assessment.StudentModuleID);
 
             ViewData["AssessmentTypeID"] = new SelectList(
-                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                _context.AssessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
                 "AssessmentTypeID",
                 "AssessmentTypeDescription",
                 assessment.AssessmentTypeID
@@ -265,7 +265,7 @@ namespace SchoolProject.Controllers
 
             // AssessmentType dropdown
             ViewData["AssessmentTypeID"] = new SelectList(
-                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                _context.AssessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
                 "AssessmentTypeID",
                 "AssessmentTypeDescription",
                 assessment.AssessmentTypeID
@@ -318,7 +318,7 @@ namespace SchoolProject.Controllers
             ViewData["StudentModuleID"] = new SelectList(studentModules, "StudentModuleID", "DisplayName", assessment.StudentModuleID);
 
             ViewData["AssessmentTypeID"] = new SelectList(
-                _context.assessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
+                _context.AssessmentTypes.Where(t => t.AssessmentTypeStatus == AssessmentTypeStatus.Active),
                 "AssessmentTypeID",
                 "AssessmentTypeDescription",
                 assessment.AssessmentTypeID
@@ -403,7 +403,7 @@ namespace SchoolProject.Controllers
 
         private bool AssessmentTypeExists(int id)
         {
-            return _context.assessmentTypes.Any(e => e.AssessmentTypeID == id);
+            return _context.AssessmentTypes.Any(e => e.AssessmentTypeID == id);
         }
 
     }

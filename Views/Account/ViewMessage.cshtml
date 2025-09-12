@@ -1,0 +1,168 @@
+﻿@using SchoolProject.ViewModel
+@model MessageViewModel
+@{
+    ViewData["Title"] = "View Message";
+}
+
+@section Sidebar {
+    @await Html.PartialAsync("_SidebarPartial")
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content -->
+        <main class="col-md-9 ms-sm-auto px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Message Details</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <a href="@Url.Action("Inbox")" class="btn btn-sm btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left"></i> Back to Inbox
+                    </a>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i> More actions
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Compose")?replyTo=@Model.MessageId">
+                                    <i class="bi bi-reply"></i> Reply
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="@Url.Action("Compose")?forward=@Model.MessageId">
+                                    <i class="bi bi-forward"></i> Forward
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form asp-action="DeleteMessage" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@Model.MessageId" />
+                                    <button type="submit" class="dropdown-item text-danger"
+                                            onclick="return confirm('Are you sure you want to delete this message?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">@Model.SenderName</h5>
+                        <small class="text-muted">to @Model.ReceiverName</small>
+                    </div>
+                    <div class="text-muted">
+                        <small>@Model.SentAt.ToString("f")</small>
+                        @if (!Model.IsRead)
+                        {
+                            <span class="badge bg-info ms-2">New</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="message-content p-3 bg-light rounded">
+                        @Html.Raw(Model.Content.Replace("\n", "<br>"))
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="@Url.Action("Compose")?replyTo=@Model.MessageId" class="btn btn-sm btn-outline-primary me-2">
+                                <i class="bi bi-reply"></i> Reply
+                            </a>
+                            <a href="@Url.Action("Compose")?forward=@Model.MessageId" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-forward"></i> Forward
+                            </a>
+                        </div>
+                        <form asp-action="DeleteMessage" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@Model.MessageId" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Are you sure you want to delete this message?')">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation to adjacent messages -->
+            <div class="d-flex justify-content-between mt-4">
+                <a href="#" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-chevron-left"></i> Previous
+                </a>
+                <a href="#" class="btn btn-sm btn-outline-secondary">
+                    Next <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<style>
+    .message-content {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    .card {
+        border-radius: 0.75rem;
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+    .btn {
+        border-radius: 0.5rem;
+    }
+</style>
+
+
+
+
+@section Scripts {
+    <script>
+        // Add some interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add animation to card
+            const card = document.querySelector('.card');
+            card.classList.add('animate__animated', 'animate__fadeIn');
+
+            // Add copy to clipboard functionality
+            const messageContent = document.querySelector('.message-content');
+            messageContent.addEventListener('dblclick', function() {
+                const textToCopy = this.textContent || this.innerText;
+                navigator.clipboard.writeText(textToCopy).then(function() {
+                    const toast = document.createElement('div');
+                    toast.className = 'position-fixed bottom-0 end-0 p-3';
+                    toast.innerHTML = `
+                        <div id="liveToast" class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="toast-header">
+                                <i class="bi bi-clipboard-check me-2"></i>
+                                <strong class="me-auto">Message Copied</strong>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                            <div class="toast-body">
+                                Message content copied to clipboard.
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 2000);
+                });
+            });
+        });
+    </script>
+}

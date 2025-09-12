@@ -1,4 +1,10 @@
-﻿// Please see documentation at https://learn.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
+﻿function updateUnreadCount() {
+    $.get('@Url.Action("GetUnreadCount", "Message")', function (count) {
+        $('#unreadCount').text(count);
+        $('#navUnreadCount').text(count > 0 ? count : '');
+    });
+}
 
-// Write your JavaScript code.
+// Update every 30 seconds
+setInterval(updateUnreadCount, 30000);
+$(document).ready(updateUnreadCount);

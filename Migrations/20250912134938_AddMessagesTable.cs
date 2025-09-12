@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SchoolProject.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class AddMessagesTable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -27,7 +27,7 @@ namespace SchoolProject.Migrations
                     Password = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     UserStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ResetPin = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsTwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    IsTwoFactorEnabled = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
                     TwoFactorSecretKey = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TwoFactorRecoveryCodes = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     EmailVerificationTokenHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -45,7 +45,7 @@ namespace SchoolProject.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "assessmentTypes",
+                name: "AssessmentTypes",
                 columns: table => new
                 {
                     AssessmentTypeID = table.Column<int>(type: "int", nullable: false)
@@ -55,7 +55,7 @@ namespace SchoolProject.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_assessmentTypes", x => x.AssessmentTypeID);
+                    table.PrimaryKey("PK_AssessmentTypes", x => x.AssessmentTypeID);
                 });
 
             migrationBuilder.CreateTable(
@@ -75,6 +75,37 @@ namespace SchoolProject.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Messages",
+                columns: table => new
+                {
+                    MessageId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SenderId = table.Column<int>(type: "int", nullable: false),
+                    ReceiverId = table.Column<int>(type: "int", nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    SentAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReadAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsDeletedBySender = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false),
+                    IsDeletedByReceiver = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Messages", x => x.MessageId);
+                    table.ForeignKey(
+                        name: "FK_Messages_Accounts_ReceiverId",
+                        column: x => x.ReceiverId,
+                        principalTable: "Accounts",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Messages_Accounts_SenderId",
+                        column: x => x.SenderId,
+                        principalTable: "Accounts",
+                        principalColumn: "UserID",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "RememberedDevices",
                 columns: table => new
                 {
@@ -86,7 +117,7 @@ namespace SchoolProject.Migrations
                     DeviceName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserAgent = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Revoked = table.Column<bool>(type: "bit", nullable: false)
+                    Revoked = table.Column<string>(type: "nvarchar(5)", maxLength: 5, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -180,16 +211,16 @@ namespace SchoolProject.Migrations
                 {
                     table.PrimaryKey("PK_Assessments", x => x.AssessmentID);
                     table.ForeignKey(
+                        name: "FK_Assessments_AssessmentTypes_AssessmentTypeID",
+                        column: x => x.AssessmentTypeID,
+                        principalTable: "AssessmentTypes",
+                        principalColumn: "AssessmentTypeID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
                         name: "FK_Assessments_StudentModules_StudentModuleID",
                         column: x => x.StudentModuleID,
                         principalTable: "StudentModules",
                         principalColumn: "StudentModuleID",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Assessments_assessmentTypes_AssessmentTypeID",
-                        column: x => x.AssessmentTypeID,
-                        principalTable: "assessmentTypes",
-                        principalColumn: "AssessmentTypeID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -198,70 +229,13 @@ namespace SchoolProject.Migrations
                 columns: new[] { "UserID", "Email", "EmailVerificationTokenExpires", "EmailVerificationTokenHash", "ExternalProvider", "ExternalProviderId", "FailedLoginAttempts", "IsTwoFactorEnabled", "LastExternalLogin", "LockoutEnd", "Name", "Password", "ResetPin", "ResetPinExpiration", "Role", "Surname", "Title", "TwoFactorRecoveryCodes", "TwoFactorSecretKey", "UserStatus" },
                 values: new object[,]
                 {
-                    { 1, "admin@school.com", null, null, null, null, 0, false, null, null, "Admin", "admin123", null, null, "Administrator", "User", "System Admin", null, null, "Active" },
-                    { 2, "lecturer@school.com", null, null, null, null, 0, false, null, null, "lECTURE", "admin123", null, null, "Lecturer", "User", "System Lecturer", null, null, "Active" },
-                    { 3, "student@school.com", null, null, null, null, 0, false, null, null, "Student", "admin123", null, null, "Student", "User", "System Student", null, null, "Active" }
+                    { 1, "admin@school.com", null, null, null, null, 0, "False", null, null, "Admin", "admin123", null, null, "Administrator", "User", "System Admin", null, null, "Active" },
+                    { 2, "lecturer@school.com", null, null, null, null, 0, "False", null, null, "Lecturer", "admin123", null, null, "Lecturer", "User", "System Lecturer", null, null, "Active" },
+                    { 3, "student@school.com", null, null, null, null, 0, "False", null, null, "Student", "admin123", null, null, "Student", "User", "System Student", null, null, "Active" }
                 });
 
             migrationBuilder.InsertData(
-                table: "Modules",
-                columns: new[] { "ModuleID", "Duration", "ModuleName", "ModuleStatus", "ModuleType" },
-                values: new object[,]
-                {
-                    { 1, 12, "Mathematics 101", "Active", "Core" },
-                    { 2, 14, "Physics 101", "Active", "Core" },
-                    { 3, 15, "Chemistry 101", "Active", "Core" },
-                    { 4, 10, "Biology 101", "Active", "Core" },
-                    { 5, 16, "Computer Science 101", "Active", "Elective" },
-                    { 6, 12, "English Literature", "Active", "Elective" },
-                    { 7, 18, "History 101", "Active", "Core" },
-                    { 8, 12, "Philosophy 101", "Active", "Elective" },
-                    { 9, 12, "Psychology 101", "Active", "Elective" },
-                    { 10, 14, "Sociology 101", "Active", "Core" },
-                    { 11, 12, "Political Science 101", "Active", "Elective" },
-                    { 12, 16, "Economics 101", "Active", "Core" },
-                    { 13, 13, "Geography 101", "Active", "Elective" },
-                    { 14, 20, "Engineering 101", "Active", "Core" },
-                    { 15, 12, "Law 101", "Active", "Elective" },
-                    { 16, 18, "Medicine 101", "Active", "Core" },
-                    { 17, 14, "Nursing 101", "Active", "Core" },
-                    { 18, 14, "Business Management 101", "Active", "Elective" },
-                    { 19, 12, "Accounting 101", "Active", "Core" },
-                    { 20, 13, "Marketing 101", "Active", "Elective" },
-                    { 21, 12, "Design 101", "Active", "Core" },
-                    { 22, 12, "Art 101", "Active", "Elective" },
-                    { 23, 14, "Music 101", "Active", "Core" },
-                    { 24, 13, "Theater 101", "Active", "Elective" },
-                    { 25, 12, "Dance 101", "Active", "Elective" },
-                    { 26, 24, "Architecture 101", "Active", "Core" },
-                    { 27, 15, "Physics 201", "Active", "Core" },
-                    { 28, 12, "Statistics 101", "Active", "Elective" },
-                    { 29, 14, "Data Science 101", "Active", "Core" },
-                    { 30, 16, "Artificial Intelligence 101", "Active", "Elective" },
-                    { 31, 14, "Machine Learning 101", "Active", "Core" },
-                    { 32, 16, "Cloud Computing 101", "Active", "Elective" },
-                    { 33, 16, "Cyber Security 101", "Active", "Core" },
-                    { 34, 12, "Networking 101", "Active", "Elective" },
-                    { 35, 15, "Database Management 101", "Active", "Core" },
-                    { 36, 14, "Web Development 101", "Active", "Elective" },
-                    { 37, 14, "Game Development 101", "Active", "Core" },
-                    { 38, 15, "Cloud Architecture 101", "Active", "Elective" },
-                    { 39, 18, "Blockchain 101", "Active", "Core" },
-                    { 40, 12, "Digital Marketing 101", "Active", "Elective" },
-                    { 41, 13, "Human Resources 101", "Active", "Core" },
-                    { 42, 14, "Project Management 101", "Active", "Elective" },
-                    { 43, 15, "Operations Management 101", "Active", "Core" },
-                    { 44, 12, "Entrepreneurship 101", "Active", "Elective" },
-                    { 45, 12, "Public Relations 101", "Active", "Core" },
-                    { 46, 13, "Leadership 101", "Active", "Elective" },
-                    { 47, 14, "Sustainability 101", "Active", "Core" },
-                    { 48, 12, "Logistics 101", "Active", "Elective" },
-                    { 49, 16, "Supply Chain Management 101", "Active", "Core" },
-                    { 50, 15, "Business Analytics 101", "Active", "Elective" }
-                });
-
-            migrationBuilder.InsertData(
-                table: "assessmentTypes",
+                table: "AssessmentTypes",
                 columns: new[] { "AssessmentTypeID", "AssessmentTypeDescription", "AssessmentTypeStatus" },
                 values: new object[,]
                 {
@@ -275,6 +249,18 @@ namespace SchoolProject.Migrations
                     { 8, "Collection of work samples", "Active" },
                     { 9, "Scientific laboratory report", "Active" },
                     { 10, "Academic research paper", "Active" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Modules",
+                columns: new[] { "ModuleID", "Duration", "ModuleName", "ModuleStatus", "ModuleType" },
+                values: new object[,]
+                {
+                    { 1, 12, "Mathematics 101", "Active", "Core" },
+                    { 2, 14, "Physics 101", "Active", "Core" },
+                    { 3, 15, "Chemistry 101", "Active", "Core" },
+                    { 4, 10, "Biology 101", "Active", "Core" },
+                    { 5, 16, "Computer Science 101", "Active", "Elective" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -296,6 +282,16 @@ namespace SchoolProject.Migrations
                 name: "IX_LecturerModules_UserID",
                 table: "LecturerModules",
                 column: "UserID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_ReceiverId",
+                table: "Messages",
+                column: "ReceiverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Messages_SenderId",
+                table: "Messages",
+                column: "SenderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_RememberedDevices_UserId",
@@ -330,13 +326,16 @@ namespace SchoolProject.Migrations
                 name: "Assessments");
 
             migrationBuilder.DropTable(
+                name: "Messages");
+
+            migrationBuilder.DropTable(
                 name: "RememberedDevices");
 
             migrationBuilder.DropTable(
-                name: "StudentModules");
+                name: "AssessmentTypes");
 
             migrationBuilder.DropTable(
-                name: "assessmentTypes");
+                name: "StudentModules");
 
             migrationBuilder.DropTable(
                 name: "LecturerModules");

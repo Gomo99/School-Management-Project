@@ -12,8 +12,8 @@ using SchoolProject.Data;
 namespace SchoolProject.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250827164042_initial")]
-    partial class initial
+    [Migration("20250912134938_AddMessagesTable")]
+    partial class AddMessagesTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -52,8 +52,10 @@ namespace SchoolProject.Migrations
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsTwoFactorEnabled")
-                        .HasColumnType("bit");
+                    b.Property<string>("IsTwoFactorEnabled")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<DateTime?>("LastExternalLogin")
                         .HasColumnType("datetime2");
@@ -111,7 +113,7 @@ namespace SchoolProject.Migrations
                             UserID = 1,
                             Email = "admin@school.com",
                             FailedLoginAttempts = 0,
-                            IsTwoFactorEnabled = false,
+                            IsTwoFactorEnabled = "False",
                             Name = "Admin",
                             Password = "admin123",
                             Role = "Administrator",
@@ -124,8 +126,8 @@ namespace SchoolProject.Migrations
                             UserID = 2,
                             Email = "lecturer@school.com",
                             FailedLoginAttempts = 0,
-                            IsTwoFactorEnabled = false,
-                            Name = "lECTURE",
+                            IsTwoFactorEnabled = "False",
+                            Name = "Lecturer",
                             Password = "admin123",
                             Role = "Lecturer",
                             Surname = "User",
@@ -137,7 +139,7 @@ namespace SchoolProject.Migrations
                             UserID = 3,
                             Email = "student@school.com",
                             FailedLoginAttempts = 0,
-                            IsTwoFactorEnabled = false,
+                            IsTwoFactorEnabled = "False",
                             Name = "Student",
                             Password = "admin123",
                             Role = "Student",
@@ -196,7 +198,7 @@ namespace SchoolProject.Migrations
 
                     b.HasKey("AssessmentTypeID");
 
-                    b.ToTable("assessmentTypes");
+                    b.ToTable("AssessmentTypes");
 
                     b.HasData(
                         new
@@ -291,6 +293,50 @@ namespace SchoolProject.Migrations
                     b.ToTable("LecturerModules");
                 });
 
+            modelBuilder.Entity("SchoolProject.Models.Message", b =>
+                {
+                    b.Property<int>("MessageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("IsDeletedByReceiver")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("IsDeletedBySender")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ReceiverId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
+                });
+
             modelBuilder.Entity("SchoolProject.Models.Module", b =>
                 {
                     b.Property<int>("ModuleID")
@@ -359,366 +405,6 @@ namespace SchoolProject.Migrations
                             ModuleName = "Computer Science 101",
                             ModuleStatus = "Active",
                             ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 6,
-                            Duration = 12,
-                            ModuleName = "English Literature",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 7,
-                            Duration = 18,
-                            ModuleName = "History 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 8,
-                            Duration = 12,
-                            ModuleName = "Philosophy 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 9,
-                            Duration = 12,
-                            ModuleName = "Psychology 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 10,
-                            Duration = 14,
-                            ModuleName = "Sociology 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 11,
-                            Duration = 12,
-                            ModuleName = "Political Science 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 12,
-                            Duration = 16,
-                            ModuleName = "Economics 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 13,
-                            Duration = 13,
-                            ModuleName = "Geography 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 14,
-                            Duration = 20,
-                            ModuleName = "Engineering 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 15,
-                            Duration = 12,
-                            ModuleName = "Law 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 16,
-                            Duration = 18,
-                            ModuleName = "Medicine 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 17,
-                            Duration = 14,
-                            ModuleName = "Nursing 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 18,
-                            Duration = 14,
-                            ModuleName = "Business Management 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 19,
-                            Duration = 12,
-                            ModuleName = "Accounting 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 20,
-                            Duration = 13,
-                            ModuleName = "Marketing 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 21,
-                            Duration = 12,
-                            ModuleName = "Design 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 22,
-                            Duration = 12,
-                            ModuleName = "Art 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 23,
-                            Duration = 14,
-                            ModuleName = "Music 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 24,
-                            Duration = 13,
-                            ModuleName = "Theater 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 25,
-                            Duration = 12,
-                            ModuleName = "Dance 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 26,
-                            Duration = 24,
-                            ModuleName = "Architecture 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 27,
-                            Duration = 15,
-                            ModuleName = "Physics 201",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 28,
-                            Duration = 12,
-                            ModuleName = "Statistics 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 29,
-                            Duration = 14,
-                            ModuleName = "Data Science 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 30,
-                            Duration = 16,
-                            ModuleName = "Artificial Intelligence 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 31,
-                            Duration = 14,
-                            ModuleName = "Machine Learning 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 32,
-                            Duration = 16,
-                            ModuleName = "Cloud Computing 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 33,
-                            Duration = 16,
-                            ModuleName = "Cyber Security 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 34,
-                            Duration = 12,
-                            ModuleName = "Networking 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 35,
-                            Duration = 15,
-                            ModuleName = "Database Management 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 36,
-                            Duration = 14,
-                            ModuleName = "Web Development 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 37,
-                            Duration = 14,
-                            ModuleName = "Game Development 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 38,
-                            Duration = 15,
-                            ModuleName = "Cloud Architecture 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 39,
-                            Duration = 18,
-                            ModuleName = "Blockchain 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 40,
-                            Duration = 12,
-                            ModuleName = "Digital Marketing 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 41,
-                            Duration = 13,
-                            ModuleName = "Human Resources 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 42,
-                            Duration = 14,
-                            ModuleName = "Project Management 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 43,
-                            Duration = 15,
-                            ModuleName = "Operations Management 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 44,
-                            Duration = 12,
-                            ModuleName = "Entrepreneurship 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 45,
-                            Duration = 12,
-                            ModuleName = "Public Relations 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 46,
-                            Duration = 13,
-                            ModuleName = "Leadership 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 47,
-                            Duration = 14,
-                            ModuleName = "Sustainability 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 48,
-                            Duration = 12,
-                            ModuleName = "Logistics 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
-                        },
-                        new
-                        {
-                            ModuleID = 49,
-                            Duration = 16,
-                            ModuleName = "Supply Chain Management 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Core"
-                        },
-                        new
-                        {
-                            ModuleID = 50,
-                            Duration = 15,
-                            ModuleName = "Business Analytics 101",
-                            ModuleStatus = "Active",
-                            ModuleType = "Elective"
                         });
                 });
 
@@ -739,8 +425,10 @@ namespace SchoolProject.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("Revoked")
-                        .HasColumnType("bit");
+                    b.Property<string>("Revoked")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
@@ -835,6 +523,25 @@ namespace SchoolProject.Migrations
                     b.Navigation("Lecturer");
 
                     b.Navigation("Module");
+                });
+
+            modelBuilder.Entity("SchoolProject.Models.Message", b =>
+                {
+                    b.HasOne("SchoolProject.Models.Account", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SchoolProject.Models.Account", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("SchoolProject.Models.RememberedDevice", b =>
