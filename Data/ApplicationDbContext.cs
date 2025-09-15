@@ -21,6 +21,22 @@ namespace SchoolProject.Data
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<Message> Messages { get; set; }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // === Conversions ===

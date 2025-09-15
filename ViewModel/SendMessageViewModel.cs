@@ -12,5 +12,6 @@ namespace SchoolProject.ViewModel
         [MaxLength(500)]
         [Display(Name = "Message")]
         public string Content { get; set; }
+
     }
 }

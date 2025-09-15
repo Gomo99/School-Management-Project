@@ -16,6 +16,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace SchoolProject.Controllers
 {
@@ -27,15 +28,32 @@ namespace SchoolProject.Controllers
         private const int MaxFailedAttempts = 5;
         private static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
         private readonly IMessageService _messageService;
+        private readonly IRealTimeMessageService _realTimeService;
+        private readonly IConfiguration _config;
 
-        public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService
-, IMessageService messageService )
+
+        public AccountController(ApplicationDbContext context, EmailService emailService, TwoFactorAuthService twoFactorService,
+             IMessageService messageService, IRealTimeMessageService realTimeService, IConfiguration config)
         {
             _context = context;
             _emailService = emailService;
             _twoFactorService = twoFactorService;
             _messageService = messageService;
+            _realTimeService = realTimeService;
+            
+            _config = config;
         }
+
+
+
+
+
+
+
+
+
+
+
 
         [HttpGet]
         public IActionResult Login()
@@ -258,9 +276,6 @@ namespace SchoolProject.Controllers
             TempData["ErrorMessage"] = "Invalid PIN or PIN has expired.";
             return View();
         }
-
-
-
 
 
 
@@ -1435,6 +1450,8 @@ namespace SchoolProject.Controllers
             var userIdClaim = User.FindFirst("UserID");
             return userIdClaim != null ? int.Parse(userIdClaim.Value) : 0;
         }
+
+
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> Inbox()
@@ -1444,9 +1461,11 @@ namespace SchoolProject.Controllers
 
             var messages = await _messageService.GetInboxAsync(userId);
             ViewBag.UnreadCount = await _messageService.GetUnreadCountAsync(userId);
+            ViewBag.CurrentUserId = userId; // Add this line
 
             return View(messages);
         }
+
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> Sent()
@@ -1473,8 +1492,13 @@ namespace SchoolProject.Controllers
                 return RedirectToAction("Inbox");
             }
 
+            // Pass both the message and user ID to the view
+            ViewBag.CurrentUserId = userId;
+            ViewBag.SenderId = message.SenderId; // Add sender ID if needed
+
             return View(message);
         }
+
 
         [Authorize]
         [HttpGet]
@@ -1556,9 +1580,6 @@ namespace SchoolProject.Controllers
         }
 
 
-
-
-
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1574,7 +1595,6 @@ namespace SchoolProject.Controllers
                     .Select(u => new { u.UserID, FullName = $"{u.Name} {u.Surname} ({u.Email})" })
                     .ToList();
 
-                // Preserve reply/forward context for the view
                 if (replyToMessageId.HasValue)
                 {
                     ViewBag.IsReply = true;
@@ -1620,7 +1640,6 @@ namespace SchoolProject.Controllers
             // Handle reply logic
             if (replyToMessageId.HasValue)
             {
-                // Verify the user has permission to reply to this message
                 var originalMessage = await _context.Messages
                     .FirstOrDefaultAsync(m => m.MessageId == replyToMessageId.Value && m.ReceiverId == userId);
 
@@ -1630,10 +1649,10 @@ namespace SchoolProject.Controllers
                     return RedirectToAction("Inbox");
                 }
 
-                // For replies, we use the original sender as recipient
                 model.ReceiverId = originalMessage.SenderId;
             }
 
+            // Send message (this already attaches files)
             var success = await _messageService.SendMessageAsync(userId, model.ReceiverId, model.Content);
 
             if (success)
@@ -1651,6 +1670,7 @@ namespace SchoolProject.Controllers
                 return View(model);
             }
         }
+
 
         [Authorize]
         [HttpPost]
@@ -1680,6 +1700,8 @@ namespace SchoolProject.Controllers
             await _messageService.MarkAsReadAsync(id, userId);
             return Ok();
         }
+
+
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetUnreadCount()
@@ -1690,35 +1712,37 @@ namespace SchoolProject.Controllers
             var count = await _messageService.GetUnreadCountAsync(userId);
             return Json(count);
         }
-    
+
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartTyping(int conversationId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return Unauthorized();
+
+            await _realTimeService.NotifyTyping(conversationId, userId, true);
+            return Ok();
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StopTyping(int conversationId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == 0) return Unauthorized();
+
+            await _realTimeService.NotifyTyping(conversationId, userId, false);
+            return Ok();
+        }
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+     
 
 
 
@@ -1829,5 +1853,8 @@ namespace SchoolProject.Controllers
             // Delete cookie on this browser (other browsers still hold their own cookies)
             Response.Cookies.Delete(TwoFactorRememberCookie);
         }
+
+
+
     }
 }

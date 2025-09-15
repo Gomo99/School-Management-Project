@@ -44,6 +44,10 @@
                                 </form>
                             </li>
                         </ul>
+
+
+
+
                     </div>
                 </div>
             </div>
@@ -89,6 +93,10 @@
                 </div>
             </div>
 
+
+       
+
+
             <!-- Navigation to adjacent messages -->
             <div class="d-flex justify-content-between mt-4">
                 <a href="#" class="btn btn-sm btn-outline-secondary">
@@ -102,8 +110,23 @@
     </div>
 </div>
 
+<!-- Typing Indicator -->
+<div id="typing-indicator" style="display: none;">
+    <em>User is typing...</em>
+</div>
+
 <!-- Bootstrap Icons -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+
+<!-- JavaScript Variables -->
+<script>
+    const currentUserId = @ViewBag.CurrentUserId;
+    const senderId = @Model.SenderId;
+    const messageId = @Model.MessageId;
+</script>
+
+<!-- SignalR Script -->
+<script src="~/js/messaging.js"></script>
 
 <style>
     .message-content {
@@ -125,9 +148,6 @@
         border-radius: 0.5rem;
     }
 </style>
-
-
-
 
 @section Scripts {
     <script>

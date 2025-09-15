@@ -37,9 +37,15 @@ namespace SchoolProject.Models
 
         [ForeignKey("ReceiverId")]
         public virtual Account Receiver { get; set; }
+
+
+        public bool IsRead { get; set; } = false;
+
+        
+
     }
 
-   
 
-  
+
+
 }

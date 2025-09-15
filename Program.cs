@@ -5,7 +5,6 @@ using SchoolProject.Service;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services
@@ -15,12 +14,16 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TwoFactorAuthService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<MessageHub>();
 
-// Program.cs
+
+// Add these service registrations
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IRealTimeMessageService, RealTimeMessageService>();
+
 builder.Services.AddDataProtection()
     .UseEphemeralDataProtectionProvider();
-
 
 builder.Services.AddAuthentication(options =>
 {
@@ -49,9 +52,7 @@ builder.Services.AddAuthentication(options =>
     options.Scope.Add("openid");
     options.Scope.Add("profile");
     options.Scope.Add("email");
-
 });
-
 
 builder.Services.AddSession(options =>
 {
@@ -60,17 +61,9 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-
-
 var app = builder.Build();
 
-// Optional logging
-app.Lifetime.ApplicationStopping.Register(() =>
-{
-    Console.WriteLine("App is shutting down. Cookies will become invalid.");
-});
-
-// Pipeline
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -78,12 +71,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseStaticFiles();
+app.MapHub<MessageHub>("/messageHub");
 
 app.MapControllerRoute(
     name: "default",

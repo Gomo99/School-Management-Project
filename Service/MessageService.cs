@@ -8,29 +8,59 @@ namespace SchoolProject.Service
     public class MessageService : IMessageService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IRealTimeMessageService _realTimeService;
 
-        public MessageService(ApplicationDbContext context)
+        public MessageService(ApplicationDbContext context, IRealTimeMessageService realTimeService
+           )
         {
             _context = context;
+            _realTimeService = realTimeService;
+           
         }
 
         public async Task<bool> SendMessageAsync(int senderId, int receiverId, string content)
         {
-            if (senderId == receiverId)
-                return false;
-
+            // 1) create message and save to get MessageId
             var message = new Message
             {
                 SenderId = senderId,
                 ReceiverId = receiverId,
                 Content = content,
-                SentAt = DateTime.UtcNow
+                SentAt = DateTime.UtcNow,
+                IsRead = false
             };
 
             _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
+            var saved = await _context.SaveChangesAsync() > 0;
+            if (!saved)
+                return false;
+
+
+            // 3) Reload the message including attachments (and optionally sender/receiver) to build a clean object to broadcast
+            var messageToBroadcast = await _context.Messages
+                .Include(m => m.Sender)   // optional: include sender info if your real-time consumers need it
+                .FirstOrDefaultAsync(m => m.MessageId == message.MessageId);
+
+            // 4) Notify receiver in real-time (single notification)
+            await _realTimeService.NotifyNewMessage(receiverId, messageToBroadcast);
+
+            // 5) Update unread count (declare once)
+            var unreadCount = await GetUnreadCountAsync(receiverId);
+            await _realTimeService.UpdateUnreadCount(receiverId, unreadCount);
+
             return true;
         }
+
+
+
+
+
+
+
+
+
+
+
 
         public async Task<List<MessageViewModel>> GetInboxAsync(int userId)
         {
@@ -93,22 +123,40 @@ namespace SchoolProject.Service
                 Content = message.Content,
                 SentAt = message.SentAt,
                 ReadAt = message.ReadAt,
-                IsRead = message.ReadAt.HasValue
+                IsRead = message.ReadAt.HasValue,
+               
             };
+
         }
+
 
         public async Task<bool> MarkAsReadAsync(int messageId, int userId)
         {
             var message = await _context.Messages
                 .FirstOrDefaultAsync(m => m.MessageId == messageId && m.ReceiverId == userId);
 
-            if (message == null || message.ReadAt.HasValue)
-                return false;
+            if (message != null && !message.IsRead)
+            {
+                message.IsRead = true;
+                message.ReadAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
 
-            message.ReadAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
-            return true;
+                // Notify in real-time
+                await _realTimeService.NotifyMessageRead(messageId, userId);
+
+                // Update unread count
+                var unreadCount = await GetUnreadCountAsync(userId);
+                await _realTimeService.UpdateUnreadCount(userId, unreadCount);
+
+                return true; // ✅ message was successfully marked as read
+            }
+
+            return false; // ❌ nothing changed
         }
+
+
+
+
 
         public async Task<bool> DeleteMessageAsync(int messageId, int userId)
         {
@@ -123,9 +171,8 @@ namespace SchoolProject.Service
             else
                 message.IsDeletedByReceiver = true;
 
-            // If both parties deleted, remove from database
-            if (message.IsDeletedBySender && message.IsDeletedByReceiver)
-                _context.Messages.Remove(message);
+           
+
 
             await _context.SaveChangesAsync();
             return true;

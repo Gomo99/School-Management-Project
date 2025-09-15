@@ -56,5 +56,8 @@ namespace SchoolProject.Service
                 await client.DisconnectAsync(true);
             }
         }
+
+
+
     }
 }

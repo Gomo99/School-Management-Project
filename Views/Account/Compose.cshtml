@@ -59,22 +59,7 @@
                             <input type="hidden" name="forwardMessageId" value="@ViewBag.ForwardMessageId" />
                         }
 
-                        <!-- Alert Messages -->
-                        @if (TempData["SuccessMessage"] != null)
-                        {
-                            <div class="alert alert-success alert-dismissible fade show rounded-3" role="alert">
-                                <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        }
-
-                        @if (TempData["ErrorMessage"] != null)
-                        {
-                            <div class="alert alert-danger alert-dismissible fade show rounded-3" role="alert">
-                                <i class="bi bi-exclamation-circle-fill me-2"></i> @TempData["ErrorMessage"]
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        }
+                      
 
                         <!-- Recipient Selection -->
                         <div class="mb-4">
@@ -167,6 +152,12 @@
                                 </div>
                             </div>
                         </div>
+
+
+
+
+
+
 
                         <!-- Action Buttons -->
                         <div class="d-flex justify-content-between align-items-center pt-3 border-top">
@@ -531,5 +522,33 @@
                 }
             }, 30000);
         });
+
+
+
+
+
+                document.addEventListener('DOMContentLoaded', () => {
+          const fileInput = document.getElementById('fileInput');
+          const attachmentsList = document.getElementById('attachmentsList');
+          const form = document.getElementById('composeForm');
+
+          // get antiforgery token from form
+          const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+          const token = tokenInput ? tokenInput.value : '';
+
+          fileInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            for (const file of files) {
+              // client-side quick checks (size & ext)
+              // optionally show spinner
+              const fd = new FormData();
+              fd.append('file', file);
+              fd.append('__RequestVerificationToken', token);
+
+                 
+
+
+
+
     </script>
 }
