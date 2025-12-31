@@ -166,6 +166,9 @@ namespace SchoolProject.Controllers
             return RedirectBasedOnRole(user.Role);
         }
 
+
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -1238,6 +1241,17 @@ namespace SchoolProject.Controllers
             };
         }
 
+
+
+
+
+
+
+
+
+
+
+
         [HttpPost]
         [AllowAnonymous]
         public IActionResult GoogleLogin(string returnUrl = "/")
@@ -1439,6 +1453,12 @@ namespace SchoolProject.Controllers
             await HttpContext.SignOutAsync(GoogleDefaults.AuthenticationScheme);
             return RedirectToAction("ViewProfile");
         }
+
+
+
+
+
+
 
 
 
