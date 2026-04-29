@@ -1,0 +1,998 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] – SchoolProject Lecturer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Nunito:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --sidebar-bg: #1e1b4b;
+            --sidebar-hover: #312e81;
+            --sidebar-active: #6366f1;
+            --sidebar-text: #a5b4fc;
+            --sidebar-text-active: #ffffff;
+            --body-bg: #f0f4f9;
+            --card-bg: #ffffff;
+            --primary: #6366f1;
+            --primary-light: #e0e7ff;
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 2px 12px rgba(99,102,241,.08);
+            --shadow-lg: 0 8px 32px rgba(99,102,241,.14);
+            --radius: 12px;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--body-bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, h6, .display-font {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* ── Sidebar ── */
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            transition: transform .28s cubic-bezier(.4,0,.2,1);
+            box-shadow: 4px 0 24px rgba(0,0,0,.18);
+        }
+
+        .sidebar-brand {
+            padding: 28px 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+
+            .sidebar-brand .brand-logo {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                text-decoration: none;
+            }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .brand-text .app-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .brand-text .app-sub {
+            font-size: 11px;
+            color: var(--sidebar-text);
+            letter-spacing: .5px;
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 0;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: rgba(165,180,252,.45);
+            padding: 14px 24px 6px;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 24px;
+            text-decoration: none;
+            color: var(--sidebar-text);
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 0;
+            transition: all .18s;
+            border-left: 3px solid transparent;
+        }
+
+            .nav-item a:hover {
+                background: var(--sidebar-hover);
+                color: var(--sidebar-text-active);
+            }
+
+            .nav-item a.active {
+                background: rgba(99,102,241,.18);
+                color: var(--sidebar-text-active);
+                border-left-color: var(--sidebar-active);
+            }
+
+            .nav-item a i {
+                font-size: 17px;
+                width: 20px;
+                text-align: center;
+            }
+
+        .sidebar-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255,255,255,.06);
+        }
+
+            .sidebar-footer a {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: var(--sidebar-text);
+                text-decoration: none;
+                font-size: 14px;
+                font-weight: 500;
+                padding: 8px 0;
+                transition: color .18s;
+            }
+
+                .sidebar-footer a:hover {
+                    color: var(--danger);
+                }
+
+        /* ── Main content ── */
+        #main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Topbar ── */
+        .topbar {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        .topbar-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 19px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* ── Page body ── */
+        .page-body {
+            flex: 1;
+            padding: 32px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+            .page-header h1 {
+                font-size: 26px;
+                font-weight: 700;
+                color: var(--text);
+                margin: 0;
+            }
+
+            .page-header p {
+                font-size: 14px;
+                color: var(--muted);
+                margin: 2px 0 0;
+            }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .card-header-custom {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+        }
+
+            .card-header-custom h5 {
+                font-family: 'Outfit', sans-serif;
+                font-size: 16px;
+                font-weight: 600;
+                margin: 0;
+                color: var(--text);
+            }
+
+        .card-body-custom {
+            padding: 24px;
+        }
+
+        /* ── Stat cards ── */
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-lg);
+            }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+            .stat-icon.indigo {
+                background: #e0e7ff;
+                color: var(--primary);
+            }
+
+            .stat-icon.green {
+                background: #d1fae5;
+                color: var(--success);
+            }
+
+            .stat-icon.amber {
+                background: #fef3c7;
+                color: var(--warning);
+            }
+
+            .stat-icon.red {
+                background: #fee2e2;
+                color: var(--danger);
+            }
+
+            .stat-icon.purple {
+                background: #ede9fe;
+                color: #8b5cf6;
+            }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.1;
+        }
+
+        /* ── Tables ── */
+        .table-custom {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+            .table-custom thead th {
+                background: #f8fafc;
+                font-family: 'Outfit', sans-serif;
+                font-size: 12px;
+                font-weight: 600;
+                letter-spacing: .6px;
+                text-transform: uppercase;
+                color: var(--muted);
+                padding: 12px 16px;
+                border-bottom: 1px solid var(--border);
+                white-space: nowrap;
+            }
+
+            .table-custom tbody tr {
+                transition: background .15s;
+            }
+
+                .table-custom tbody tr:hover {
+                    background: #f8fafc;
+                }
+
+            .table-custom tbody td {
+                padding: 13px 16px;
+                border-bottom: 1px solid var(--border);
+                font-size: 14px;
+                color: var(--text);
+                vertical-align: middle;
+            }
+
+            .table-custom tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+        /* ── Badges ── */
+        .badge-custom {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .2px;
+        }
+
+        .badge-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-completed {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .badge-missed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-rescheduled {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .badge-notstarted {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .badge-student {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-lecturer {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        /* ── Buttons ── */
+        .btn-primary-custom {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .18s, transform .15s, box-shadow .15s;
+        }
+
+            .btn-primary-custom:hover {
+                background: #4f46e5;
+                color: #fff;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(99,102,241,.3);
+            }
+
+        .btn-secondary-custom {
+            background: #f1f5f9;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .18s;
+        }
+
+            .btn-secondary-custom:hover {
+                background: #e2e8f0;
+                color: var(--text);
+            }
+
+        .btn-danger-custom {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .18s;
+        }
+
+            .btn-danger-custom:hover {
+                background: #dc2626;
+                color: #fff;
+            }
+
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all .18s;
+        }
+
+            .btn-icon:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--shadow);
+            }
+
+            .btn-icon.edit {
+                color: var(--primary);
+            }
+
+                .btn-icon.edit:hover {
+                    background: var(--primary-light);
+                    border-color: var(--primary);
+                }
+
+            .btn-icon.view {
+                color: var(--success);
+            }
+
+                .btn-icon.view:hover {
+                    background: #d1fae5;
+                    border-color: var(--success);
+                }
+
+            .btn-icon.delete {
+                color: var(--danger);
+            }
+
+                .btn-icon.delete:hover {
+                    background: #fee2e2;
+                    border-color: var(--danger);
+                }
+
+        /* ── Forms ── */
+        .form-label-custom {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .form-control-custom, .form-select-custom {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text);
+            background: #fff;
+            font-family: 'Nunito', sans-serif;
+            transition: border-color .18s, box-shadow .18s;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+            .form-control-custom:focus, .form-select-custom:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+            }
+
+            .form-control-custom.is-invalid {
+                border-color: var(--danger);
+            }
+
+        .form-group-custom {
+            margin-bottom: 20px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .form-error {
+            font-size: 12px;
+            color: var(--danger);
+            margin-top: 4px;
+        }
+
+        /* ── Alert messages ── */
+        .alert-custom {
+            padding: 13px 18px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .alert-success-custom {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-error-custom {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* ── Delete confirm card ── */
+        .delete-card {
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .delete-icon-wrap {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: #fee2e2;
+            color: var(--danger);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+        }
+
+        /* ── Details card ── */
+        .detail-row {
+            display: flex;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+            align-items: flex-start;
+        }
+
+            .detail-row:last-child {
+                border-bottom: none;
+            }
+
+        .detail-label {
+            width: 180px;
+            flex-shrink: 0;
+            font-weight: 600;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .detail-value {
+            color: var(--text);
+            flex: 1;
+        }
+
+        /* ── Search bar ── */
+        .search-wrap {
+            position: relative;
+            max-width: 280px;
+        }
+
+            .search-wrap i {
+                position: absolute;
+                left: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: var(--muted);
+                font-size: 16px;
+                pointer-events: none;
+            }
+
+            .search-wrap input {
+                padding-left: 38px !important;
+            }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-custom {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+            .breadcrumb-custom a {
+                color: var(--primary);
+                text-decoration: none;
+            }
+
+                .breadcrumb-custom a:hover {
+                    text-decoration: underline;
+                }
+
+            .breadcrumb-custom span {
+                color: var(--muted);
+            }
+
+        /* ── Animations ── */
+        .fade-in {
+            animation: fadeIn .35s ease;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Scrollbar ── */
+        .sidebar-nav::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,.12);
+            border-radius: 4px;
+        }
+
+        /* ── Mobile ── */
+        @@media (max-width: 991px) {
+            #sidebar {
+                transform: translateX(-100%);
+            }
+
+                #sidebar.show {
+                    transform: translateX(0);
+                }
+
+            #main-content {
+                margin-left: 0;
+            }
+
+            .page-body {
+                padding: 20px 16px;
+            }
+        }
+    </style>
+    @RenderSection("Styles", required: false)
+</head>
+<body>
+
+    <!-- ══ SIDEBAR ══ -->
+    <aside id="sidebar">
+        <div class="sidebar-brand">
+            <a class="brand-logo" href="/Lecturer/Dashboard">
+                <div class="brand-icon"><i class="bi bi-mortarboard-fill"></i></div>
+                <div class="brand-text">
+                    <div class="app-name">SchoolProject</div>
+                    <div class="app-sub">Lecturer Portal</div>
+                </div>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Overview</div>
+            <div class="nav-item">
+                <a href="/Lecturer/Dashboard" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-grid-1x2-fill"></i> Dashboard
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/Lecturer/ListModules" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "ListModules" ? "active" : "")">
+                    <i class="bi bi-book-fill"></i> My Modules
+                </a>
+            </div>
+
+            <div class="nav-section-label">Assessments</div>
+            <div class="nav-item">
+                <a href="/Lecturer/ManageAssessments" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "ManageAssessments" ? "active" : "")">
+                    <i class="bi bi-list-check"></i> All Assessments
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/Lecturer/AddAssessment" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "AddAssessment" ? "active" : "")">
+                    <i class="bi bi-plus-circle"></i> Create Assessment
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/Lecturer/ManageAssessmentType" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "ManageAssessmentType" ? "active" : "")">
+                    <i class="bi bi-gear-fill"></i> Assessment Types
+                </a>
+            </div>
+
+            <div class="nav-section-label">Students</div>
+            <div class="nav-item">
+                <a href="/Lecturer/LookupStudents" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "LookupStudents" ? "active" : "")">
+                    <i class="bi bi-people-fill"></i> My Students
+                </a>
+            </div>
+
+            <div class="nav-section-label">Reports</div>
+            <div class="nav-item">
+                <a href="/Lecturer/AssessmentReport" class="@(ViewContext.RouteData.Values["Action"]?.ToString() == "AssessmentReport" ? "active" : "")">
+                    <i class="bi bi-graph-up"></i> Assessment Report
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/Account/Logout">
+                <i class="bi bi-box-arrow-left"></i> Sign Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- ══ MAIN ══ -->
+    <div id="main-content">
+        <header class="topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn-icon d-lg-none" onclick="document.getElementById('sidebar').classList.toggle('show')"
+                        style="border:none; background:none; font-size:22px; color:var(--text);">
+                    <i class="bi bi-list"></i>
+                </button>
+                <span class="topbar-title">@ViewData["Title"]</span>
+            </div>
+            <div class="topbar-right">
+                <!-- ── Notification Bell ── -->
+                <div class="dropdown" id="notificationDropdown">
+                    <button class="btn btn-link position-relative" type="button" id="bellButton"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-bell-fill" style="font-size:1.4rem; color:var(--text);"></i>
+                        <span id="notificationBadge"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                              style="display:none;">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bellButton">
+                        <h6 class="dropdown-header">Notifications</h6>
+                        <div id="notificationItems" class="px-2">
+                            <div class="text-muted text-center py-3">Loading...</div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" onclick="markAllAsRead(); return false;" class="dropdown-item text-primary small">Mark all as read</a>
+                    </div>
+                </div>
+
+                <div class="topbar-user">
+                    <div class="user-avatar">@(User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "L")</div>
+                    <span>@User.Identity?.Name</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="page-body fade-in">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert-custom alert-success-custom">
+                    <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert-custom alert-error-custom">
+                    <i class="bi bi-exclamation-circle-fill"></i> @TempData["ErrorMessage"]
+                </div>
+            }
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+
+    <!-- ── Real‑time notification logic ── -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get current user ID from claims
+            const userId = '@(User.FindFirst("UserID")?.Value)';
+            if (!userId) return;
+
+            // SignalR connection
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/messageHub")
+                .build();
+
+            connection.start().then(function () {
+                connection.invoke("JoinUserGroup", parseInt(userId)).catch(console.error);
+            }).catch(console.error);
+
+            connection.on("ReceiveNotification", function (data) {
+                // Show a simple toast (you can improve this)
+                showToast(data.message, data.type === 'deadline_reminder' ? 'warning' : 'info');
+                loadNotifications(); // refresh dropdown
+            });
+
+            // Load initial notifications
+            loadNotifications();
+
+            async function loadNotifications() {
+                try {
+                    const res = await fetch(`/Notifications/GetNotifications`);
+                    if (!res.ok) return;
+                    const notifications = await res.json();
+                    renderNotifications(notifications);
+                    const unread = notifications.filter(n => !n.isRead).length;
+                    updateBadge(unread);
+                } catch (ex) {
+                    console.error("Failed to load notifications", ex);
+                }
+            }
+
+            function renderNotifications(items) {
+                const container = document.getElementById('notificationItems');
+                if (!items.length) {
+                    container.innerHTML = '<div class="text-muted text-center py-3">No notifications</div>';
+                    return;
+                }
+                let html = '';
+                items.forEach(n => {
+                    const date = new Date(n.createdAt);
+                    const timeAgo = moment ? moment(date).fromNow() : date.toLocaleString();
+                    html += `<div class="dropdown-item d-flex justify-content-between align-items-start p-2">
+                        <span class="me-2">${n.message}</span>
+                        <div class="d-flex align-items-center">
+                            <small class="text-muted me-2">${timeAgo}</small>
+                            ${!n.isRead ? '<i class="bi bi-circle-fill text-primary" style="font-size:8px;"></i>' : ''}
+                            <button class="btn btn-sm ms-1" title="Mark read" onclick="markAsRead(${n.notificationID})" style="padding:0; line-height:1;">
+                                <i class="bi bi-check2"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+
+            function updateBadge(count) {
+                const badge = document.getElementById('notificationBadge');
+                if (count > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.textContent = count;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            function showToast(message, type) {
+                // Simple alert for now; replace with Bootstrap toast if desired
+                alert(message);
+            }
+
+            window.markAsRead = async function(id) {
+                try {
+                    await fetch(`/Notifications/MarkNotificationRead?id=${id}`, { method: 'POST' });
+                    loadNotifications();
+                } catch (ex) {
+                    console.error("Mark read failed", ex);
+                }
+            };
+
+            window.markAllAsRead = async function() {
+                try {
+                    await fetch(`/Notifications/MarkAllNotificationsRead`, { method: 'POST' });
+                    loadNotifications();
+                } catch (ex) {
+                    console.error("Mark all read failed", ex);
+                }
+            };
+        });
+    </script>
+</body>
+</html>

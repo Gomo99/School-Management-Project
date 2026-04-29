@@ -1,34 +1,37 @@
 ﻿@model IEnumerable<SchoolProject.Models.Assessment>
 @{
-    ViewData["Title"] = "All Assessments";
-    Layout = "~/Views/Shared/_LecturerLayout.cshtml";
+    ViewData["Title"] = "Module Assessments";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
 }
 
 <div class="page-header">
     <div>
-        <h1>All Assessments</h1>
-        <p>Assessments you've created for your modules.</p>
+        <div class="breadcrumb-custom">
+            <a href="/Student/Dashboard">Dashboard</a>
+            <span>/</span>
+            <span>@ViewBag.ModuleName</span>
+        </div>
+        <h1>@ViewBag.ModuleName</h1>
+        <p>View and update your assessment statuses.</p>
     </div>
-    <a href="/Lecturer/AddAssessment" class="btn-primary-custom">
-        <i class="bi bi-plus-circle"></i> New Assessment
+    <a href="/Student/Dashboard" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back to Modules
     </a>
 </div>
 
 <div class="card">
     <div class="card-header-custom">
-        <h5><i class="bi bi-list-check me-2" style="color:var(--primary);"></i>Assessments</h5>
-        <span class="badge-custom badge-active">@Model.Count() records</span>
+        <h5><i class="bi bi-card-checklist me-2" style="color:var(--primary);"></i>Assessments</h5>
+        <span class="badge-custom badge-pending">@Model.Count() items</span>
     </div>
     <div style="overflow-x:auto;">
         <table class="table-custom">
             <thead>
                 <tr>
-                    <th>Student</th>
-                    <th>Module</th>
                     <th>Type</th>
                     <th>Due Date</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,9 +40,7 @@
                     @foreach (var a in Model)
                     {
                         <tr>
-                            <td>@a.StudentModule?.Student?.Name @a.StudentModule?.Student?.Surname</td>
-                            <td>@a.StudentModule?.LecturerModule?.Module?.ModuleName</td>
-                            <td>@a.AssessmentType?.AssessmentTypeDescription</td>
+                            <td><strong>@a.AssessmentType.AssessmentTypeDescription</strong></td>
                             <td>@a.DueDate.ToString("dd MMM yyyy")</td>
                             <td>
                                 @switch (a.AssessmentStatus)
@@ -59,10 +60,9 @@
                                 }
                             </td>
                             <td>
-                                <div class="d-flex gap-1">
-                                    <a href="/Lecturer/EditAssessment/@a.AssessmentID" class="btn-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
-                                    <a href="/Lecturer/DeleteAssessment/@a.AssessmentID" class="btn-icon delete" title="Delete"><i class="bi bi-trash"></i></a>
-                                </div>
+                                <a href="/Student/UpdateAssessmentStatus/@a.AssessmentID" class="btn-primary-custom" style="padding:6px 14px; font-size:13px;">
+                                    <i class="bi bi-pencil-square"></i> Update
+                                </a>
                             </td>
                         </tr>
                     }
@@ -70,9 +70,9 @@
                 else
                 {
                     <tr>
-                        <td colspan="6" class="text-center py-4" style="color:var(--muted);">
+                        <td colspan="4" class="text-center py-4" style="color:var(--muted);">
                             <i class="bi bi-inbox" style="font-size:28px; display:block; margin-bottom:6px;"></i>
-                            No assessments found.
+                            No assessments available for this module.
                         </td>
                     </tr>
                 }
@@ -80,3 +80,7 @@
         </table>
     </div>
 </div>
+
+@section Styles {
+    <partial name="_BadgeStyles" />
+}

@@ -1,52 +1,83 @@
-﻿@model SchoolProject.Models.Module
-
+@model SchoolProject.Models.Module
 @{
     ViewData["Title"] = "Module Details";
-}
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-<div class="container mt-5">
-    <div class="card shadow-lg rounded-4">
-        <div class="card-header bg-info text-white rounded-top-4">
-            <h4 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i> Module Details</h4>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageModules">Modules</a>
+            <span>/</span> Details
         </div>
-        <div class="card-body bg-light rounded-bottom-4">
-            <dl class="row fs-5">
-                <dt class="col-sm-4 text-end fw-semibold">📘 Module Name:</dt>
-                <dd class="col-sm-8">@Model.ModuleName</dd>
-
-                <dt class="col-sm-4 text-end fw-semibold">⏱️ Duration:</dt>
-                <dd class="col-sm-8">@Model.Duration</dd>
-
-                <dt class="col-sm-4 text-end fw-semibold">🏷️ Type:</dt>
-                <dd class="col-sm-8">@Model.ModuleType</dd>
-
-                <dt class="col-sm-4 text-end fw-semibold">📍 Status:</dt>
-                <dd class="col-sm-8">
-                    <span class="badge @GetStatusBadgeClass(Model.ModuleStatus)">
-                        @Model.ModuleStatus
-                    </span>
-                </dd>
-            </dl>
-        </div>
-        <div class="card-footer text-end bg-white rounded-bottom-4">
-            <a asp-action="ManageModules" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left-circle me-1"></i> Back to List
-            </a>
-        </div>
+        <h1>Module Details</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Admin/EditModule/@Model.ModuleID" class="btn-primary-custom">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="/Admin/ManageModules" class="btn-secondary-custom">
+            <i class="bi bi-arrow-left"></i> Back
+        </a>
     </div>
 </div>
 
-@functions {
-    string GetStatusBadgeClass(ModuleStatus status)
-    {
-        return status switch
-        {
-            ModuleStatus.Active => "bg-success",
-            ModuleStatus.Inactive => "bg-secondary",
-            _ => "bg-dark"
-        };
-    }
-}
+<div style="max-width:640px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-book-fill me-2" style="color:var(--primary);"></i>@Model.ModuleName</h5>
+            @if (Model.ModuleStatus.ToString() == "Active")
+            {
+                <span class="badge-custom badge-active"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Active</span>
+            }
+            else
+            {
+                <span class="badge-custom badge-inactive"><i class="bi bi-circle-fill me-1" style="font-size:7px;"></i>Inactive</span>
+            }
+        </div>
+        <div class="card-body-custom">
+            <div class="detail-row">
+                <div class="detail-label">Module ID</div>
+                <div class="detail-value" style="font-family:'Outfit',sans-serif; font-weight:600; color:var(--primary);">#@Model.ModuleID</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Module Name</div>
+                <div class="detail-value"><strong>@Model.ModuleName</strong></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Duration</div>
+                <div class="detail-value">@Model.Duration weeks</div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Module Type</div>
+                <div class="detail-value">
+                    <span class="badge-custom badge-student">@Model.ModuleType</span>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">Status</div>
+                <div class="detail-value">
+                    @if (Model.ModuleStatus.ToString() == "Active")
+                    {
+                        <span class="badge-custom badge-active">Active</span>
+                    }
+                    else
+                    {
+                        <span class="badge-custom badge-inactive">Inactive</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <a href="/Admin/EditModule/@Model.ModuleID" class="btn-primary-custom">
+            <i class="bi bi-pencil"></i> Edit Module
+        </a>
+        <a href="/Admin/DeleteModule/@Model.ModuleID" class="btn-danger-custom">
+            <i class="bi bi-trash"></i> Deactivate
+        </a>
+    </div>
+</div>

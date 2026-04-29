@@ -1,47 +1,68 @@
-﻿@model SchoolProject.Models.LecturerModule
-
+@model SchoolProject.Models.LecturerModule
 @{
-    ViewData["Title"] = "Remove Lecturer From Module";
+    ViewData["Title"] = "Remove Lecturer Module";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
-}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageLecturerModules">Lecturer Modules</a>
+            <span>/</span> Remove
+        </div>
+        <h1>Remove Assignment</h1>
+    </div>
+</div>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-6">
-            <!-- Card Layout for a desktop-like feel -->
-            <div class="card shadow-lg">
-                <div class="card-header bg-danger text-white text-center">
-                    <h4>Confirm Removal</h4>
-                </div>
-                <div class="card-body">
-                    <p class="text-center mb-4">Are you sure you want to remove this lecturer from the module?</p>
+<div class="delete-card">
+    <div class="card">
+        <div class="card-body-custom text-center" style="padding:40px;">
+            <div class="delete-icon-wrap">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
 
-                    <dl class="row mb-4">
-                        <dt class="col-sm-4">Lecturer:</dt>
-                        <dd class="col-sm-8">@Model.Lecturer?.Name @Model.Lecturer?.Surname</dd>
+            <h3 style="font-family:'Outfit',sans-serif; font-size:22px; font-weight:700; margin-bottom:8px;">Remove Assignment?</h3>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:28px;">
+                This will deactivate the assignment between
+                <strong style="color:var(--text);">@Model.Lecturer?.Name @Model.Lecturer?.Surname</strong>
+                and <strong style="color:var(--text);">@Model.Module?.ModuleName</strong>.
+            </p>
 
-                        <dt class="col-sm-4">Module:</dt>
-                        <dd class="col-sm-8">@Model.Module?.ModuleName</dd>
-                    </dl>
-
-                    <!-- Confirm Removal Form -->
-                    <form asp-action="DeleteLecturerModuleConfirmed" method="post">
-                        <input type="hidden" asp-for="LecturerModuleID" />
-
-                        <!-- Button Controls -->
-                        <div class="d-flex justify-content-between">
-                            <!-- Confirm Remove button -->
-                            <button type="submit" class="btn btn-danger">Remove</button>
-
-                            <!-- Cancel button -->
-                            <a asp-action="ManageLecturerModules" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+            <div class="card" style="text-align:left; margin-bottom:28px; background:#f8fafc;">
+                <div class="card-body-custom" style="padding:16px 20px;">
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">Assignment ID</div>
+                        <div class="detail-value">#@Model.LecturerModuleID</div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">Lecturer</div>
+                        <div class="detail-value">@Model.Lecturer?.Name @Model.Lecturer?.Surname</div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">Module</div>
+                        <div class="detail-value">@Model.Module?.ModuleName</div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0; border-bottom:none;">
+                        <div class="detail-label">Assigned Date</div>
+                        <div class="detail-value">@Model.AssignedDate.ToString("dd MMM yyyy")</div>
+                    </div>
                 </div>
             </div>
+
+            <form asp-action="DeleteLecturerModule" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.LecturerModuleID" />
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/Admin/ManageLecturerModules" class="btn-secondary-custom">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn-danger-custom">
+                        <i class="bi bi-trash-fill"></i> Confirm Remove
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

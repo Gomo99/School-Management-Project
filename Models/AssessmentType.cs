@@ -8,18 +8,8 @@ namespace SchoolProject.Models
         public int AssessmentTypeID { get; set; }
 
         [Required]
-        [StringLength(100)]  // Adjust max length as per your requirement
+        [StringLength(100)]
         public string AssessmentTypeDescription { get; set; }
 
-        [Required]
-        public AssessmentTypeStatus AssessmentTypeStatus { get; set; }
-    }
-
-
-
-    public enum AssessmentTypeStatus
-    {
-        Active,
-        Inactive
-    }
-}
+        public bool IsDeleted { get; set; } = false;   // soft delete
+}   }

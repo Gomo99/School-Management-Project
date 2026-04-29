@@ -16,7 +16,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<TwoFactorAuthService>();
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<MessageHub>();
-
+builder.Services.AddScoped<NotificationService>();
+builder.Services.AddHostedService<AssessmentDeadlineNotificationService>();
 
 // Add these service registrations
 builder.Services.AddScoped<IMessageService, MessageService>();

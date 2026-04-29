@@ -1,59 +1,56 @@
 ﻿@model SchoolProject.Models.Assessment
 @{
-    ViewData["Title"] = "Add Assessment";
-}
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+    ViewData["Title"] = "Create Assessment";
+    Layout = "~/Views/Shared/_LecturerLayout.cshtml";
 }
 
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
+<div class="page-header">
+    <div>
+        <h1>New Assessment</h1>
+    </div>
+    <a href="/Lecturer/ManageAssessments" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
-            <div class="card shadow-lg border-0 rounded-3">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0"><i class="bi bi-journal-plus me-2"></i>Add New Assessment</h4>
+<div style="max-width:600px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-plus-circle-fill me-2" style="color:var(--primary);"></i>Assessment Details</h5>
+        </div>
+        <div class="card-body-custom">
+            <form asp-action="AddAssessment" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Student <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="StudentModuleID" class="form-control-custom form-select-custom"
+                            asp-items="@(ViewData["StudentModuleID"] as SelectList)">
+                        <option value="">-- Select Student --</option>
+                    </select>
+                    <span asp-validation-for="StudentModuleID" class="form-error"></span>
                 </div>
-                <div class="card-body p-4">
-
-                    <form asp-action="AddAssessment" method="post" class="needs-validation" novalidate>
-                        <div class="mb-3">
-                            <label asp-for="StudentModuleID" class="form-label fw-bold"></label>
-                            <select asp-for="StudentModuleID" class="form-select" asp-items="ViewBag.StudentModuleID"></select>
-                            <span asp-validation-for="StudentModuleID" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="AssessmentTypeID" class="form-label fw-bold"></label>
-                            <select asp-for="AssessmentTypeID" class="form-select" asp-items="ViewBag.AssessmentTypeID"></select>
-                            <span asp-validation-for="AssessmentTypeID" class="text-danger small"></span>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="DueDate" class="form-label fw-bold"></label>
-                            <input asp-for="DueDate" class="form-control" type="date" />
-                            <span asp-validation-for="DueDate" class="text-danger small"></span>
-                        </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a asp-action="ManageAssessments" class="btn btn-outline-secondary px-4">
-                                <i class="bi bi-x-circle me-1"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-success px-4">
-                                <i class="bi bi-check-circle me-1"></i> Save
-                            </button>
-                        </div>
-                    </form>
-
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Assessment Type <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="AssessmentTypeID" class="form-control-custom form-select-custom"
+                            asp-items="@(ViewData["AssessmentTypeID"] as SelectList)">
+                        <option value="">-- Select Type --</option>
+                    </select>
+                    <span asp-validation-for="AssessmentTypeID" class="form-error"></span>
                 </div>
-            </div>
-
+                <div class="form-group-custom">
+                    <label asp-for="DueDate" class="form-label-custom">Due Date <span style="color:var(--danger);">*</span></label>
+                    <input asp-for="DueDate" type="date" class="form-control-custom" />
+                    <span asp-validation-for="DueDate" class="form-error"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-primary-custom"><i class="bi bi-check-lg"></i> Create</button>
+                    <a href="/Lecturer/ManageAssessments" class="btn-secondary-custom">Cancel</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    <partial name="_ValidationScriptsPartial" />
 }

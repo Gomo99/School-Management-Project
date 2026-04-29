@@ -1,53 +1,128 @@
-﻿@model SchoolProject.Models.Account
-
+@model SchoolProject.Models.Account
 @{
     ViewData["Title"] = "Create User";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-<h2>Create User</h2>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageUsers">Users</a>
+            <span>/</span> Create
+        </div>
+        <h1>New User</h1>
+        <p>Create a student, lecturer, or administrator account. A verification email will be sent automatically.</p>
+    </div>
+    <a href="/Admin/ManageUsers" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+<div style="max-width:700px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-person-plus-fill me-2" style="color:var(--primary);"></i>Account Information</h5>
+        </div>
+        <div class="card-body-custom">
+            <form asp-action="CreateUser" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <div class="form-group-custom">
+                            <label asp-for="Title" class="form-label-custom">Title</label>
+                            <select asp-for="Title" class="form-control-custom form-select-custom">
+                                <option value="">--</option>
+                                <option value="Mr">Mr</option>
+                                <option value="Ms">Ms</option>
+                                <option value="Mrs">Mrs</option>
+                                <option value="Dr">Dr</option>
+                                <option value="Prof">Prof</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group-custom">
+                            <label asp-for="Name" class="form-label-custom">First Name <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Name" class="form-control-custom @(ViewData.ModelState["Name"]?.Errors.Count > 0 ? "is-invalid" : "")" placeholder="e.g. Thabo" />
+                            <span asp-validation-for="Name" class="form-error"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group-custom">
+                            <label asp-for="Surname" class="form-label-custom">Surname <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Surname" class="form-control-custom @(ViewData.ModelState["Surname"]?.Errors.Count > 0 ? "is-invalid" : "")" placeholder="e.g. Nkosi" />
+                            <span asp-validation-for="Surname" class="form-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="form-group-custom">
+                            <label asp-for="Email" class="form-label-custom">Email Address <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Email" type="email" class="form-control-custom @(ViewData.ModelState["Email"]?.Errors.Count > 0 ? "is-invalid" : "")" placeholder="user@example.com" />
+                            <span asp-validation-for="Email" class="form-error"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-custom">
+                            <label asp-for="Role" class="form-label-custom">Role <span style="color:var(--danger);">*</span></label>
+                            <select asp-for="Role" asp-items="ViewBag.Roles" class="form-control-custom form-select-custom">
+                                <option value="">-- Select Role --</option>
+                            </select>
+                            <span asp-validation-for="Role" class="form-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group-custom">
+                    <label asp-for="Password" class="form-label-custom">Password <span style="color:var(--danger);">*</span></label>
+                    <div style="position:relative;">
+                        <input asp-for="Password" type="password" id="passwordInput"
+                               class="form-control-custom @(ViewData.ModelState["Password"]?.Errors.Count > 0 ? "is-invalid" : "")"
+                               placeholder="Minimum 8 characters" style="padding-right:44px;" />
+                        <button type="button" onclick="togglePassword()" tabindex="-1"
+                                style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="form-error"></span>
+                    <div class="form-hint">The user will receive a verification email to activate their account.</div>
+                </div>
+
+                <!-- Info banner -->
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 16px; margin-bottom:20px; display:flex; gap:10px; font-size:13px; color:#1e40af;">
+                    <i class="bi bi-envelope-fill" style="font-size:16px; flex-shrink:0; margin-top:1px;"></i>
+                    <span>A verification email will be sent to the user. Their account will remain <strong>Inactive</strong> until they verify their email address.</span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="bi bi-check-lg"></i> Create & Send Email
+                    </button>
+                    <a href="/Admin/ManageUsers" class="btn-secondary-custom">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const icon  = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        }
+    </script>
 }
-
-<form asp-action="CreateUser" method="post">
-    <div class="form-group">
-        <label asp-for="Name" class="control-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Surname" class="control-label"></label>
-        <input asp-for="Surname" class="form-control" />
-        <span asp-validation-for="Surname" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Title" class="control-label"></label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Role" class="control-label"></label>
-        <select asp-for="Role" class="form-control" asp-items="ViewBag.Roles"></select>
-        <span asp-validation-for="Role" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Email" class="control-label"></label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Password" class="control-label"></label>
-        <input asp-for="Password" type="password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="ConfirmPassword" class="control-label"></label>
-        <input asp-for="ConfirmPassword" type="password" class="form-control" />
-        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <input type="submit" value="Create" class="btn btn-primary" />
-        <a asp-action="ManageUsers" class="btn btn-secondary">Cancel</a>
-    </div>
-</form>

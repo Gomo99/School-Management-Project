@@ -1,41 +1,87 @@
-﻿@model SchoolProject.Models.Account
-
+@model SchoolProject.Models.Account
 @{
-    ViewData["Title"] = "Delete User";
+    ViewData["Title"] = "Deactivate User";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
-}
-<h2>Delete User</h2>
 
-<h3>Are you sure you want to deactivate this user?</h3>
-<div>
-    <h4>@Model.Name @Model.Surname</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Email)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Email)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Role)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Role)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.UserStatus)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.UserStatus)
-        </dd>
-    </dl>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageUsers">Users</a>
+            <span>/</span> Deactivate
+        </div>
+        <h1>Deactivate User</h1>
+    </div>
+</div>
 
-    <form asp-action="DeleteUserConfirmed">
-        <input type="hidden" asp-for="UserID" />
-        <input type="submit" value="Deactivate" class="btn btn-danger" />
-        <a asp-action="ManageUsers" class="btn btn-secondary">Cancel</a>
-    </form>
+<div class="delete-card">
+    <div class="card">
+        <div class="card-body-custom text-center" style="padding:40px;">
+            <div class="delete-icon-wrap">
+                <i class="bi bi-person-dash-fill"></i>
+            </div>
+
+            <h3 style="font-family:'Outfit',sans-serif; font-size:22px; font-weight:700; margin-bottom:8px;">Deactivate Account?</h3>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:28px;">
+                The account for <strong style="color:var(--text);">@Model.Title @Model.Name @Model.Surname</strong>
+                will be set to <strong style="color:var(--danger);">Inactive</strong>. They will no longer be able to sign in.
+            </p>
+
+            <div class="card" style="text-align:left; margin-bottom:28px; background:#f8fafc;">
+                <div class="card-body-custom" style="padding:16px 20px;">
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">User ID</div>
+                        <div class="detail-value">#@Model.UserID</div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">Full Name</div>
+                        <div class="detail-value">@Model.Title @Model.Name @Model.Surname</div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">Email</div>
+                        <div class="detail-value">@Model.Email</div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0;">
+                        <div class="detail-label">Role</div>
+                        <div class="detail-value">
+                            @switch (Model.Role.ToString())
+                            {
+                                case "Student":      <span class="badge-custom badge-student">Student</span>      break;
+                                case "Lecturer":     <span class="badge-custom badge-lecturer">Lecturer</span>    break;
+                                default:             <span class="badge-custom badge-admin">Administrator</span>  break;
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-row" style="padding:8px 0; border-bottom:none;">
+                        <div class="detail-label">Current Status</div>
+                        <div class="detail-value">
+                            @if (Model.UserStatus.ToString() == "Active")
+                            {
+                                <span class="badge-custom badge-active">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge-custom badge-inactive">Inactive</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form asp-action="DeleteUser" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.UserID" />
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="/Admin/ManageUsers" class="btn-secondary-custom">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn-danger-custom">
+                        <i class="bi bi-person-dash-fill"></i> Confirm Deactivate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>

@@ -1,10 +1,179 @@
-﻿@{
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Admin Dashboard";
+﻿@model IEnumerable<SchoolProject.Models.StudentModule>
+@{
+    ViewData["Title"] = "My Dashboard";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
 }
 
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
-}
+<div class="page-header">
+    <div>
+        <h1>Welcome, @ViewBag.StudentName</h1>
+        <p>Your enrolled modules and progress overview.</p>
+    </div>
+</div>
 
-<partial name="_NotificationPartial" />
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="bi bi-bookmark-check-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label">Enrolled Modules</div>
+                <div class="stat-value">@Model.Count()</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="bi bi-clock-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label">Pending Assessments</div>
+                <div class="stat-value">@ViewBag.PendingCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon indigo">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">@ViewBag.CompletedCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="bi bi-exclamation-diamond-fill"></i>
+            </div>
+            <div>
+                <div class="stat-label">Missed</div>
+                <div class="stat-value">@ViewBag.MissedCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enrolled Modules List -->
+<div class="card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-collection-fill me-2" style="color:var(--primary);"></i>My Modules</h5>
+        <span class="badge-custom" style="background: var(--primary-light); color: var(--primary);">@Model.Count() active</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Module</th>
+                    <th>Lecturer</th>
+                    <th>Duration</th>
+                    <th>Type</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var sm in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@sm.LecturerModule.Module.ModuleName</strong>
+                            </td>
+                            <td>@sm.LecturerModule.Lecturer.Title @sm.LecturerModule.Lecturer.Name @sm.LecturerModule.Lecturer.Surname</td>
+                            <td>@sm.LecturerModule.Module.Duration weeks</td>
+                            <td>
+                                <span class="badge-custom badge-pending">@sm.LecturerModule.Module.ModuleType</span>
+                            </td>
+                            <td>
+                                <a href="/Student/ViewAssessments/@sm.StudentModuleID" class="btn-primary-custom" style="padding:6px 14px; font-size:13px;">
+                                    <i class="bi bi-eye"></i> Assessments
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-4" style="color:var(--muted);">
+                            <i class="bi bi-journal-x" style="font-size:28px; display:block; margin-bottom:6px;"></i>
+                            You are not enrolled in any active modules.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--shadow-lg);
+            }
+
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+            .stat-icon.green {
+                background: #d1fae5;
+                color: var(--primary);
+            }
+
+            .stat-icon.amber {
+                background: #fef3c7;
+                color: var(--warning);
+            }
+
+            .stat-icon.indigo {
+                background: #ede9fe;
+                color: var(--accent);
+            }
+
+            .stat-icon.red {
+                background: #fee2e2;
+                color: var(--danger);
+            }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1.1;
+        }
+    </style>
+}

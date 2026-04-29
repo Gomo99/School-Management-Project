@@ -20,7 +20,7 @@ namespace SchoolProject.Data
         public DbSet<AssessmentType> AssessmentTypes { get; set; }
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<Message> Messages { get; set; }
-
+        public DbSet<Notification> Notifications { get; set; }
 
 
 
@@ -142,16 +142,16 @@ namespace SchoolProject.Data
 
             // === Seeding AssessmentTypes ===
             modelBuilder.Entity<AssessmentType>().HasData(
-                new AssessmentType { AssessmentTypeID = 1, AssessmentTypeDescription = "Formal written examination", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 2, AssessmentTypeDescription = "Short knowledge test", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 3, AssessmentTypeDescription = "Practical or theoretical work assignment", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 4, AssessmentTypeDescription = "Extended practical project work", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 5, AssessmentTypeDescription = "Oral presentation of work", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 6, AssessmentTypeDescription = "Hands-on practical assessment", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 7, AssessmentTypeDescription = "Analysis of real-world scenarios", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 8, AssessmentTypeDescription = "Collection of work samples", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 9, AssessmentTypeDescription = "Scientific laboratory report", AssessmentTypeStatus = AssessmentTypeStatus.Active },
-                new AssessmentType { AssessmentTypeID = 10, AssessmentTypeDescription = "Academic research paper", AssessmentTypeStatus = AssessmentTypeStatus.Active }
+                new AssessmentType { AssessmentTypeID = 1, AssessmentTypeDescription = "Formal written examination", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 2, AssessmentTypeDescription = "Short knowledge test", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 3, AssessmentTypeDescription = "Practical or theoretical work assignment", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 4, AssessmentTypeDescription = "Extended practical project work", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 5, AssessmentTypeDescription = "Oral presentation of work", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 6, AssessmentTypeDescription = "Hands-on practical assessment", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 7, AssessmentTypeDescription = "Analysis of real-world scenarios", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 8, AssessmentTypeDescription = "Collection of work samples", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 9, AssessmentTypeDescription = "Scientific laboratory report", IsDeleted = false },
+                new AssessmentType { AssessmentTypeID = 10, AssessmentTypeDescription = "Academic research paper", IsDeleted = false }
             );
         }
     }

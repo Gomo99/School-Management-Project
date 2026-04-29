@@ -1,0 +1,94 @@
+﻿@model SchoolProject.Models.Assessment
+@{
+    ViewData["Title"] = "Update Assessment";
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+}
+
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Student/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Student/ViewAssessments/@Model.StudentModuleID">@ViewBag.ModuleName</a>
+            <span>/</span> Update
+        </div>
+        <h1>Update Assessment Status</h1>
+        <p>@ViewBag.ModuleName – @Model.AssessmentType?.AssessmentTypeDescription</p>
+    </div>
+</div>
+
+<div style="max-width:600px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-pencil-square me-2" style="color:var(--primary);"></i>Change Status</h5>
+        </div>
+        <div class="card-body-custom">
+            <form asp-action="UpdateAssessmentStatus" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.AssessmentID" />
+
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Current Status</label>
+                    <div style="font-size:16px; font-weight:600;">
+                        @switch (Model.AssessmentStatus)
+                        {
+                            case AssessmentStatus.Completed:
+                                <span class="badge-custom badge-completed">Completed</span>
+                                break;
+                            case AssessmentStatus.Missed:
+                                <span class="badge-custom badge-missed">Missed</span>
+                                break;
+                            case AssessmentStatus.Rescheduled:
+                                <span class="badge-custom badge-rescheduled">Rescheduled</span>
+                                break;
+                            default:
+                                <span class="badge-custom badge-notstarted">Not Started</span>
+                                break;
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group-custom">
+                    <label class="form-label-custom">New Status <span style="color:var(--danger);">*</span></label>
+                    <select name="newStatus" class="form-control-custom form-select-custom" id="statusSelect">
+                        <option value="NotStarted" selected="@(Model.AssessmentStatus == AssessmentStatus.NotStarted)">Not Started</option>
+                        <option value="Completed" selected="@(Model.AssessmentStatus == AssessmentStatus.Completed)">Completed</option>
+                        <option value="Missed" selected="@(Model.AssessmentStatus == AssessmentStatus.Missed)">Missed</option>
+                        <option value="Rescheduled" selected="@(Model.AssessmentStatus == AssessmentStatus.Rescheduled)">Rescheduled</option>
+                    </select>
+                </div>
+
+                <div class="form-group-custom" id="rescheduleDateGroup" style="display:none;">
+                    <label class="form-label-custom">New Due Date <span style="color:var(--danger);">*</span></label>
+                    <input type="date" name="newDueDate" class="form-control-custom"
+                           min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    <div class="form-hint">Required if you are rescheduling. Must be a future date.</div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="bi bi-check-lg"></i> Save Changes
+                    </button>
+                    <a href="/Student/ViewAssessments/@Model.StudentModuleID" class="btn-secondary-custom">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const statusSelect = document.getElementById('statusSelect');
+            const dateGroup = document.getElementById('rescheduleDateGroup');
+
+            function toggleDate() {
+                dateGroup.style.display = statusSelect.value === 'Rescheduled' ? 'block' : 'none';
+            }
+
+            // Initial toggle
+            toggleDate();
+            statusSelect.addEventListener('change', toggleDate);
+        });
+    </script>
+}

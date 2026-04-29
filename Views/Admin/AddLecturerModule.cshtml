@@ -1,45 +1,79 @@
-﻿@model SchoolProject.ViewModel.AssignLecturerModulesViewModel
-
+@model SchoolProject.ViewModel.AssignLecturerModulesViewModel
 @{
-    ViewData["Title"] = "Assign Lecturer to Modules";
+    ViewData["Title"] = "Assign Lecturer to Module";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
-}
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageLecturerModules">Lecturer Modules</a>
+            <span>/</span> Assign
+        </div>
+        <h1>Assign Lecturer to Module</h1>
+        <p>Select a lecturer and the modules to assign. Max 3 active modules per lecturer.</p>
+    </div>
+    <a href="/Admin/ManageLecturerModules" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3>Assign Lecturer to Modules</h3>
-                </div>
-                <div class="card-body">
-                    <form asp-action="AddLecturerModule" method="post">
-                        <div class="mb-3">
-                            <label for="SelectedModuleIDs" class="form-label">Modules</label>
-                            <select asp-for="SelectedModuleIDs" class="form-select" asp-items="ViewBag.Modules" multiple size="5">
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="UserID" class="form-label">Lecturer</label>
-                            <select asp-for="UserID" class="form-select" asp-items="ViewBag.Lecturers">
-                                <option value="">Select Lecturer</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="AssignedDate" class="form-label">Date</label>
-                            <input asp-for="AssignedDate" type="date" class="form-control" />
-                        </div>
+<div style="max-width:680px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-person-workspace me-2" style="color:var(--primary);"></i>Assignment Details</h5>
+        </div>
+        <div class="card-body-custom">
+            <form asp-action="AddLecturerModule" method="post">
+                @Html.AntiForgeryToken()
 
-                        <div class="d-flex justify-content-between">
-                            <button type="submit" class="btn btn-success">Assign</button>
-                            <a asp-action="ManageLecturerModules" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Lecturer <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="UserID" asp-items="ViewBag.Lecturers" class="form-control-custom form-select-custom">
+                        <option value="">-- Select Lecturer --</option>
+                    </select>
+                    <div class="form-hint">Only lecturers with fewer than 3 active modules are shown.</div>
+                    <span asp-validation-for="UserID" class="form-error"></span>
                 </div>
-            </div>
+
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Modules <span style="color:var(--danger);">*</span></label>
+                    <div style="border:1.5px solid var(--border); border-radius:8px; padding:4px; max-height:220px; overflow-y:auto;">
+                        @if (ViewBag.Modules != null)
+                        {
+                            @foreach (Microsoft.AspNetCore.Mvc.Rendering.SelectListItem item in ViewBag.Modules)
+                            {
+                                <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-radius:6px;transition:background .15s;" onmouseover="this.style.background='#f0f4f9'" onmouseout="this.style.background='transparent'">
+                                    <input type="checkbox" name="SelectedModuleIDs" value="@item.Value"
+                                           style="width:16px;height:16px;accent-color:var(--primary);" />
+                                    <span style="font-size:14px;">@item.Text</span>
+                                </label>
+                            }
+                        }
+                    </div>
+                    <div class="form-hint">Hold Ctrl / ⌘ or tick multiple checkboxes to assign several modules at once.</div>
+                </div>
+
+                <div class="form-group-custom">
+                    <label asp-for="AssignedDate" class="form-label-custom">Assignment Date <span style="color:var(--danger);">*</span></label>
+                    <input asp-for="AssignedDate" type="date" class="form-control-custom"
+                           value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="AssignedDate" class="form-error"></span>
+                </div>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="bi bi-check-lg"></i> Assign Modules
+                    </button>
+                    <a href="/Admin/ManageLecturerModules" class="btn-secondary-custom">Cancel</a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

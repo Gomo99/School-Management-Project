@@ -1,78 +1,188 @@
-﻿@model IEnumerable<SchoolProject.Models.Account>
-
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+@model IEnumerable<SchoolProject.Models.Account>
+@{
+    ViewData["Title"] = "Manage Users";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-<div class="container mt-5">
-    <div class="card shadow-lg border-0 rounded-4">
-        <div class="card-body">
-            <h2 class="card-title mb-4">User Management</h2>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span> Users
+        </div>
+        <h1>Users</h1>
+        <p>View and manage all system users.</p>
+    </div>
+    <a href="/Admin/CreateUser" class="btn-primary-custom">
+        <i class="bi bi-person-plus-fill"></i> New User
+    </a>
+</div>
 
-            <!-- Users Table -->
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">Name</th>
-                            <th scope="col">Email</th>
-                            <th scope="col">Role</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.Any())
-                        {
-                            foreach (var user in Model)
-                            {
-                                <tr>
-                                    <td>@user.Name @user.Surname</td>
-                                    <td>@user.Email</td>
-                                    <td>@user.Role</td>
-                                    <td>
-                                        <span class="badge bg-@(user.UserStatus == UserStatus.Active ? "success" : "secondary")">@user.UserStatus</span>
-                                    </td>
-                                    <td class="d-flex gap-2">
-                                        <!-- Edit Button -->
-                                        <a asp-action="EditUser" asp-route-id="@user.UserID"
-                                           class="btn btn-sm btn-primary" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+<!-- Filter Tabs -->
+<div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+    <button onclick="filterTable('all')" id="tab-all" class="filter-tab active-tab">
+        All <span id="cnt-all" class="tab-count"></span>
+    </button>
+    <button onclick="filterTable('Student')" id="tab-Student" class="filter-tab">
+        Students <span id="cnt-Student" class="tab-count"></span>
+    </button>
+    <button onclick="filterTable('Lecturer')" id="tab-Lecturer" class="filter-tab">
+        Lecturers <span id="cnt-Lecturer" class="tab-count"></span>
+    </button>
+    <button onclick="filterTable('Administrator')" id="tab-Administrator" class="filter-tab">
+        Admins <span id="cnt-Administrator" class="tab-count"></span>
+    </button>
+</div>
 
-                                        <!-- Delete/Deactivate Button -->
-                                        @if (user.UserStatus == UserStatus.Active)
-                                        {
-                                            <form asp-action="DeleteUser" asp-route-id="@user.UserID" method="post">
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Deactivate"
-                                                        onclick="return confirm('Are you sure you want to deactivate this user?')">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <!-- Reactivate Button -->
-                                            <form asp-action="ReactivateAccount" asp-route-id="@user.UserID" method="post">
-                                                <button type="submit" class="btn btn-sm btn-success" title="Reactivate"
-                                                        onclick="return confirm('Are you sure you want to reactivate this user?')">
-                                                    <i class="bi bi-arrow-clockwise"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="5" class="text-center text-muted">No users found.</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+<div class="card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-people-fill me-2" style="color:var(--primary);"></i>System Users</h5>
+        <div class="search-wrap">
+            <i class="bi bi-search"></i>
+            <input type="text" id="userSearch" class="form-control-custom" placeholder="Search by name or email…"
+                   style="height:36px;" oninput="searchUsers()" />
         </div>
     </div>
+    <div style="overflow-x:auto;">
+        <table class="table-custom" id="usersTable">
+            <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Title</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var user in Model)
+                    {
+                        <tr data-role="@user.Role" data-name="@user.Name @user.Surname" data-email="@user.Email">
+                            <td><span style="font-family:'Outfit',sans-serif; font-weight:600; color:var(--primary);">#@user.UserID</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:32px;height:32px;border-radius:50%;
+                                        background:@(user.Role.ToString()=="Student"?"#dbeafe":user.Role.ToString()=="Lecturer"?"#ede9fe":"#fce7f3");
+                                        color:@(user.Role.ToString()=="Student"?"#1e40af":user.Role.ToString()=="Lecturer"?"#5b21b6":"#9d174d");
+                                        display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
+                                        @(user.Name?.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600;">@user.Title @user.Name @user.Surname</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="color:var(--muted); font-size:13px;">@user.Email</td>
+                            <td>@user.Title</td>
+                            <td>
+                                @switch (user.Role.ToString())
+                                {
+                                    case "Student":
+                                        <span class="badge-custom badge-student">Student</span>
+                                        break;
+                                    case "Lecturer":
+                                        <span class="badge-custom badge-lecturer">Lecturer</span>
+                                        break;
+                                    default:
+                                        <span class="badge-custom badge-admin">Administrator</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                @if (user.UserStatus.ToString() == "Active")
+                                {
+                                    <span class="badge-custom badge-active">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-custom badge-inactive">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="/Admin/EditUser/@user.UserID" class="btn-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <a href="/Admin/DeleteUser/@user.UserID" class="btn-icon delete" title="Deactivate"><i class="bi bi-person-dash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5" style="color:var(--muted);">
+                            <i class="bi bi-people" style="font-size:36px; display:block; margin-bottom:8px;"></i>
+                            No users found. <a href="/Admin/CreateUser" style="color:var(--primary);">Create one now.</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
+
+@section Styles {
+    <style>
+        .filter-tab {
+            padding: 7px 18px; border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: #fff; color: var(--muted);
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all .18s;
+            font-family: 'Nunito', sans-serif;
+        }
+        .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
+        .active-tab { background: var(--primary); color: #fff !important; border-color: var(--primary) !important; }
+        .tab-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px; border-radius: 50%;
+            background: rgba(255,255,255,.25);
+            font-size: 11px; font-weight: 700; margin-left: 4px;
+        }
+        .active-tab .tab-count { background: rgba(255,255,255,.3); }
+        .filter-tab:not(.active-tab) .tab-count { background: #e2e8f0; color: var(--text); }
+    </style>
+}
+
+@section Scripts {
+<script>
+    // Count roles on load
+    document.addEventListener('DOMContentLoaded', function () {
+        const rows = document.querySelectorAll('#usersTable tbody tr[data-role]');
+        const counts = { all: 0, Student: 0, Lecturer: 0, Administrator: 0 };
+        rows.forEach(r => {
+            counts.all++;
+            const role = r.dataset.role;
+            if (counts[role] !== undefined) counts[role]++;
+        });
+        Object.keys(counts).forEach(k => {
+            const el = document.getElementById('cnt-' + k);
+            if (el) el.textContent = counts[k];
+        });
+    });
+
+    function filterTable(role) {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active-tab'));
+        document.getElementById('tab-' + role)?.classList.add('active-tab');
+
+        const rows = document.querySelectorAll('#usersTable tbody tr[data-role]');
+        rows.forEach(r => {
+            r.style.display = (role === 'all' || r.dataset.role === role) ? '' : 'none';
+        });
+    }
+
+    function searchUsers() {
+        const q = document.getElementById('userSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('#usersTable tbody tr[data-role]');
+        rows.forEach(r => {
+            const name  = (r.dataset.name  || '').toLowerCase();
+            const email = (r.dataset.email || '').toLowerCase();
+            r.style.display = (name.includes(q) || email.includes(q)) ? '' : 'none';
+        });
+    }
+</script>
+}

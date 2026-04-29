@@ -1,49 +1,48 @@
 ﻿@model SchoolProject.Models.Assessment
 @{
     ViewData["Title"] = "Edit Assessment";
-}
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+    Layout = "~/Views/Shared/_LecturerLayout.cshtml";
 }
 
-<div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0"><i class="bi bi-pencil-square me-2"></i> Edit Assessment</h4>
+<div class="page-header">
+    <div>
+        <h1>Edit Assessment</h1>
+    </div>
+    <a href="/Lecturer/ManageAssessments" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div style="max-width:600px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-pencil-fill me-2" style="color:var(--primary);"></i>Assessment #@Model.AssessmentID</h5>
         </div>
-        <div class="card-body">
-            <form asp-action="EditAssessment" method="post" class="needs-validation" novalidate>
+        <div class="card-body-custom">
+            <form asp-action="EditAssessment" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="AssessmentID" />
-
-                <!-- Student Module (Read-only) -->
-                <div class="mb-3">
-                    <label asp-for="StudentModuleID" class="form-label"></label>
-                    <select asp-for="StudentModuleID" class="form-select" asp-items="ViewBag.StudentModuleID" disabled></select>
-                    <span class="text-muted small">Student module cannot be changed.</span>
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Student <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="StudentModuleID" class="form-control-custom form-select-custom"
+                            asp-items="@(ViewData["StudentModuleID"] as SelectList)">
+                        <option value="">-- Select Student --</option>
+                    </select>
                 </div>
-
-                <!-- Assessment Type -->
-                <div class="mb-3">
-                    <label asp-for="AssessmentTypeID" class="form-label"></label>
-                    <select asp-for="AssessmentTypeID" class="form-select" asp-items="ViewBag.AssessmentTypeID"></select>
-                    <span asp-validation-for="AssessmentTypeID" class="text-danger"></span>
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Assessment Type <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="AssessmentTypeID" class="form-control-custom form-select-custom"
+                            asp-items="@(ViewData["AssessmentTypeID"] as SelectList)">
+                        <option value="">-- Select Type --</option>
+                    </select>
                 </div>
-
-                <!-- Due Date -->
-                <div class="mb-3">
-                    <label asp-for="DueDate" class="form-label"></label>
-                    <input asp-for="DueDate" type="date" class="form-control" />
-                    <span asp-validation-for="DueDate" class="text-danger"></span>
+                <div class="form-group-custom">
+                    <label asp-for="DueDate" class="form-label-custom">Due Date <span style="color:var(--danger);">*</span></label>
+                    <input asp-for="DueDate" type="date" class="form-control-custom" />
                 </div>
-
-                <!-- Buttons -->
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-circle me-1"></i> Update
-                    </button>
-                    <a asp-action="ManageAssessments" class="btn btn-secondary">
-                        <i class="bi bi-x-circle me-1"></i> Cancel
-                    </a>
+                    <button type="submit" class="btn-primary-custom"><i class="bi bi-check-lg"></i> Save</button>
+                    <a href="/Lecturer/ManageAssessments" class="btn-secondary-custom">Cancel</a>
                 </div>
             </form>
         </div>
@@ -51,5 +50,5 @@
 </div>
 
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <partial name="_ValidationScriptsPartial" />
 }

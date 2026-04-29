@@ -1,47 +1,121 @@
-﻿@model SchoolProject.Models.Account
-
+@model SchoolProject.Models.Account
 @{
     ViewData["Title"] = "Edit User";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageUsers">Users</a>
+            <span>/</span> Edit
+        </div>
+        <h1>Edit User</h1>
+        <p>Updating details for <strong>@Model.Name @Model.Surname</strong>.</p>
+    </div>
+    <a href="/Admin/ManageUsers" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div style="max-width:700px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <div class="d-flex align-items-center gap-3">
+                <div style="width:44px;height:44px;border-radius:50%;
+                    background:@(Model.Role.ToString()=="Student"?"#dbeafe":Model.Role.ToString()=="Lecturer"?"#ede9fe":"#fce7f3");
+                    color:@(Model.Role.ToString()=="Student"?"#1e40af":Model.Role.ToString()=="Lecturer"?"#5b21b6":"#9d174d");
+                    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;">
+                    @(Model.Name?.Substring(0,1).ToUpper())
+                </div>
+                <div>
+                    <h5 style="margin:0;">@Model.Title @Model.Name @Model.Surname</h5>
+                    <div style="font-size:12px;color:var(--muted);">#@Model.UserID · @Model.Email</div>
+                </div>
+            </div>
+            @switch (Model.Role.ToString())
+            {
+                case "Student":      <span class="badge-custom badge-student">Student</span>      break;
+                case "Lecturer":     <span class="badge-custom badge-lecturer">Lecturer</span>     break;
+                default:             <span class="badge-custom badge-admin">Administrator</span>   break;
+            }
+        </div>
+        <div class="card-body-custom">
+            <form asp-action="EditUser" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="UserID" type="hidden" />
+
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <div class="form-group-custom">
+                            <label asp-for="Title" class="form-label-custom">Title</label>
+                            <select asp-for="Title" class="form-control-custom form-select-custom">
+                                <option value="">--</option>
+                                <option value="Mr"   selected="@(Model.Title=="Mr")">Mr</option>
+                                <option value="Ms"   selected="@(Model.Title=="Ms")">Ms</option>
+                                <option value="Mrs"  selected="@(Model.Title=="Mrs")">Mrs</option>
+                                <option value="Dr"   selected="@(Model.Title=="Dr")">Dr</option>
+                                <option value="Prof" selected="@(Model.Title=="Prof")">Prof</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group-custom">
+                            <label asp-for="Name" class="form-label-custom">First Name <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Name" class="form-control-custom @(ViewData.ModelState["Name"]?.Errors.Count > 0 ? "is-invalid" : "")" />
+                            <span asp-validation-for="Name" class="form-error"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="form-group-custom">
+                            <label asp-for="Surname" class="form-label-custom">Surname <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Surname" class="form-control-custom @(ViewData.ModelState["Surname"]?.Errors.Count > 0 ? "is-invalid" : "")" />
+                            <span asp-validation-for="Surname" class="form-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <div class="form-group-custom">
+                            <label asp-for="Email" class="form-label-custom">Email Address <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Email" type="email" class="form-control-custom @(ViewData.ModelState["Email"]?.Errors.Count > 0 ? "is-invalid" : "")" />
+                            <span asp-validation-for="Email" class="form-error"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group-custom">
+                            <label asp-for="Role" class="form-label-custom">Role <span style="color:var(--danger);">*</span></label>
+                            <select asp-for="Role" asp-items="ViewBag.Roles" class="form-control-custom form-select-custom">
+                            </select>
+                            <span asp-validation-for="Role" class="form-error"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group-custom">
+                    <label asp-for="UserStatus" class="form-label-custom">Account Status</label>
+                    <select asp-for="UserStatus" asp-items="ViewBag.Statuses" class="form-control-custom form-select-custom">
+                    </select>
+                    <div class="form-hint">Note: Status will be forced to <strong>Active</strong> on save by the system.</div>
+                </div>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="bi bi-check-lg"></i> Save Changes
+                    </button>
+                    <a href="/Admin/ManageUsers" class="btn-secondary-custom">Cancel</a>
+                    <a href="/Admin/DeleteUser/@Model.UserID" class="btn-danger-custom ms-auto">
+                        <i class="bi bi-person-dash"></i> Deactivate
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 }
-<h2>Edit User</h2>
-
-
-<form asp-action="EditUser" method="post">
-    <input type="hidden" asp-for="UserID" />
-    <div class="form-group">
-        <label asp-for="Name" class="control-label"></label>
-        <input asp-for="Name" class="form-control" />
-        <span asp-validation-for="Name" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Surname" class="control-label"></label>
-        <input asp-for="Surname" class="form-control" />
-        <span asp-validation-for="Surname" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Title" class="control-label"></label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Role" class="control-label"></label>
-        <select asp-for="Role" class="form-control" asp-items="ViewBag.Roles"></select>
-        <span asp-validation-for="Role" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Email" class="control-label"></label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label>Status</label>
-        <input class="form-control" value="Active" readonly />
-    </div>
-    <div class="form-group">
-        <input type="submit" value="Save" class="btn btn-primary" />
-        <a asp-action="ManageUsers" class="btn btn-secondary">Cancel</a>
-    </div>
-</form>

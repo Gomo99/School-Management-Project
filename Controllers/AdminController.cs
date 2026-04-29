@@ -1,164 +1,180 @@
-﻿using iTextSharp.text.pdf;
-using iTextSharp.text;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using SchoolProject.Data;
 using SchoolProject.Models;
-using SchoolProject.ViewModel;
 using SchoolProject.Service;
-
-
-// With this:
-
+using System.Security.Claims;
 
 namespace SchoolProject.Controllers
 {
     [Authorize(Roles = "Administrator")]
     public class AdminController : Controller
     {
-
         private readonly ApplicationDbContext _context;
-        private readonly IConfiguration _configuration;
+        private readonly NotificationService _notificationService;
 
-        // Single constructor with all required dependencies
-        public AdminController(ApplicationDbContext context, IConfiguration configuration)
+        public AdminController(ApplicationDbContext context, NotificationService notificationService = null)
         {
             _context = context;
-            _configuration = configuration;
+            _notificationService = notificationService;
         }
 
-
-        public async Task<IActionResult> DashboardAsync()
+        // ========== Dashboard ==========
+        public IActionResult Dashboard()
         {
-            var currentUserName = User.Identity.Name;
+            return View();
+        }
 
-            var model = new DashboardViewModel
-            {
-                ActiveModulesCount = await _context.Modules
-           .CountAsync(m => m.ModuleStatus == ModuleStatus.Active),
-                InactiveModulesCount = await _context.Modules
-           .CountAsync(m => m.ModuleStatus == ModuleStatus.Inactive),
-
-                RecentAccounts = await _context.Accounts
-    .OrderByDescending(a => a.UserID)
-    .Take(5)
-    .Select(a => new Account { UserID = a.UserID, Name = a.Name, Surname = a.Surname })
-    .ToListAsync()
-            };
-
+        // ========== USER MANAGEMENT ==========
+        public async Task<IActionResult> ManageUsers(UserRole? role = null)
+        {
+            IQueryable<Account> users = _context.Accounts;
+            if (role.HasValue)
+                users = users.Where(u => u.Role == role.Value);
+            var model = await users.ToListAsync();
             return View(model);
         }
 
-
-
-
-        // View all modules
-        public IActionResult ManageModules()
+        // GET: Admin/CreateUser
+        public IActionResult CreateUser()
         {
-            var modules = _context.Modules
-                .Where(m => m.ModuleStatus == ModuleStatus.Active)
-                .OrderBy(m => m.ModuleName)
-                .ToList();
+            ViewBag.Roles = new SelectList(Enum.GetValues(typeof(UserRole)));
+            return View();
+        }
 
+        // POST: Admin/CreateUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser(Account account)
+        {
+            if (ModelState.IsValid)
+            {
+                // Set defaults
+                account.UserStatus = UserStatus.Active;
+                account.Password = BCrypt.Net.BCrypt.HashPassword(account.Password); // hash password
+                _context.Accounts.Add(account);
+                await _context.SaveChangesAsync();
+
+                // Send welcome notification to the new user
+                if (_notificationService != null)
+                {
+                    string welcomeMsg = $"Welcome to SchoolProject! Your {account.Role} account has been created.";
+                    await _notificationService.CreateAsync(account.UserID, welcomeMsg, "new_user");
+                }
+
+                TempData["SuccessMessage"] = "User created successfully.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+            ViewBag.Roles = new SelectList(Enum.GetValues(typeof(UserRole)));
+            return View(account);
+        }
+
+        // GET: Admin/EditUser/5
+        public async Task<IActionResult> EditUser(int id)
+        {
+            var user = await _context.Accounts.FindAsync(id);
+            if (user == null) return NotFound();
+            ViewBag.Roles = new SelectList(Enum.GetValues(typeof(UserRole)), user.Role);
+            return View(user);
+        }
+
+        // POST: Admin/EditUser/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditUser(int id, Account model)
+        {
+            if (id != model.UserID) return NotFound();
+            if (ModelState.IsValid)
+            {
+                var user = await _context.Accounts.FindAsync(id);
+                if (user == null) return NotFound();
+
+                user.Name = model.Name;
+                user.Surname = model.Surname;
+                user.Title = model.Title;
+                user.Email = model.Email;
+                user.Role = model.Role;
+                // Don't update password here – separate action
+
+                _context.Update(user);
+                await _context.SaveChangesAsync();
+
+                // Optionally notify the user that their profile was updated
+                if (_notificationService != null)
+                {
+                    await _notificationService.CreateAsync(user.UserID,
+                        "Your profile has been updated by an administrator.", "profile_update");
+                }
+
+                TempData["SuccessMessage"] = "User updated.";
+                return RedirectToAction(nameof(ManageUsers));
+            }
+            ViewBag.Roles = new SelectList(Enum.GetValues(typeof(UserRole)), model.Role);
+            return View(model);
+        }
+
+        // GET: Admin/DeleteUser/5 (soft delete)
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var user = await _context.Accounts.FindAsync(id);
+            if (user == null) return NotFound();
+            return View(user);
+        }
+
+        // POST: Admin/DeleteUser/5
+        [HttpPost, ActionName("DeleteUser")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteUserConfirmed(int id)
+        {
+            var user = await _context.Accounts.FindAsync(id);
+            if (user == null) return NotFound();
+            user.UserStatus = UserStatus.Inactive;
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
+            // Notify the user of deactivation
+            if (_notificationService != null)
+            {
+                await _notificationService.CreateAsync(user.UserID,
+                    "Your account has been deactivated. Please contact the administrator.", "account_deactivated");
+            }
+
+            TempData["SuccessMessage"] = "User deactivated.";
+            return RedirectToAction(nameof(ManageUsers));
+        }
+
+        // ========== MODULE MANAGEMENT ==========
+        public async Task<IActionResult> ManageModules()
+        {
+            var modules = await _context.Modules.ToListAsync();
             return View(modules);
         }
-        public IActionResult ExportModulesPdf(string searchString)
-        {
-            var query = _context.Modules
-                .Where(m => m.ModuleStatus == ModuleStatus.Active);
 
-            if (!string.IsNullOrEmpty(searchString))
-            {
-                query = query.Where(m =>
-                    m.ModuleName.Contains(searchString) ||
-                    m.ModuleType.ToString().Contains(searchString) ||
-                    m.Duration.ToString().Contains(searchString));
-            }
-
-            var modules = query.OrderBy(m => m.ModuleName).ToList();
-
-            using var memoryStream = new MemoryStream();
-
-            Document document = new Document(PageSize.A4, 25, 25, 30, 30);
-            PdfWriter.GetInstance(document, memoryStream);
-            document.Open();
-
-            // Title
-            var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 18);
-            var title = new Paragraph("Module List", titleFont)
-            {
-                Alignment = Element.ALIGN_CENTER,
-                SpacingAfter = 10f
-            };
-            document.Add(title);
-
-            // Export info
-            var infoFont = FontFactory.GetFont(FontFactory.HELVETICA, 10, BaseColor.DarkGray);
-            var exportInfo = new Paragraph($"Exported on: {DateTime.Now:dddd, dd MMMM yyyy HH:mm:ss}", infoFont)
-            {
-                Alignment = Element.ALIGN_RIGHT,
-                SpacingAfter = 20f
-            };
-            document.Add(exportInfo);
-
-            // Table
-            PdfPTable table = new PdfPTable(4) { WidthPercentage = 100 };
-            table.SetWidths(new float[] { 3, 1, 2, 2 });
-
-            AddCellToHeader(table, "Module Name");
-            AddCellToHeader(table, "Duration");
-            AddCellToHeader(table, "Type");
-            AddCellToHeader(table, "Status");
-
-            foreach (var module in modules)
-            {
-                AddCellToBody(table, module.ModuleName);
-                AddCellToBody(table, module.Duration.ToString());
-                AddCellToBody(table, module.ModuleType.ToString());
-                AddCellToBody(table, module.ModuleStatus.ToString());
-            }
-
-            document.Add(table);
-            document.Close();
-
-            return File(memoryStream.ToArray(), "application/pdf", "Modules.pdf");
-        }
-
-        // GET: Create module
+        // GET: Admin/CreateModule
         public IActionResult CreateModule()
         {
             return View();
         }
 
-        // POST: Create module
+        // POST: Admin/CreateModule
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateModule(Module module)
         {
             if (ModelState.IsValid)
             {
-                try
-                {
-                    module.ModuleStatus = ModuleStatus.Active;
-                    _context.Modules.Add(module);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Module created successfully!";
-                    return RedirectToAction(nameof(ManageModules));
-                }
-                catch
-                {
-                    TempData["ErrorMessage"] = "An error occurred while creating the module.";
-                    return RedirectToAction(nameof(ManageModules));
-                }
+                module.ModuleStatus = ModuleStatus.Active;
+                _context.Modules.Add(module);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Module created.";
+                return RedirectToAction(nameof(ManageModules));
             }
-
-            TempData["ErrorMessage"] = "Invalid data. Please check the form.";
             return View(module);
         }
 
-        // GET: Edit
+        // GET: Admin/EditModule/5
         public async Task<IActionResult> EditModule(int id)
         {
             var module = await _context.Modules.FindAsync(id);
@@ -166,925 +182,571 @@ namespace SchoolProject.Controllers
             return View(module);
         }
 
-        // POST: Edit
+        // POST: Admin/EditModule/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditModule(int id, Module module)
+        public async Task<IActionResult> EditModule(int id, Module model)
         {
-            if (id != module.ModuleID)
-            {
-                TempData["ErrorMessage"] = "Module not found.";
-                return NotFound();
-            }
-
+            if (id != model.ModuleID) return NotFound();
             if (ModelState.IsValid)
             {
-                try
-                {
-                    module.ModuleStatus = ModuleStatus.Active;
-                    _context.Update(module);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Module updated successfully!";
-                    return RedirectToAction(nameof(ManageModules));
-                }
-                catch
-                {
-                    TempData["ErrorMessage"] = "An error occurred while updating the module.";
-                    return RedirectToAction(nameof(ManageModules));
-                }
+                var module = await _context.Modules.FindAsync(id);
+                if (module == null) return NotFound();
+                module.ModuleName = model.ModuleName;
+                module.Duration = model.Duration;
+                module.ModuleType = model.ModuleType;
+                _context.Update(module);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Module updated.";
+                return RedirectToAction(nameof(ManageModules));
             }
-
-            TempData["ErrorMessage"] = "Invalid data. Please check the form.";
-            return View(module);
+            return View(model);
         }
 
-        // GET: Account/DeleteModule/5
-        [HttpGet]
+        // GET: Admin/DeleteModule/5 (soft delete)
         public async Task<IActionResult> DeleteModule(int id)
         {
             var module = await _context.Modules.FindAsync(id);
             if (module == null) return NotFound();
-
-            return View(module); // This should point to a view showing confirmation
+            return View(module);
         }
 
-        // POST: Account/DeleteModule/5
         [HttpPost, ActionName("DeleteModule")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteModuleConfirmed(int id)
         {
             var module = await _context.Modules.FindAsync(id);
-            if (module == null)
-            {
-                TempData["ErrorMessage"] = "Module not found.";
-                return NotFound();
-            }
-
-            try
-            {
-                module.ModuleStatus = ModuleStatus.Inactive;
-                _context.Modules.Update(module);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Module deleted successfully!";
-            }
-            catch
-            {
-                TempData["ErrorMessage"] = "An error occurred while deleting the module.";
-            }
-
+            if (module == null) return NotFound();
+            module.ModuleStatus = ModuleStatus.Inactive;
+            _context.Update(module);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Module deactivated.";
             return RedirectToAction(nameof(ManageModules));
         }
 
-
-
-        // GET: Details
-        public async Task<IActionResult> ModuleDetails(int id)
-        {
-            var module = await _context.Modules.FindAsync(id);
-            if (module == null) return NotFound();
-
-            return View(module);
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        // ========== LECTURER MODULE ASSIGNMENT ==========
         public async Task<IActionResult> ManageLecturerModules()
         {
-            var data = _context.LecturerModules
-                .Include(lm => lm.Lecturer)
+            var lecturerModules = await _context.LecturerModules
                 .Include(lm => lm.Module)
-                .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active);
-
-            return View(await data.ToListAsync());
+                .Include(lm => lm.Lecturer)
+                .ToListAsync();
+            return View(lecturerModules);
         }
 
-
-        public async Task<IActionResult> AddLecturerModule()
+        // GET: Admin/AssignLecturer
+        public IActionResult AssignLecturer()
         {
-            await PopulateDropdowns();
+            ViewBag.Lecturers = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active), "UserID", "Name");
+            ViewBag.Modules = new SelectList(_context.Modules.Where(m => m.ModuleStatus == ModuleStatus.Active), "ModuleID", "ModuleName");
             return View();
         }
 
+        // POST: Admin/AssignLecturer
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddLecturerModule(AssignLecturerModulesViewModel model)
+      
+        public async Task<IActionResult> AssignLecturer(int userId, int moduleId)
         {
-            if (model.SelectedModuleIDs == null || model.SelectedModuleIDs.Count == 0)
+            // Check if already assigned active
+            bool exists = await _context.LecturerModules.AnyAsync(lm =>
+                lm.UserID == userId && lm.ModuleID == moduleId && lm.ModLecturerStatus == ModLecturerStatus.Active);
+            if (exists)
             {
-                TempData["ErrorMessage"] = "Please select at least one module.";
-                await PopulateDropdowns();
-                return View(model);
+                TempData["ErrorMessage"] = "This lecturer is already assigned to this module.";
+                return RedirectToAction(nameof(AssignLecturer));
+            }
+            var lecturerModule = new LecturerModule
+            {
+                UserID = userId,
+                ModuleID = moduleId,
+                AssignedDate = DateTime.Now,
+                ModLecturerStatus = ModLecturerStatus.Active
+            };
+            _context.LecturerModules.Add(lecturerModule);
+            await _context.SaveChangesAsync();
+
+            // Notify the lecturer
+            if (_notificationService != null)
+            {
+                var moduleName = (await _context.Modules.FindAsync(moduleId))?.ModuleName;
+                string msg = $"You have been assigned to the module \"{moduleName}\".";
+                await _notificationService.CreateAsync(userId, msg, "lecturer_assigned");
             }
 
-            // Get current count of active modules assigned to this lecturer
-            var existingCount = await _context.LecturerModules
-                .CountAsync(lm => lm.UserID == model.UserID && lm.ModLecturerStatus == ModLecturerStatus.Active);
+            TempData["SuccessMessage"] = "Lecturer assigned.";
+            return RedirectToAction(nameof(ManageLecturerModules));
+        }
 
-            // Make sure the new total will not exceed 3
-            if (existingCount + model.SelectedModuleIDs.Count > 3)
-            {
-                TempData["ErrorMessage"] = $"This lecturer is already assigned to {existingCount} module(s). " +
-                                           $"You can only assign {3 - existingCount} more.";
-                await PopulateDropdowns();
-                return View(model);
-            }
+        // GET: Admin/ChangeLecturer/5 (LecturerModuleID)
+        public async Task<IActionResult> ChangeLecturer(int id)
+        {
+            var lm = await _context.LecturerModules.Include(lm => lm.Lecturer).FirstOrDefaultAsync(lm => lm.LecturerModuleID == id);
+            if (lm == null) return NotFound();
+            ViewBag.Lecturers = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active), "UserID", "Name", lm.UserID);
+            return View(lm);
+        }
 
-            try
+        // POST: Admin/ChangeLecturer
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangeLecturer(int id, int newLecturerId)
+        {
+            var existing = await _context.LecturerModules
+                .Include(lm => lm.Lecturer)
+                .Include(lm => lm.Module)
+                .FirstOrDefaultAsync(lm => lm.LecturerModuleID == id);
+
+            if (existing == null) return NotFound();
+
+            int oldLecturerId = existing.UserID;
+            string moduleName = existing.Module?.ModuleName ?? "a module";
+
+            // 1. Deactivate current assignment
+            existing.ModLecturerStatus = ModLecturerStatus.Inactive;
+            _context.Update(existing);
+
+            // 2. Create new active assignment
+            var newAssignment = new LecturerModule
             {
-                foreach (var moduleId in model.SelectedModuleIDs)
+                ModuleID = existing.ModuleID,
+                UserID = newLecturerId,
+                AssignedDate = DateTime.Now,
+                ModLecturerStatus = ModLecturerStatus.Active
+            };
+            _context.LecturerModules.Add(newAssignment);
+            await _context.SaveChangesAsync();
+
+            // Send notifications
+            if (_notificationService != null)
+            {
+                // Notify old lecturer (if still active)
+                var oldLecturer = await _context.Accounts.FindAsync(oldLecturerId);
+                if (oldLecturer != null && oldLecturer.UserStatus == UserStatus.Active)
                 {
-                    var lecturerModule = new LecturerModule
-                    {
-                        ModuleID = moduleId,
-                        UserID = model.UserID,
-                        AssignedDate = model.AssignedDate,
-                        ModLecturerStatus = ModLecturerStatus.Active
-                    };
-                    _context.LecturerModules.Add(lecturerModule);
+                    string msgOld = $"You have been removed from the module \"{moduleName}\".";
+                    await _notificationService.CreateAsync(oldLecturerId, msgOld, "lecturer_removed");
                 }
 
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Lecturer successfully assigned to selected modules!";
-                return RedirectToAction("ManageLecturerModules");
-            }
-            catch
-            {
-                TempData["ErrorMessage"] = "An error occurred while assigning modules.";
+                // Notify new lecturer
+                string msgNew = $"You have been assigned to the module \"{moduleName}\".";
+                await _notificationService.CreateAsync(newLecturerId, msgNew, "lecturer_assigned");
             }
 
-            await PopulateDropdowns();
+            TempData["SuccessMessage"] = "Lecturer changed successfully.";
+            return RedirectToAction(nameof(ManageLecturerModules));
+        }
+
+
+        public async Task<IActionResult> EditLecturerModule(int id)
+        {
+            var lm = await _context.LecturerModules
+                .Include(lm => lm.Lecturer)
+                .Include(lm => lm.Module)
+                .FirstOrDefaultAsync(lm => lm.LecturerModuleID == id);
+            if (lm == null) return NotFound();
+
+            ViewBag.LecturerList = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active), "UserID", "Name", lm.UserID);
+            ViewBag.ModuleList = new SelectList(_context.Modules.Where(m => m.ModuleStatus == ModuleStatus.Active), "ModuleID", "ModuleName", lm.ModuleID);
+            return View(lm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditLecturerModule(int id, LecturerModule model)
+        {
+            if (id != model.LecturerModuleID) return NotFound();
+            if (ModelState.IsValid)
+            {
+                var existing = await _context.LecturerModules.FindAsync(id);
+                if (existing == null) return NotFound();
+
+                existing.UserID = model.UserID;
+                existing.ModuleID = model.ModuleID;
+                existing.AssignedDate = model.AssignedDate;
+
+                _context.Update(existing);
+                await _context.SaveChangesAsync();
+
+                if (_notificationService != null)
+                {
+                    var moduleName = (await _context.Modules.FindAsync(model.ModuleID))?.ModuleName;
+                    await _notificationService.CreateAsync(model.UserID,
+                        $"Your assignment for module \"{moduleName}\" has been updated by an administrator.", "lecturer_updated");
+                }
+
+                TempData["SuccessMessage"] = "Lecturer module assignment updated.";
+                return RedirectToAction(nameof(ManageLecturerModules));
+            }
+            ViewBag.LecturerList = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active), "UserID", "Name", model.UserID);
+            ViewBag.ModuleList = new SelectList(_context.Modules.Where(m => m.ModuleStatus == ModuleStatus.Active), "ModuleID", "ModuleName", model.ModuleID);
             return View(model);
         }
 
-
-
-
-
-        
-        // GET: EditLecturerModule
-        public async Task<IActionResult> EditLecturerModule(int id)
-        {
-            var lecturerModule = await _context.LecturerModules.FindAsync(id);
-            if (lecturerModule == null)
-            {
-                return NotFound();
-            }
-
-            await PopulateEditDropdowns(lecturerModule.ModuleID, lecturerModule.UserID);
-            return View(lecturerModule);
-        }
-
-
-        // POST: EditLecturerModule
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditLecturerModule(LecturerModule lecturerModule)
-        {
-           
-                try
-                {
-                    lecturerModule.ModLecturerStatus = ModLecturerStatus.Active;
-                    _context.Update(lecturerModule);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Lecturer-module assignment updated successfully!";
-                    return RedirectToAction("ManageLecturerModules");
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.LecturerModules.Any(e => e.LecturerModuleID == lecturerModule.LecturerModuleID))
-                    {
-                        return NotFound();
-                    }
-                    TempData["ErrorMessage"] = "Concurrency error occurred. Please try again.";
-                    throw;
-                }
-                catch
-                {
-                    TempData["ErrorMessage"] = "An error occurred while updating the lecturer-module assignment.";
-                }
-            
-
-            await PopulateEditDropdowns(lecturerModule.ModuleID, lecturerModule.UserID);
-            return View(lecturerModule);
-        }
-
-
-
-
-        // GET: DeleteLecturerModule
-        // GET: DeleteLecturerModule
+        // ========== MISSING: Delete Lecturer Module (Soft) ==========
         public async Task<IActionResult> DeleteLecturerModule(int id)
         {
-            var lecturerModule = await _context.LecturerModules
+            var lm = await _context.LecturerModules
                 .Include(lm => lm.Lecturer)
                 .Include(lm => lm.Module)
-                .FirstOrDefaultAsync(m => m.LecturerModuleID == id);
-
-            if (lecturerModule == null)
-                return NotFound();
-
-            return View(lecturerModule);
+                .FirstOrDefaultAsync(lm => lm.LecturerModuleID == id);
+            if (lm == null) return NotFound();
+            return View(lm);
         }
 
-
-        // POST: DeleteLecturerModuleConfirmed
         [HttpPost, ActionName("DeleteLecturerModule")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteLecturerModuleConfirmed(int id)
         {
-            var lecturerModule = await _context.LecturerModules.FindAsync(id);
-            if (lecturerModule != null)
+            var lm = await _context.LecturerModules
+                .Include(lm => lm.Lecturer)
+                .Include(lm => lm.Module)
+                .FirstOrDefaultAsync(lm => lm.LecturerModuleID == id);
+            if (lm == null) return NotFound();
+
+            lm.ModLecturerStatus = ModLecturerStatus.Inactive;
+            _context.Update(lm);
+            await _context.SaveChangesAsync();
+
+            if (_notificationService != null && lm.Lecturer != null)
             {
-                try
-                {
-                    lecturerModule.ModLecturerStatus = ModLecturerStatus.Inactive;
-                    _context.LecturerModules.Update(lecturerModule);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Lecturer-module assignment deleted successfully!";
-                }
-                catch
-                {
-                    TempData["ErrorMessage"] = "An error occurred while deleting the lecturer-module assignment.";
-                }
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Lecturer-module assignment not found.";
+                await _notificationService.CreateAsync(lm.UserID,
+                    $"Your assignment for module \"{lm.Module?.ModuleName}\" has been removed by an administrator.",
+                    "lecturer_removed");
             }
 
-            return RedirectToAction("ManageLecturerModules");
+            TempData["SuccessMessage"] = "Lecturer module assignment deactivated.";
+            return RedirectToAction(nameof(ManageLecturerModules));
         }
 
-
-
-        // GET: DetailsLecturerModule
-        public async Task<IActionResult> DetailsLecturerModule(int id)
-        {
-            var lecturerModule = await _context.LecturerModules
-                .Include(lm => lm.Lecturer)  // Include Lecturer info
-                .Include(lm => lm.Module)    // Include Module info
-                .FirstOrDefaultAsync(m => m.LecturerModuleID == id);  // Get LecturerModule by ID
-
-            if (lecturerModule == null)
-            {
-                return NotFound();  // Return Not Found if no record is found
-            }
-
-            return View(lecturerModule);  // Pass the lecturerModule to the view
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-        public async Task<IActionResult> ManageStudentModule()
+        // ========== STUDENT ENROLLMENT ==========
+        public async Task<IActionResult> ManageStudentModules()
         {
             var studentModules = await _context.StudentModules
-                .Where(sm => sm.StudModStatus == StudModStatus.Active) // Filter only active
-                .Include(sm => sm.LecturerModule)
-                    .ThenInclude(lm => lm.Lecturer)
+                .Include(sm => sm.Student)
                 .Include(sm => sm.LecturerModule)
                     .ThenInclude(lm => lm.Module)
-                .Include(sm => sm.Student)
+                .Include(sm => sm.LecturerModule)
+                    .ThenInclude(lm => lm.Lecturer)
                 .ToListAsync();
-
             return View(studentModules);
         }
 
-
-
-
-
-        public IActionResult AddStudentModules()
+        // GET: Admin/EnrollStudent
+        public IActionResult EnrollStudent()
         {
-            // Populate lecturer dropdown
-            var lecturerModules = _context.LecturerModules
-                .Include(lm => lm.Lecturer)
-                .Include(lm => lm.Module)
-                .Select(lm => new {
-                    lm.LecturerModuleID,
-                    LecturerName = lm.Lecturer.Name + " " + lm.Lecturer.Surname + " - " + lm.Module.ModuleName
-                })
-                .ToList();
-
-            ViewData["LecturerModuleID"] = new SelectList(lecturerModules, "LecturerModuleID", "LecturerName");
-
-            // Populate active student dropdown
-            var activeStudents = _context.Accounts
-                .Where(a => a.Role == UserRole.Student && a.UserStatus == UserStatus.Active)
-                .Select(a => new { a.UserID, FullName = a.Name + " " + a.Surname })
-                .ToList();
-
-            ViewData["UserID"] = new SelectList(activeStudents, "UserID", "FullName");
-
+            ViewBag.Students = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Student && u.UserStatus == UserStatus.Active), "UserID", "Name");
+            // Show active lecturer‑module pair with module name
+            ViewBag.LecturerModules = new SelectList(
+                _context.LecturerModules
+                    .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active)
+                    .Include(lm => lm.Module)
+                    .Select(lm => new { lm.LecturerModuleID, Display = lm.Module.ModuleName + " - " + lm.Lecturer.Name }),
+                "LecturerModuleID", "Display");
             return View();
         }
 
-
-
-
+        // POST: Admin/EnrollStudent
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddStudentModules([Bind("StudentModuleID,LecturerModuleID,UserID,Date,StudModStatus")] StudentModule studentModule)
+        public async Task<IActionResult> EnrollStudent(int userId, int lecturerModuleId)
         {
-            try
+            bool alreadyEnrolled = await _context.StudentModules.AnyAsync(sm =>
+                sm.UserID == userId && sm.LecturerModuleID == lecturerModuleId && sm.StudModStatus == StudModStatus.Active);
+            if (alreadyEnrolled)
             {
-                studentModule.StudModStatus = StudModStatus.Active;
-                _context.Add(studentModule);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Student-module enrollment added successfully!";
-                return RedirectToAction(nameof(ManageStudentModule));
+                TempData["ErrorMessage"] = "Student already enrolled.";
+                return RedirectToAction(nameof(EnrollStudent));
             }
-            catch
+            var studentModule = new StudentModule
             {
-                TempData["ErrorMessage"] = "An error occurred while adding the student-module enrollment.";
+                UserID = userId,
+                LecturerModuleID = lecturerModuleId,
+                Date = DateTime.Now,
+                StudModStatus = StudModStatus.Active
+            };
+            _context.StudentModules.Add(studentModule);
+            await _context.SaveChangesAsync();
+
+            // Notify the student
+            if (_notificationService != null)
+            {
+                var lm = await _context.LecturerModules
+                    .Include(x => x.Module)
+                    .Include(x => x.Lecturer)
+                    .FirstOrDefaultAsync(x => x.LecturerModuleID == lecturerModuleId);
+                if (lm != null)
+                {
+                    string msg = $"You have been enrolled in \"{lm.Module.ModuleName}\" taught by {lm.Lecturer.Title} {lm.Lecturer.Name} {lm.Lecturer.Surname}.";
+                    await _notificationService.CreateAsync(userId, msg, "student_enrolled");
+                }
             }
 
-            // If model validation fails or an error occurs, repopulate the dropdowns
-            ViewData["LecturerModuleID"] = new SelectList(_context.LecturerModules
-                .Include(lm => lm.Lecturer)
-                .Include(lm => lm.Module)
-                .Select(lm => new {
-                    lm.LecturerModuleID,
-                    LecturerName = lm.Lecturer.Name + " " + lm.Lecturer.Surname + " - " + lm.Module.ModuleName
-                }),
-                "LecturerModuleID", "LecturerName", studentModule.LecturerModuleID);
-
-            ViewData["ModuleID"] = new SelectList(Enumerable.Empty<SelectListItem>());
-
-            return View(studentModule);
+            TempData["SuccessMessage"] = "Student enrolled.";
+            return RedirectToAction(nameof(ManageStudentModules));
         }
 
 
 
         public async Task<IActionResult> EditStudentModule(int id)
         {
-            // Fetch the StudentModule to edit
-            var studentModule = await _context.StudentModules
-                .Include(sm => sm.LecturerModule)
-                .ThenInclude(lm => lm.Lecturer)
-                .Include(sm => sm.LecturerModule)
-                .ThenInclude(lm => lm.Module)
+            var sm = await _context.StudentModules
                 .Include(sm => sm.Student)
+                .Include(sm => sm.LecturerModule)
                 .FirstOrDefaultAsync(sm => sm.StudentModuleID == id);
+            if (sm == null) return NotFound();
 
-            if (studentModule == null)
-            {
-                return NotFound();
-            }
-
-            // Populate lecturer dropdown
-            var lecturerModules = _context.LecturerModules
-                .Include(lm => lm.Lecturer)
-                .Include(lm => lm.Module)
-                .Select(lm => new {
-                    lm.LecturerModuleID,
-                    LecturerName = lm.Lecturer.Name + " " + lm.Lecturer.Surname + " - " + lm.Module.ModuleName
-                })
-                .ToList();
-
-            ViewData["LecturerModuleID"] = new SelectList(lecturerModules, "LecturerModuleID", "LecturerName", studentModule.LecturerModuleID);
-
-            // Populate active student dropdown
-            var activeStudents = _context.Accounts
-                .Where(a => a.Role == UserRole.Student && a.UserStatus == UserStatus.Active)
-                .Select(a => new { a.UserID, FullName = a.Name + " " + a.Surname })
-                .ToList();
-
-            ViewData["UserID"] = new SelectList(activeStudents, "UserID", "FullName", studentModule.UserID);
-
-            return View(studentModule);
+            ViewData["UserID"] = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Student && u.UserStatus == UserStatus.Active), "UserID", "Name", sm.UserID);
+            ViewData["LecturerModuleID"] = new SelectList(
+                _context.LecturerModules
+                    .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active)
+                    .Include(lm => lm.Module)
+                    .Include(lm => lm.Lecturer)
+                    .Select(lm => new { lm.LecturerModuleID, Display = lm.Module.ModuleName + " - " + lm.Lecturer.Name }),
+                "LecturerModuleID", "Display", sm.LecturerModuleID);
+            return View(sm);
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditStudentModule(int id, [Bind("StudentModuleID,LecturerModuleID,UserID,Date,StudModStatus")] StudentModule studentModule)
+        public async Task<IActionResult> EditStudentModule(int id, StudentModule model)
         {
-            if (id != studentModule.StudentModuleID)
+            if (id != model.StudentModuleID) return NotFound();
+            if (ModelState.IsValid)
             {
-                return NotFound();
+                var existing = await _context.StudentModules.FindAsync(id);
+                if (existing == null) return NotFound();
+
+                existing.UserID = model.UserID;
+                existing.LecturerModuleID = model.LecturerModuleID;
+                existing.Date = model.Date;
+
+                _context.Update(existing);
+                await _context.SaveChangesAsync();
+
+                if (_notificationService != null)
+                {
+                    var lm = await _context.LecturerModules
+                        .Include(x => x.Module)
+                        .Include(x => x.Lecturer)
+                        .FirstOrDefaultAsync(x => x.LecturerModuleID == model.LecturerModuleID);
+                    await _notificationService.CreateAsync(model.UserID,
+                        $"Your enrollment details have been updated by an administrator.", "enrollment_updated");
+                }
+
+                TempData["SuccessMessage"] = "Student module enrollment updated.";
+                return RedirectToAction(nameof(ManageStudentModules));
             }
-
-            
-                try
-                {
-                    studentModule.StudModStatus = StudModStatus.Active;
-                    _context.Update(studentModule);
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Student-module enrollment updated successfully!";
-                    return RedirectToAction(nameof(ManageStudentModule));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.StudentModules.Any(sm => sm.StudentModuleID == studentModule.StudentModuleID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "A concurrency error occurred while updating the enrollment.";
-                        throw;
-                    }
-                }
-                catch
-                {
-                    TempData["ErrorMessage"] = "An unexpected error occurred while updating the enrollment.";
-                }
-            
-
-            // Repopulate dropdowns if model is invalid or an error occurs
-            var lecturerModules = _context.LecturerModules
-                .Include(lm => lm.Lecturer)
-                .Include(lm => lm.Module)
-                .Select(lm => new {
-                    lm.LecturerModuleID,
-                    LecturerName = lm.Lecturer.Name + " " + lm.Lecturer.Surname + " - " + lm.Module.ModuleName
-                })
-                .ToList();
-
-            ViewData["LecturerModuleID"] = new SelectList(lecturerModules, "LecturerModuleID", "LecturerName", studentModule.LecturerModuleID);
-
-            var activeStudents = _context.Accounts
-                .Where(a => a.Role == UserRole.Student && a.UserStatus == UserStatus.Active)
-                .Select(a => new { a.UserID, FullName = a.Name + " " + a.Surname })
-                .ToList();
-
-            ViewData["UserID"] = new SelectList(activeStudents, "UserID", "FullName", studentModule.UserID);
-
-            return View(studentModule);
+            ViewData["UserID"] = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Student && u.UserStatus == UserStatus.Active), "UserID", "Name", model.UserID);
+            ViewData["LecturerModuleID"] = new SelectList(
+                _context.LecturerModules
+                    .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active)
+                    .Include(lm => lm.Module)
+                    .Include(lm => lm.Lecturer)
+                    .Select(lm => new { lm.LecturerModuleID, Display = lm.Module.ModuleName + " - " + lm.Lecturer.Name }),
+                "LecturerModuleID", "Display", model.LecturerModuleID);
+            return View(model);
         }
 
-
-
+        // ========== MISSING: Delete Student Module (Soft) ==========
         public async Task<IActionResult> DeleteStudentModule(int id)
         {
-            var studentModule = await _context.StudentModules
+            var sm = await _context.StudentModules
                 .Include(sm => sm.Student)
                 .Include(sm => sm.LecturerModule)
-                    .ThenInclude(lm => lm.Lecturer)
-                .Include(sm => sm.LecturerModule)
                     .ThenInclude(lm => lm.Module)
+                .Include(sm => sm.LecturerModule)
+                    .ThenInclude(lm => lm.Lecturer)
                 .FirstOrDefaultAsync(sm => sm.StudentModuleID == id);
-
-            if (studentModule == null)
-            {
-                return NotFound();
-            }
-
-            return View(studentModule);
+            if (sm == null) return NotFound();
+            return View(sm);
         }
-
 
         [HttpPost, ActionName("DeleteStudentModule")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteStudentModuleConfirmed(int id)
         {
-            var studentModule = await _context.StudentModules.FindAsync(id);
-            if (studentModule == null)
+            var sm = await _context.StudentModules
+                .Include(sm => sm.Student)
+                .Include(sm => sm.LecturerModule)
+                    .ThenInclude(lm => lm.Module)
+                .FirstOrDefaultAsync(sm => sm.StudentModuleID == id);
+            if (sm == null) return NotFound();
+
+            sm.StudModStatus = StudModStatus.Inactive;
+            _context.Update(sm);
+            await _context.SaveChangesAsync();
+
+            if (_notificationService != null && sm.Student != null)
             {
-                TempData["ErrorMessage"] = "Student-module enrollment not found.";
-                return NotFound();
+                await _notificationService.CreateAsync(sm.UserID,
+                    $"Your enrollment in module \"{sm.LecturerModule?.Module?.ModuleName}\" has been removed by an administrator.",
+                    "enrollment_removed");
             }
 
-            try
-            {
-                studentModule.StudModStatus = StudModStatus.Inactive;
-                _context.StudentModules.Update(studentModule);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Student-module enrollment deactivated successfully!";
-            }
-            catch
-            {
-                TempData["ErrorMessage"] = "An error occurred while deactivating the enrollment.";
-            }
-
-            return RedirectToAction(nameof(ManageStudentModule));
+            TempData["SuccessMessage"] = "Student enrollment deactivated.";
+            return RedirectToAction(nameof(ManageStudentModules));
         }
 
 
 
 
 
-
-
-
-
-        public async Task<IActionResult> ManageUsers()
+        // ========== MISSING: ASSESSMENT TYPES CRUD (Admin) ==========
+        public async Task<IActionResult> ManageAssessmentTypes()
         {
-            // Get all active users ordered by surname and name
-            var users = await _context.Accounts
-                .OrderBy(u => u.Surname)
-                .ThenBy(u => u.Name)
-                .ToListAsync();
-
-            return View(users);
+            var types = await _context.AssessmentTypes.Where(t => !t.IsDeleted).ToListAsync();
+            return View(types);
         }
 
-
-
-
-
-
-
-        // GET: Create User
-        public IActionResult CreateUser()
+        public IActionResult AddAssessmentType()
         {
-            PopulateRoleDropdown(); // No need to await, it's synchronous
             return View();
         }
 
-        // POST: Create User
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateUser(Account account)
+        public async Task<IActionResult> AddAssessmentType(AssessmentType type)
         {
-            try
-            {
-                if (_context.Accounts.Any(a => a.Email == account.Email))
-                {
-                    TempData["ErrorMessage"] = "Email already exists in the system.";
-                    PopulateRoleDropdown();
-                    return View(account);
-                }
-
-                // Set status inactive initially
-                account.UserStatus = UserStatus.Inactive;
-
-                // Generate verification token
-                account.EmailVerificationTokenHash = Guid.NewGuid().ToString();
-                account.EmailVerificationTokenExpires = DateTime.UtcNow.AddHours(24);
-
-                _context.Accounts.Add(account);
-                await _context.SaveChangesAsync();
-
-                // Send verification email
-                var emailService = new EmailService(_configuration);
-                var verificationLink = Url.Action(
-                    "VerifyEmail",
-                    "Account",
-                    new { userId = account.UserID, token = account.EmailVerificationTokenHash },
-                    Request.Scheme);
-
-                var placeholders = new Dictionary<string, string>
-        {
-            { "Name", account.Name },
-            { "VerificationLink", verificationLink }
-        };
-
-                await emailService.SendEmailWithTemplateAsync(
-                    account.Email,
-                    "Verify your email",
-                    "EmailVerificationTemplate.html",
-                    placeholders);
-
-                TempData["SuccessMessage"] = $"User created! A verification email has been sent to {account.Email}.";
-                return RedirectToAction(nameof(ManageUsers));
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
-            }
-
-            PopulateRoleDropdown();
-            return View(account);
-        }
-
-
-
-
-        public async Task<IActionResult> EditUser(int id)
-        {
-            var user = await _context.Accounts.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            await PopulateRoleDropdown(user.Role);
-            await PopulateStatusDropdown(user.UserStatus);
-            return View(user);
-        }
-
-        // POST: Edit User
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditUser(int id, Account account)
-        {
-            if (id != account.UserID)
-            {
-                return NotFound();
-            }
-
             if (ModelState.IsValid)
             {
-                try
-                {
-                    // Prevent changing email to one that already exists (for another user)
-                    if (_context.Accounts.Any(a => a.Email == account.Email && a.UserID != account.UserID))
-                    {
-                        TempData["ErrorMessage"] = "Email already exists in the system.";
-                        await PopulateRoleDropdown(account.Role);
-                        await PopulateStatusDropdown(account.UserStatus);
-                        return View(account);
-                    }
-
-                    // Get the existing user from database
-                    var existingUser = await _context.Accounts.FindAsync(id);
-                    if (existingUser == null)
-                    {
-                        return NotFound();
-                    }
-
-                    // Update only the fields we want to allow changing
-                    existingUser.Name = account.Name;
-                    existingUser.Surname = account.Surname;
-                    existingUser.Title = account.Title;
-                    existingUser.Role = account.Role;
-                    existingUser.Email = account.Email;
-
-                    // Force status to Active regardless of input
-                    existingUser.UserStatus = UserStatus.Active;
-
-                    // Explicitly tell EF which properties to update
-                    _context.Entry(existingUser).Property(x => x.Name).IsModified = true;
-                    _context.Entry(existingUser).Property(x => x.Surname).IsModified = true;
-                    _context.Entry(existingUser).Property(x => x.Title).IsModified = true;
-                    _context.Entry(existingUser).Property(x => x.Role).IsModified = true;
-                    _context.Entry(existingUser).Property(x => x.Email).IsModified = true;
-                    _context.Entry(existingUser).Property(x => x.UserStatus).IsModified = true;
-
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "User updated successfully!";
-                    return RedirectToAction(nameof(ManageUsers));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Accounts.Any(e => e.UserID == account.UserID))
-                    {
-                        return NotFound();
-                    }
-                    throw;
-                }
-            }
-
-            await PopulateRoleDropdown(account.Role);
-            await PopulateStatusDropdown(account.UserStatus);
-            return View(account);
-        }
-        // GET: Delete User
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await _context.Accounts.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
-        }
-
-        // POST: Delete User
-        [HttpPost, ActionName("DeleteUser")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteUserConfirmed(int id)
-        {
-            var user = await _context.Accounts.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            try
-            {
-                // Soft delete by setting status to Inactive
-                user.UserStatus = UserStatus.Inactive;
-                _context.Accounts.Update(user);
+                type.IsDeleted = false;
+                _context.AssessmentTypes.Add(type);
                 await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "User deactivated successfully!";
+                TempData["SuccessMessage"] = "Assessment type created.";
+                return RedirectToAction(nameof(ManageAssessmentTypes));
             }
-            catch
+            return View(type);
+        }
+
+        public async Task<IActionResult> EditAssessmentType(int? id)
+        {
+            if (id == null) return NotFound();
+            var type = await _context.AssessmentTypes.FindAsync(id);
+            if (type == null || type.IsDeleted) return NotFound();
+            return View(type);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAssessmentType(int id, AssessmentType model)
+        {
+            if (id != model.AssessmentTypeID) return NotFound();
+            if (ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "An error occurred while deactivating the user.";
+                var existing = await _context.AssessmentTypes.FindAsync(id);
+                if (existing == null || existing.IsDeleted) return NotFound();
+                existing.AssessmentTypeDescription = model.AssessmentTypeDescription;
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Assessment type updated.";
+                return RedirectToAction(nameof(ManageAssessmentTypes));
             }
-
-            return RedirectToAction(nameof(ManageUsers));
+            return View(model);
         }
 
-
-
-      
-
-
-
-
-
-
-
-        // Helper methods
-        private async Task PopulateRoleDropdown(UserRole? selectedRole = null)
+        public async Task<IActionResult> DeleteAssessmentType(int? id)
         {
-            var roles = Enum.GetValues(typeof(UserRole))
-                .Cast<UserRole>()
-                .Select(r => new SelectListItem
-                {
-                    Value = r.ToString(),
-                    Text = r.ToString(),
-                    Selected = selectedRole.HasValue && r == selectedRole.Value
-                })
-                .ToList();
-
-            ViewBag.Roles = new SelectList(roles, "Value", "Text", selectedRole);
+            if (id == null) return NotFound();
+            var type = await _context.AssessmentTypes.FindAsync(id);
+            if (type == null || type.IsDeleted) return NotFound();
+            return View(type);
         }
 
-        private async Task PopulateStatusDropdown(UserStatus? selectedStatus = null)
+        [HttpPost, ActionName("DeleteAssessmentType")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAssessmentTypeConfirmed(int id)
         {
-            var statuses = Enum.GetValues(typeof(UserStatus))
-                .Cast<UserStatus>()
-                .Select(s => new SelectListItem
-                {
-                    Value = s.ToString(),
-                    Text = s.ToString(),
-                    Selected = selectedStatus.HasValue && s == selectedStatus.Value
-                })
-                .ToList();
-
-            ViewBag.Statuses = new SelectList(statuses, "Value", "Text", selectedStatus);
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        private void AddCellToHeader(PdfPTable table, string text)
-        {
-            var font = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.White);
-            var cell = new PdfPCell(new Phrase(text, font))
+            var type = await _context.AssessmentTypes.FindAsync(id);
+            if (type != null && !type.IsDeleted)
             {
-                BackgroundColor = new BaseColor(52, 73, 94), // dark blue
-                HorizontalAlignment = Element.ALIGN_CENTER,
-                Padding = 5
-            };
-            table.AddCell(cell);
+                type.IsDeleted = true;
+                await _context.SaveChangesAsync();
+            }
+            TempData["SuccessMessage"] = "Assessment type deleted.";
+            return RedirectToAction(nameof(ManageAssessmentTypes));
         }
 
-        private void AddCellToBody(PdfPTable table, string text)
+
+
+
+
+
+
+        // ========== REPORTS ==========
+        // 1. User Report
+        public async Task<IActionResult> UserReport(string searchTerm, UserRole? role = null)
         {
-            var font = FontFactory.GetFont(FontFactory.HELVETICA, 11, BaseColor.Black);
-            var cell = new PdfPCell(new Phrase(text, font))
+            IQueryable<Account> query = _context.Accounts;
+            if (!string.IsNullOrEmpty(searchTerm))
             {
-                HorizontalAlignment = Element.ALIGN_CENTER,
-                Padding = 5
-            };
-            table.AddCell(cell);
+                query = query.Where(u => u.Name.Contains(searchTerm) || u.Surname.Contains(searchTerm) || u.UserID.ToString().Contains(searchTerm));
+            }
+            if (role.HasValue)
+            {
+                query = query.Where(u => u.Role == role.Value);
+            }
+            var users = await query.ToListAsync();
+            return View(users);
         }
 
-
-
-
-
-        private async Task PopulateEditDropdowns(int currentModuleId, int currentLecturerId)
+        // 2. Module Report
+        public async Task<IActionResult> ModuleReport(int? moduleId)
         {
-            var assignedModuleIds = await _context.LecturerModules
-                .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active && lm.ModuleID != currentModuleId)
-                .Select(lm => lm.ModuleID)
-                .ToListAsync();
-
-            var assignedLecturerIds = await _context.LecturerModules
-                .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active && lm.UserID != currentLecturerId)
-                .Select(lm => lm.UserID)
-                .ToListAsync();
-
-            var availableModules = await _context.Modules
-                .Where(m => m.ModuleStatus == ModuleStatus.Active && (!assignedModuleIds.Contains(m.ModuleID) || m.ModuleID == currentModuleId))
-                .ToListAsync();
-
-            var availableLecturers = await _context.Accounts
-                .Where(u => u.Role == UserRole.Lecturer &&
-                            u.UserStatus == UserStatus.Active &&
-                            (!assignedLecturerIds.Contains(u.UserID) || u.UserID == currentLecturerId))
-                .Select(u => new
-                {
-                    u.UserID,
-                    FullName = u.Name + " " + u.Surname
-                })
-                .ToListAsync();
-            ViewBag.ModuleList = new SelectList(availableModules, "ModuleID", "ModuleName", currentModuleId);
-            ViewBag.LecturerList = new SelectList(availableLecturers, "UserID", "FullName", currentLecturerId);
-
+            if (moduleId == null)
+            {
+                // List all modules with basic info
+                var modules = await _context.Modules.ToListAsync();
+                return View("ModuleReportList", modules);
+            }
+            else
+            {
+                var module = await _context.Modules.FindAsync(moduleId);
+                if (module == null) return NotFound();
+                var activeLecturer = await _context.LecturerModules
+                    .Where(lm => lm.ModuleID == moduleId && lm.ModLecturerStatus == ModLecturerStatus.Active)
+                    .Include(lm => lm.Lecturer)
+                    .FirstOrDefaultAsync();
+                int studentCount = await _context.StudentModules.CountAsync(sm =>
+                    sm.LecturerModule.ModuleID == moduleId && sm.StudModStatus == StudModStatus.Active);
+                ViewBag.Module = module;
+                ViewBag.Lecturer = activeLecturer?.Lecturer;
+                ViewBag.StudentCount = studentCount;
+                return View("ModuleReportDetail");
+            }
         }
 
-
-
-
-
-        private async Task PopulateDropdowns()
+        // 3. Assessment Report – filtered by status, type, date range
+        public async Task<IActionResult> AssessmentReport(AssessmentStatus? status, int? typeId, DateTime? fromDate, DateTime? toDate)
         {
-            var availableModules = await _context.Modules
-                .Where(m => m.ModuleStatus == ModuleStatus.Active)
-                .ToListAsync();
+            var query = _context.Assessments
+                .Where(a => !a.IsDeleted)
+                .Include(a => a.AssessmentType)
+                .Include(a => a.StudentModule)
+                    .ThenInclude(sm => sm.Student)
+                .Include(a => a.StudentModule)
+                    .ThenInclude(sm => sm.LecturerModule)
+                        .ThenInclude(lm => lm.Module)
+                .AsQueryable();
 
-            // Get lecturers with less than 3 assigned active modules
-            var lecturersWithCounts = await _context.LecturerModules
-                .Where(lm => lm.ModLecturerStatus == ModLecturerStatus.Active)
-                .GroupBy(lm => lm.UserID)
-                .Select(group => new
-                {
-                    UserID = group.Key,
-                    Count = group.Count()
-                })
-                .ToListAsync();
+            if (status.HasValue)
+                query = query.Where(a => a.AssessmentStatus == status.Value);
+            if (typeId.HasValue)
+                query = query.Where(a => a.AssessmentTypeID == typeId.Value);
+            if (fromDate.HasValue)
+                query = query.Where(a => a.DueDate >= fromDate.Value);
+            if (toDate.HasValue)
+                query = query.Where(a => a.DueDate <= toDate.Value);
 
-            var lecturersToExclude = lecturersWithCounts
-                .Where(x => x.Count >= 3)
-                .Select(x => x.UserID)
-                .ToList();
+            var assessments = await query.OrderBy(a => a.DueDate).ToListAsync();
 
-            var availableLecturers = await _context.Accounts
-                .Where(u => u.Role == UserRole.Lecturer &&
-                            u.UserStatus == UserStatus.Active &&
-                            !lecturersToExclude.Contains(u.UserID))
-                .Select(u => new
-                {
-                    u.UserID,
-                    FullName = u.Name + " " + u.Surname
-                })
-                .ToListAsync();
+            ViewBag.StatusOptions = Enum.GetValues(typeof(AssessmentStatus)).Cast<AssessmentStatus>().ToList();
+            ViewBag.AssessmentTypes = await _context.AssessmentTypes.Where(t => !t.IsDeleted).ToListAsync();
+            ViewBag.SelectedStatus = status;
+            ViewBag.SelectedTypeId = typeId;
+            ViewBag.FromDate = fromDate;
+            ViewBag.ToDate = toDate;
 
-            ViewBag.Modules = new MultiSelectList(availableModules, "ModuleID", "ModuleName");
-            ViewBag.Lecturers = new SelectList(availableLecturers, "UserID", "FullName");
+            return View(assessments);
         }
-
-        
-       
-
-
-
     }
 }

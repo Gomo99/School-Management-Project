@@ -1,52 +1,78 @@
-﻿@model SchoolProject.Models.Module
-
+@model SchoolProject.Models.Module
 @{
     ViewData["Title"] = "Edit Module";
-}
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow rounded-4">
-                <div class="card-header bg-warning text-dark rounded-top-4 d-flex align-items-center">
-                    <i class="bi bi-pencil-square me-2"></i>
-                    <h5 class="mb-0">Edit Module</h5>
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageModules">Modules</a>
+            <span>/</span> Edit
+        </div>
+        <h1>Edit Module</h1>
+        <p>Update the details for <strong>@Model.ModuleName</strong>.</p>
+    </div>
+    <a href="/Admin/ManageModules" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div style="max-width:640px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-pencil-fill me-2" style="color:var(--primary);"></i>Module Information</h5>
+            <span class="badge-custom badge-student">#@Model.ModuleID</span>
+        </div>
+        <div class="card-body-custom">
+            <form asp-action="EditModule" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="ModuleID" type="hidden" />
+
+                <div class="form-group-custom">
+                    <label asp-for="ModuleName" class="form-label-custom">Module Name <span style="color:var(--danger);">*</span></label>
+                    <input asp-for="ModuleName" class="form-control-custom @(ViewData.ModelState["ModuleName"]?.Errors.Count > 0 ? "is-invalid" : "")" />
+                    <span asp-validation-for="ModuleName" class="form-error"></span>
                 </div>
-                <div class="card-body bg-light rounded-bottom-4">
-                    <form asp-action="EditModule" method="post">
-                        <input type="hidden" asp-for="ModuleID" />
 
-                        <div class="mb-3">
-                            <label asp-for="ModuleName" class="form-label">Module Name</label>
-                            <input asp-for="ModuleName" class="form-control form-control-lg" placeholder="Enter module name" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group-custom">
+                            <label asp-for="Duration" class="form-label-custom">Duration (Weeks) <span style="color:var(--danger);">*</span></label>
+                            <input asp-for="Duration" type="number" min="1" class="form-control-custom @(ViewData.ModelState["Duration"]?.Errors.Count > 0 ? "is-invalid" : "")" />
+                            <span asp-validation-for="Duration" class="form-error"></span>
                         </div>
-
-                        <div class="mb-3">
-                            <label asp-for="Duration" class="form-label">Duration</label>
-                            <input asp-for="Duration" class="form-control form-control-lg" placeholder="e.g. 10 weeks" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="ModuleType" class="form-label">Module Type</label>
-                            <select asp-for="ModuleType" class="form-select form-select-lg" asp-items="Html.GetEnumSelectList<ModuleType>()">
-                                <option disabled selected>-- Select Type --</option>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group-custom">
+                            <label asp-for="ModuleType" class="form-label-custom">Module Type <span style="color:var(--danger);">*</span></label>
+                            <select asp-for="ModuleType" class="form-control-custom form-select-custom">
+                                @foreach (var type in Enum.GetValues(typeof(SchoolProject.Models.ModuleType)).Cast<SchoolProject.Models.ModuleType>())
+                                {
+                                    <option value="@type" selected="@(Model.ModuleType == type)">@type</option>
+                                }
                             </select>
+                            <span asp-validation-for="ModuleType" class="form-error"></span>
                         </div>
-
-                        <div class="d-flex justify-content-between mt-4">
-                            <a asp-action="ManageModules" class="btn btn-outline-secondary btn-lg">
-                                <i class="bi bi-arrow-left-circle me-1"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-save2 me-1"></i> Save Changes
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="bi bi-check-lg"></i> Save Changes
+                    </button>
+                    <a href="/Admin/ManageModules" class="btn-secondary-custom">Cancel</a>
+                    <a href="/Admin/ModuleDetails/@Model.ModuleID" class="btn-secondary-custom">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

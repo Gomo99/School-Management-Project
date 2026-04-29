@@ -58,5 +58,9 @@ namespace SchoolProject.Service
             _userConnections.TryGetValue(userId, out var connectionId);
             return connectionId;
         }
+
+
+
+
     }
 }

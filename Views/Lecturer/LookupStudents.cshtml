@@ -1,38 +1,46 @@
 ﻿@model IEnumerable<SchoolProject.Models.Account>
-
 @{
-    ViewData["Title"] = "Lookup Students";
+    ViewData["Title"] = "My Students";
+    Layout = "~/Views/Shared/_LecturerLayout.cshtml";
 }
 
-<div class="container mt-4">
-    <h2 class="mb-4">Active Students</h2>
+<div class="page-header">
+    <div>
+        <h1>My Students</h1>
+        <p>Students enrolled in your modules.</p>
+    </div>
+</div>
 
-    <table class="table table-hover table-striped shadow-sm">
-        <thead class="table-dark">
-            <tr>
-                <th>Name</th>
-                <th>Surname</th>
-                <th>Email</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model != null && Model.Any())
-            {
-                foreach (var student in Model)
+<div class="card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-people-fill me-2" style="color:var(--primary);"></i>Student List</h5>
+        <span class="badge-custom badge-active">@Model.Count() students</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Model)
                 {
                     <tr>
-                        <td>@student.Name</td>
-                        <td>@student.Surname</td>
+                        <td>#@student.UserID</td>
+                        <td><strong>@student.Title @student.Name @student.Surname</strong></td>
                         <td>@student.Email</td>
+                        <td>
+                            <a href="/Lecturer/StudentDetails?studentId=@student.UserID" class="btn-primary-custom" style="padding:6px 14px; font-size:13px;">
+                                <i class="bi bi-eye"></i> View Assessments
+                            </a>
+                        </td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="3" class="text-center text-muted">No active students found.</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 </div>

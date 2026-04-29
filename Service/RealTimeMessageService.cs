@@ -42,5 +42,30 @@ namespace SchoolProject.Service
             await _hubContext.Clients.GroupExcept($"conversation_{conversationId}", MessageHub.GetConnectionId(userId))
                 .SendAsync("UserTyping", userId, isTyping);
         }
+
+
+
+        // in Services/RealTimeMessageService.cs
+        public async Task NotifyAssessmentCreated(int userId, string message)
+        {
+            await _hubContext.Clients.Group($"user_{userId}")
+                .SendAsync("ReceiveNotification", new
+                {
+                    message,
+                    type = "new_assessment",
+                    createdAt = DateTime.UtcNow.ToString("o")
+                });
+        }
+
+        public async Task NotifyDeadlineReminder(int userId, string message)
+        {
+            await _hubContext.Clients.Group($"user_{userId}")
+                .SendAsync("ReceiveNotification", new
+                {
+                    message,
+                    type = "deadline_reminder",
+                    createdAt = DateTime.UtcNow.ToString("o")
+                });
+        }
     }
 }

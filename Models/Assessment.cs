@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SchoolProject.Models
@@ -20,9 +19,11 @@ namespace SchoolProject.Models
         public DateTime DueDate { get; set; }
 
         [Required]
-        public AssessmentStatus AssessmentStatus { get; set; }
+        public AssessmentStatus AssessmentStatus { get; set; } = AssessmentStatus.NotStarted;
 
-        // Navigation properties
+        // Soft delete flag
+        public bool IsDeleted { get; set; } = false;
+
         [ForeignKey("StudentModuleID")]
         public virtual StudentModule StudentModule { get; set; }
 
@@ -30,11 +31,11 @@ namespace SchoolProject.Models
         public virtual AssessmentType AssessmentType { get; set; }
     }
 
-
-
     public enum AssessmentStatus
     {
-        Active,
-        Inactive
+        NotStarted,
+        Completed,
+        Missed,
+        Rescheduled
     }
 }

@@ -1,60 +1,69 @@
-﻿@model SchoolProject.Models.StudentModule
-
+@model SchoolProject.Models.StudentModule
 @{
-    ViewData["Title"] = "Add Student Module";
+    ViewData["Title"] = "Enrol Student";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
-}
-<div class="container py-5">
-    <div class="card shadow-lg">
-        <div class="card-header bg-primary text-white">
-            <h4>Add Student Module</h4>
+
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span>
+            <a href="/Admin/ManageStudentModule">Student Modules</a>
+            <span>/</span> Enrol
         </div>
-        <div class="card-body">
+        <h1>Enrol Student</h1>
+        <p>Assign a student to a lecturer's module.</p>
+    </div>
+    <a href="/Admin/ManageStudentModule" class="btn-secondary-custom">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div style="max-width:640px;">
+    <div class="card">
+        <div class="card-header-custom">
+            <h5><i class="bi bi-journal-plus me-2" style="color:var(--primary);"></i>Enrolment Details</h5>
+        </div>
+        <div class="card-body-custom">
             <form asp-action="AddStudentModules" method="post">
                 @Html.AntiForgeryToken()
 
-                <!-- Lecturer Dropdown -->
-                <div class="mb-3">
-                    <label for="LecturerModuleID" class="form-label">Lecturer and Module</label>
-                    <select id="LecturerModuleID" name="LecturerModuleID" class="form-select" required>
-                        <option value="">Select Lecturer and Module</option>
-                        @if (ViewData["LecturerModuleID"] != null)
-                        {
-                            foreach (var item in ViewData["LecturerModuleID"] as SelectList)
-                            {
-                                <option value="@item.Value">@item.Text</option>
-                            }
-                        }
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Student <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="UserID" asp-items="@ViewData["UserID"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-control-custom form-select-custom">
+                        <option value="">-- Select Student --</option>
                     </select>
-                    <span asp-validation-for="LecturerModuleID" class="text-danger"></span>
+                    <span asp-validation-for="UserID" class="form-error"></span>
                 </div>
 
-                <!-- Student Dropdown populated from Controller -->
-                <div class="mb-3">
-                    <label for="UserID" class="form-label">Student</label>
-                    <select id="UserID" name="UserID" class="form-select" required>
-                        <option value="">Select a Student</option>
-                        @if (ViewData["UserID"] != null)
-                        {
-                            foreach (var item in ViewData["UserID"] as SelectList)
-                            {
-                                <option value="@item.Value">@item.Text</option>
-                            }
-                        }
+                <div class="form-group-custom">
+                    <label class="form-label-custom">Lecturer Module <span style="color:var(--danger);">*</span></label>
+                    <select asp-for="LecturerModuleID" asp-items="@ViewData["LecturerModuleID"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList" class="form-control-custom form-select-custom">
+                        <option value="">-- Select Lecturer & Module --</option>
                     </select>
-                    <span asp-validation-for="UserID" class="text-danger"></span>
+                    <div class="form-hint">Shows lecturer name and associated module.</div>
+                    <span asp-validation-for="LecturerModuleID" class="form-error"></span>
                 </div>
 
-                <div class="mb-3">
-                    <label for="Date" class="form-label">Date</label>
-                    <input type="date" id="Date" name="Date" class="form-control" required />
-                    <span asp-validation-for="Date" class="text-danger"></span>
+                <div class="form-group-custom">
+                    <label asp-for="Date" class="form-label-custom">Enrolment Date <span style="color:var(--danger);">*</span></label>
+                    <input asp-for="Date" type="date" class="form-control-custom"
+                           value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="Date" class="form-error"></span>
                 </div>
 
-                <button type="submit" class="btn btn-success">Add Student Module</button>
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn-primary-custom">
+                        <i class="bi bi-check-lg"></i> Enrol Student
+                    </button>
+                    <a href="/Admin/ManageStudentModule" class="btn-secondary-custom">Cancel</a>
+                </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

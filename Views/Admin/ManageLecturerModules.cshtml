@@ -1,43 +1,90 @@
-﻿@model IEnumerable<SchoolProject.Models.LecturerModule>
-
+@model IEnumerable<SchoolProject.Models.LecturerModule>
 @{
-    ViewData["Title"] = "Manage Lecturer Modules";
-}
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
+    ViewData["Title"] = "Lecturer Modules";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
-<partial name="_NotificationPartial" />
+<div class="page-header">
+    <div>
+        <div class="breadcrumb-custom">
+            <a href="/Admin/Dashboard">Dashboard</a>
+            <span>/</span> Lecturer Modules
+        </div>
+        <h1>Lecturer Modules</h1>
+        <p>Manage which lecturers are assigned to which modules.</p>
+    </div>
+    <a href="/Admin/AddLecturerModule" class="btn-primary-custom">
+        <i class="bi bi-plus-lg"></i> Assign Lecturer
+    </a>
+</div>
 
-
-<div class="container mt-4">
-    <h2 class="mb-3">Lecturer Module Assignments</h2>
-    <a asp-action="AddLecturerModule" class="btn btn-primary mb-3">Assign New Lecturer</a>
-    <table class="table table-striped table-bordered">
-        <thead class="table-dark">
-            <tr>
-                <th>Module</th>
-                <th>Lecturer</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var lm in Model)
-            {
+<div class="card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-person-workspace me-2" style="color:var(--primary);"></i>Active Assignments</h5>
+        <span class="badge-custom badge-student">@Model.Count() records</span>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="table-custom">
+            <thead>
                 <tr>
-                    <td>@lm.Module?.ModuleName</td>
-                    <td>@lm.Lecturer?.Name @lm.Lecturer?.Surname</td>
-                    <td>@lm.AssignedDate.ToShortDateString()</td>
-                    <td>@lm.ModLecturerStatus</td>
-                    <td>
-                        <a asp-action="EditLecturerModule" asp-route-id="@lm.LecturerModuleID" class="btn btn-sm btn-warning">Edit</a>
-                        <a asp-action="DeleteLecturerModule" asp-route-id="@lm.LecturerModuleID" class="btn btn-sm btn-danger">Remove</a>
-                        <a asp-action="DetailsLecturerModule" asp-route-id="@lm.LecturerModuleID" class="btn btn-sm btn-info">Details</a>
-                    </td>
+                    <th>#ID</th>
+                    <th>Lecturer</th>
+                    <th>Module</th>
+                    <th>Assigned Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var lm in Model)
+                    {
+                        <tr>
+                            <td><span style="font-family:'Outfit',sans-serif; font-weight:600; color:var(--primary);">#@lm.LecturerModuleID</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">
+                                        @(lm.Lecturer?.Name?.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600;">@lm.Lecturer?.Name @lm.Lecturer?.Surname</div>
+                                        <div style="font-size:12px;color:var(--muted);">@lm.Lecturer?.Email</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><strong>@lm.Module?.ModuleName</strong></td>
+                            <td style="color:var(--muted);">@lm.AssignedDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                @if (lm.ModLecturerStatus.ToString() == "Active")
+                                {
+                                    <span class="badge-custom badge-active">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-custom badge-inactive">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="/Admin/DetailsLecturerModule/@lm.LecturerModuleID" class="btn-icon view" title="View"><i class="bi bi-eye"></i></a>
+                                    <a href="/Admin/EditLecturerModule/@lm.LecturerModuleID" class="btn-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
+                                    <a href="/Admin/DeleteLecturerModule/@lm.LecturerModuleID" class="btn-icon delete" title="Remove"><i class="bi bi-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5" style="color:var(--muted);">
+                            <i class="bi bi-person-workspace" style="font-size:36px; display:block; margin-bottom:8px;"></i>
+                            No assignments found. <a href="/Admin/AddLecturerModule" style="color:var(--primary);">Assign one now.</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

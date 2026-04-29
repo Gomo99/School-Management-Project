@@ -1,7 +1,64 @@
 ﻿@{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_LecturerLayout.cshtml";
 }
-@section Sidebar {
-    @await Html.PartialAsync("_SidebarPartial")
-}
-<partial name="_NotificationPartial" />
+
+<div class="page-header">
+    <div>
+        <h1>Welcome back 👋</h1>
+        <p>Quick overview of your teaching activities.</p>
+    </div>
+</div>
+
+<!-- Quick‑link cards (hardcoded counts; you can pass real data from controller) -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon indigo"><i class="bi bi-book-fill"></i></div>
+            <div>
+                <div class="stat-label">My Modules</div>
+                <div class="stat-value">@ViewBag.ModuleCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <div class="stat-label">My Students</div>
+                <div class="stat-value">@ViewBag.StudentCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon amber"><i class="bi bi-list-check"></i></div>
+            <div>
+                <div class="stat-label">Active Assessments</div>
+                <div class="stat-value">@ViewBag.AssessmentCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-check-circle-fill"></i></div>
+            <div>
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">@ViewBag.CompletedCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card">
+    <div class="card-header-custom">
+        <h5><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
+    </div>
+    <div class="card-body-custom d-flex flex-wrap gap-2">
+        <a href="/Lecturer/AddAssessment" class="btn-primary-custom"><i class="bi bi-plus-circle"></i> New Assessment</a>
+        <a href="/Lecturer/ManageAssessmentType" class="btn-primary-custom" style="background:#8b5cf6;"><i class="bi bi-gear-fill"></i> Manage Assessment Types</a>
+        <a href="/Lecturer/LookupStudents" class="btn-primary-custom" style="background:var(--success);"><i class="bi bi-people-fill"></i> My Students</a>
+        <a href="/Lecturer/AssessmentReport" class="btn-primary-custom" style="background:var(--warning);"><i class="bi bi-graph-up"></i> Assessment Report</a>
+    </div>
+</div>
