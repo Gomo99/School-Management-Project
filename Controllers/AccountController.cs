@@ -159,7 +159,11 @@ namespace SchoolProject.Controllers
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
-            var authProperties = new AuthenticationProperties { IsPersistent = model.RememberMe };
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30)
+            };
             await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);
 
             TempData["SuccessMessage"] = "Login successful!";
@@ -1215,16 +1219,17 @@ namespace SchoolProject.Controllers
         private async Task SignInUser(Account user, bool isPersistent)
         {
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim("UserID", user.UserID.ToString())
-            };
+    {
+        new Claim(ClaimTypes.Name, $"{user.Name} {user.Surname}"),
+        new Claim(ClaimTypes.Role, user.Role.ToString()),
+        new Claim("UserID", user.UserID.ToString())
+    };
 
             var claimsIdentity = new ClaimsIdentity(claims, "MyCookieAuth");
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = isPersistent
+                IsPersistent = true,                          // ← Always persistent
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(30) // ← 30‑day lifetime
             };
 
             await HttpContext.SignInAsync("MyCookieAuth", new ClaimsPrincipal(claimsIdentity), authProperties);

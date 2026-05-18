@@ -1,126 +1,468 @@
 @model SchoolProject.ViewModel.DashboardViewModel
 @{
-    ViewData["Title"] = "Dashboard";
-    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Admin Dashboard";
 }
 
-<div class="page-header">
-    <div>
-        <h1>Welcome back 👋</h1>
-        <p>Here's what's happening with your school management system.</p>
-    </div>
+<style>
+    .dashboard-header {
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-title {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-subtitle {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.2rem;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        height: 100%;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        width: 70px;
+        height: 70px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .stat-content {
+        color: white;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .stat-value {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-change {
+        font-size: 0.9rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .stat-change.positive {
+        background: rgba(79, 172, 254, 0.2);
+        color: #4facfe;
+    }
+
+    .stat-change.negative {
+        background: rgba(245, 87, 108, 0.2);
+        color: #f5576c;
+    }
+
+    .quick-actions {
+        margin-top: 2rem;
+    }
+
+    .action-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: block;
+        color: white;
+    }
+
+    .action-card:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+    }
+
+    .action-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .action-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .chart-container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-top: 2rem;
+        color: white;
+    }
+
+    .chart-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+
+    .recent-activity {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-top: 2rem;
+        color: white;
+    }
+
+    .activity-item {
+        padding: 1rem;
+        border-left: 3px solid #4facfe;
+        margin-bottom: 1rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+    }
+
+    .activity-time {
+        font-size: 0.875rem;
+        opacity: 0.7;
+    }
+</style>
+
+<div class="dashboard-header">
+    <h1 class="dashboard-title">
+        <i class="fas fa-tachometer-alt"></i> Administrator Dashboard
+    </h1>
+    <p class="dashboard-subtitle">
+        Welcome back, @User.Identity.Name! Here's what's happening today.
+    </p>
 </div>
 
-<!-- Stat Cards -->
-<div class="row g-3 mb-4">
-    <div class="col-sm-6 col-xl-3">
+<!-- Statistics Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
         <div class="stat-card">
-            <div class="stat-icon blue"><i class="bi bi-book-fill"></i></div>
-            <div>
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
                 <div class="stat-label">Active Modules</div>
                 <div class="stat-value">@Model.ActiveModulesCount</div>
+                <span class="stat-change positive">
+                    <i class="fas fa-arrow-up"></i> Active
+                </span>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+
+    <div class="col-md-3">
         <div class="stat-card">
-            <div class="stat-icon red"><i class="bi bi-book"></i></div>
-            <div>
+            <div class="stat-icon">
+                <i class="fas fa-book-dead"></i>
+            </div>
+            <div class="stat-content">
                 <div class="stat-label">Inactive Modules</div>
                 <div class="stat-value">@Model.InactiveModulesCount</div>
+                <span class="stat-change negative">
+                    <i class="fas fa-arrow-down"></i> Inactive
+                </span>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+
+    <div class="col-md-3">
         <div class="stat-card">
-            <div class="stat-icon green"><i class="bi bi-people-fill"></i></div>
-            <div>
-                <div class="stat-label">Total Modules</div>
-                <div class="stat-value">@(Model.ActiveModulesCount + Model.InactiveModulesCount)</div>
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value" id="totalUsers">0</div>
+                <span class="stat-change positive">
+                    <i class="fas fa-chart-line"></i> Growing
+                </span>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
+
+    <div class="col-md-3">
         <div class="stat-card">
-            <div class="stat-icon amber"><i class="bi bi-person-check-fill"></i></div>
-            <div>
-                <div class="stat-label">Recent Accounts</div>
-                <div class="stat-value">@Model.RecentAccounts?.Count</div>
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Assessments</div>
+                <div class="stat-value" id="totalAssessments">0</div>
+                <span class="stat-change positive">
+                    <i class="fas fa-tasks"></i> Tracked
+                </span>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row g-4">
-    <!-- Recent Accounts -->
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header-custom">
-                <h5><i class="bi bi-clock-history me-2 text-primary"></i>Recently Added Accounts</h5>
-                <a href="/Admin/ManageUsers" class="btn-secondary-custom" style="padding:6px 14px; font-size:13px;">
-                    View All <i class="bi bi-arrow-right"></i>
-                </a>
-            </div>
-            <div style="overflow-x:auto;">
-                <table class="table-custom">
-                    <thead>
-                        <tr>
-                            <th>#ID</th>
-                            <th>Name</th>
-                            <th>Surname</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.RecentAccounts != null && Model.RecentAccounts.Any())
-                        {
-                            @foreach (var acc in Model.RecentAccounts)
-                            {
-                                <tr>
-                                    <td><span style="font-family:'Outfit',sans-serif; font-weight:600; color:var(--primary);">#@acc.UserID</span></td>
-                                    <td>@acc.Name</td>
-                                    <td>@acc.Surname</td>
-                                    <td>
-                                        <a href="/Admin/EditUser/@acc.UserID" class="btn-icon edit"><i class="bi bi-pencil"></i></a>
-                                    </td>
-                                </tr>
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <h2 class="text-white mb-3" style="font-size: 1.8rem; font-weight: 700;">
+        <i class="fas fa-bolt"></i> Quick Actions
+    </h2>
+    <div class="row g-4">
+        <div class="col-md-3">
+            <a href="/Admin/CreateUser" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+                <div class="action-title">Add User</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/CreateModule" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-book-medical"></i>
+                </div>
+                <div class="action-title">Create Module</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/AssignLecturer" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="action-title">Assign Lecturer</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/EnrollStudent" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="action-title">Enroll Student</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/ManageUsers" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-users-cog"></i>
+                </div>
+                <div class="action-title">Manage Users</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/ManageModules" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-book-reader"></i>
+                </div>
+                <div class="action-title">Manage Modules</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/UserReport" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <div class="action-title">User Reports</div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/Admin/AssessmentReport" class="action-card">
+                <div class="action-icon">
+                    <i class="fas fa-file-contract"></i>
+                </div>
+                <div class="action-title">Assessment Reports</div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-4 mt-2">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-bar"></i> Module Status Overview
+            </h3>
+            <canvas id="moduleChart"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="chart-container">
+            <h3 class="chart-title">
+                <i class="fas fa-chart-line"></i> User Distribution
+            </h3>
+            <canvas id="userChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="recent-activity">
+    <h3 class="chart-title">
+        <i class="fas fa-history"></i> Recent Activity
+    </h3>
+    <div class="activity-item">
+        <div><strong>New Module Created</strong></div>
+        <div class="activity-time">
+            <i class="fas fa-clock"></i> Today at @DateTime.Now.ToString("hh:mm tt")
+        </div>
+    </div>
+    <div class="activity-item">
+        <div><strong>User Account Activated</strong></div>
+        <div class="activity-time">
+            <i class="fas fa-clock"></i> 2 hours ago
+        </div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Assessment Type Updated</strong></div>
+        <div class="activity-time">
+            <i class="fas fa-clock"></i> 5 hours ago
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Animate counter
+        function animateValue(id, start, end, duration) {
+            let obj = document.getElementById(id);
+            let range = end - start;
+            let current = start;
+            let increment = end > start ? 1 : -1;
+            let stepTime = Math.abs(Math.floor(duration / range));
+            let timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current;
+                if (current == end) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        }
+
+        // Simulate data (replace with actual values from your backend)
+        animateValue("totalUsers", 0, 150, 2000);
+        animateValue("totalAssessments", 0, 487, 2000);
+
+        // Module Status Chart
+        const moduleCtx = document.getElementById('moduleChart').getContext('2d');
+        const moduleChart = new Chart(moduleCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Active Modules', 'Inactive Modules'],
+                datasets: [{
+                    data: [@Model.ActiveModulesCount, @Model.InactiveModulesCount],
+                    backgroundColor: [
+                        'rgba(79, 172, 254, 0.8)',
+                        'rgba(245, 87, 108, 0.8)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'white',
+                            padding: 20,
+                            font: {
+                                size: 14
                             }
                         }
-                        else
-                        {
-                            <tr>
-                                <td colspan="4" class="text-center py-4" style="color:var(--muted);">
-                                    <i class="bi bi-inbox" style="font-size:28px; display:block; margin-bottom:6px;"></i>
-                                    No accounts found.
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                    }
+                }
+            }
+        });
 
-    <!-- Quick Links -->
-    <div class="col-lg-4">
-        <div class="card h-100">
-            <div class="card-header-custom">
-                <h5><i class="bi bi-lightning-charge-fill me-2 text-warning"></i>Quick Actions</h5>
-            </div>
-            <div class="card-body-custom d-flex flex-column gap-2">
-                <a href="/Admin/CreateModule" class="btn-primary-custom justify-content-start">
-                    <i class="bi bi-plus-circle-fill"></i> Add New Module
-                </a>
-                <a href="/Admin/CreateUser" class="btn-primary-custom justify-content-start" style="background:#6366f1;">
-                    <i class="bi bi-person-plus-fill"></i> Add New User
-                </a>
-                <a href="/Admin/AddLecturerModule" class="btn-primary-custom justify-content-start" style="background:var(--success);">
-                    <i class="bi bi-person-workspace"></i> Assign Lecturer Module
-                </a>
-                <a href="/Admin/AddStudentModules" class="btn-primary-custom justify-content-start" style="background:var(--accent);">
-                    <i class="bi bi-journal-plus"></i> Enrol Student Module
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
+        // User Distribution Chart
+        const userCtx = document.getElementById('userChart').getContext('2d');
+        const userChart = new Chart(userCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Students', 'Lecturers', 'Admins'],
+                datasets: [{
+                    label: 'User Count',
+                    data: [120, 25, 5],
+                    backgroundColor: [
+                        'rgba(102, 126, 234, 0.8)',
+                        'rgba(118, 75, 162, 0.8)',
+                        'rgba(79, 172, 254, 0.8)'
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'white'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: 'white'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SchoolProject.Data;
 using SchoolProject.Models;
 using SchoolProject.Service;
+using SchoolProject.ViewModel;
 using System.Security.Claims;
 
 namespace SchoolProject.Controllers
@@ -22,9 +23,16 @@ namespace SchoolProject.Controllers
         }
 
         // ========== Dashboard ==========
-        public IActionResult Dashboard()
+        // Inside AdminController.cs
+        public async Task<IActionResult> Dashboard()
         {
-            return View();
+            var model = new DashboardViewModel
+            {
+                ActiveModulesCount = await _context.Modules.CountAsync(m => m.ModuleStatus == ModuleStatus.Active),
+                InactiveModulesCount = await _context.Modules.CountAsync(m => m.ModuleStatus == ModuleStatus.Inactive),
+                
+            };
+            return View(model);
         }
 
         // ========== USER MANAGEMENT ==========
@@ -237,46 +245,80 @@ namespace SchoolProject.Controllers
         // GET: Admin/AssignLecturer
         public IActionResult AssignLecturer()
         {
-            ViewBag.Lecturers = new SelectList(_context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active), "UserID", "Name");
-            ViewBag.Modules = new SelectList(_context.Modules.Where(m => m.ModuleStatus == ModuleStatus.Active), "ModuleID", "ModuleName");
-            return View();
+            // Fill lecturers dropdown
+            ViewBag.Lecturers = new SelectList(
+                _context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active),
+                "UserID", "Name");
+
+            // Pass all active modules as a list for the checkboxes
+            ViewBag.Modules = _context.Modules
+                .Where(m => m.ModuleStatus == ModuleStatus.Active)
+                .ToList();
+
+            return View(new AssignLecturerModulesViewModel
+            {
+                AssignedDate = DateTime.Now,
+                SelectedModuleIDs = new List<int>()
+            });
         }
 
-        // POST: Admin/AssignLecturer
+        // POST: Admin/AssignLecturer (now accepts multiple module IDs)
         [HttpPost]
         [ValidateAntiForgeryToken]
-      
-        public async Task<IActionResult> AssignLecturer(int userId, int moduleId)
+        public async Task<IActionResult> AssignLecturer(int userId, List<int> moduleIds, DateTime assignedDate)
         {
-            // Check if already assigned active
-            bool exists = await _context.LecturerModules.AnyAsync(lm =>
-                lm.UserID == userId && lm.ModuleID == moduleId && lm.ModLecturerStatus == ModLecturerStatus.Active);
-            if (exists)
+            if (userId == 0 || moduleIds == null || moduleIds.Count == 0)
             {
-                TempData["ErrorMessage"] = "This lecturer is already assigned to this module.";
-                return RedirectToAction(nameof(AssignLecturer));
+                TempData["ErrorMessage"] = "Please select a lecturer and at least one module.";
+                // Re-populate dropdowns
+                ViewBag.Lecturers = new SelectList(
+                    _context.Accounts.Where(u => u.Role == UserRole.Lecturer && u.UserStatus == UserStatus.Active),
+                    "UserID", "Name");
+                ViewBag.Modules = _context.Modules
+                    .Where(m => m.ModuleStatus == ModuleStatus.Active)
+                    .ToList();
+                return View(new AssignLecturerModulesViewModel
+                {
+                    UserID = userId,
+                    SelectedModuleIDs = moduleIds ?? new List<int>(),
+                    AssignedDate = assignedDate
+                });
             }
-            var lecturerModule = new LecturerModule
+
+            // Loop over each selected module and assign if not already active
+            foreach (var moduleId in moduleIds)
             {
-                UserID = userId,
-                ModuleID = moduleId,
-                AssignedDate = DateTime.Now,
-                ModLecturerStatus = ModLecturerStatus.Active
-            };
-            _context.LecturerModules.Add(lecturerModule);
+                bool exists = await _context.LecturerModules.AnyAsync(lm =>
+                    lm.UserID == userId && lm.ModuleID == moduleId && lm.ModLecturerStatus == ModLecturerStatus.Active);
+                if (!exists)
+                {
+                    var lecturerModule = new LecturerModule
+                    {
+                        UserID = userId,
+                        ModuleID = moduleId,
+                        AssignedDate = assignedDate,
+                        ModLecturerStatus = ModLecturerStatus.Active
+                    };
+                    _context.LecturerModules.Add(lecturerModule);
+                }
+            }
             await _context.SaveChangesAsync();
 
             // Notify the lecturer
             if (_notificationService != null)
             {
-                var moduleName = (await _context.Modules.FindAsync(moduleId))?.ModuleName;
-                string msg = $"You have been assigned to the module \"{moduleName}\".";
+                var moduleNames = await _context.Modules
+                    .Where(m => moduleIds.Contains(m.ModuleID))
+                    .Select(m => m.ModuleName)
+                    .ToListAsync();
+                string msg = $"You have been assigned to the following modules: {string.Join(", ", moduleNames)}.";
                 await _notificationService.CreateAsync(userId, msg, "lecturer_assigned");
             }
 
-            TempData["SuccessMessage"] = "Lecturer assigned.";
+            TempData["SuccessMessage"] = "Lecturer assigned to selected modules.";
             return RedirectToAction(nameof(ManageLecturerModules));
         }
+
 
         // GET: Admin/ChangeLecturer/5 (LecturerModuleID)
         public async Task<IActionResult> ChangeLecturer(int id)

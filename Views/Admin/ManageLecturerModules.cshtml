@@ -13,7 +13,7 @@
         <h1>Lecturer Modules</h1>
         <p>Manage which lecturers are assigned to which modules.</p>
     </div>
-    <a href="/Admin/AddLecturerModule" class="btn-primary-custom">
+    <a href="/Admin/AssignLecturer" class="btn-primary-custom">
         <i class="bi bi-plus-lg"></i> Assign Lecturer
     </a>
 </div>
@@ -67,7 +67,6 @@
                             </td>
                             <td>
                                 <div class="d-flex gap-1">
-                                    <a href="/Admin/DetailsLecturerModule/@lm.LecturerModuleID" class="btn-icon view" title="View"><i class="bi bi-eye"></i></a>
                                     <a href="/Admin/EditLecturerModule/@lm.LecturerModuleID" class="btn-icon edit" title="Edit"><i class="bi bi-pencil"></i></a>
                                     <a href="/Admin/DeleteLecturerModule/@lm.LecturerModuleID" class="btn-icon delete" title="Remove"><i class="bi bi-trash"></i></a>
                                 </div>
@@ -80,7 +79,7 @@
                     <tr>
                         <td colspan="6" class="text-center py-5" style="color:var(--muted);">
                             <i class="bi bi-person-workspace" style="font-size:36px; display:block; margin-bottom:8px;"></i>
-                            No assignments found. <a href="/Admin/AddLecturerModule" style="color:var(--primary);">Assign one now.</a>
+                            No assignments found. <a href="/Admin/AssignLecturer" style="color:var(--primary);">Assign one now.</a>
                         </td>
                     </tr>
                 }

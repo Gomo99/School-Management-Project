@@ -1,73 +1,480 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SchoolProject</title>
+    <title>@ViewData["Title"] - SchoolHub</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SchoolProject.styles.css" asp-append-version="true" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-dark: #2d3748;
+            --text-light: #ffffff;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
 
-    <script src="https://cdn.jsdelivr.net/npm/Spopperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
 
-    <!-- Notyf CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.css">
+        /* Animated Background Particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
 
-    <!-- Notyf JS -->
-    <script src="https://cdn.jsdelivr.net/npm/notyf@3/notyf.min.js"></script>
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            animation: float 15s infinite;
+        }
 
+        @@keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); }
+            25% { transform: translateY(-100px) translateX(50px); }
+            50% { transform: translateY(-200px) translateX(-50px); }
+            75% { transform: translateY(-100px) translateX(100px); }
+        }
+
+        /* Navbar */
+        .navbar-custom {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-light) !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand i {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Notification Badge */
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-badge .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f5576c;
+            color: white;
+            border-radius: 50%;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Main Content */
+        .main-content {
+            position: relative;
+            z-index: 1;
+            padding: 2rem 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+        }
+
+        /* Alert Messages */
+        .alert-custom {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideIn 0.5s ease;
+        }
+
+        @@keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success { border-left: 4px solid #4facfe; }
+        .alert-danger { border-left: 4px solid #f5576c; }
+        .alert-info { border-left: 4px solid #667eea; }
+
+        /* Buttons */
+        .btn-primary-custom {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.7);
+        }
+
+        .btn-secondary-custom {
+            background: var(--secondary-gradient);
+            border: none;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        /* Footer */
+        .footer-custom {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-light);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 0.5rem;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="container-fluid">
-        <div class="row">
-            @RenderSection("Sidebar", required: false)
-
-            <main class="col-md-9 col-lg-10 py-4">
-                @RenderBody()
-            </main>
-        </div>
+    <!-- Animated Background -->
+    <div class="particles">
+        @for (int i = 0; i < 20; i++)
+        {
+            var size = Random.Shared.Next(10, 50);
+            var left = Random.Shared.Next(0, 100);
+            var delay = Random.Shared.Next(0, 15);
+            <div class="particle" style="width: @(size)px; height: @(size)px; left: @(left)%; animation-delay: @(delay)s;"></div>
+        }
     </div>
 
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-graduation-cap"></i>
+                SchoolHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        @if (User.IsInRole("Administrator"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Admin/Dashboard">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-users-cog"></i> Management
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-custom">
+                                    <li><a class="dropdown-item" href="/Admin/ManageUsers"><i class="fas fa-users"></i> Users</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/ManageModules"><i class="fas fa-book"></i> Modules</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/ManageLecturerModules"><i class="fas fa-chalkboard-teacher"></i> Lecturer Assignments</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/ManageStudentModules"><i class="fas fa-user-graduate"></i> Student Enrollments</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/ManageAssessmentTypes"><i class="fas fa-clipboard-list"></i> Assessment Types</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-chart-bar"></i> Reports
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-custom">
+                                    <li><a class="dropdown-item" href="/Admin/UserReport"><i class="fas fa-user-check"></i> User Report</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/ModuleReport"><i class="fas fa-book-open"></i> Module Report</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/AssessmentReport"><i class="fas fa-file-alt"></i> Assessment Report</a></li>
+                                </ul>
+                            </li>
+                        }
+                        else if (User.IsInRole("Lecturer"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Lecturer/Dashboard">
+                                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Lecturer/ListModules">
+                                    <i class="fas fa-book"></i> My Modules
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Lecturer/ManageAssessments">
+                                    <i class="fas fa-tasks"></i> Assessments
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Lecturer/LookupStudents">
+                                    <i class="fas fa-user-graduate"></i> Students
+                                </a>
+                            </li>
+                        }
+                        else if (User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Student/Dashboard">
+                                    <i class="fas fa-tachometer-alt"></i> My Modules
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
 
-  
+                <ul class="navbar-nav ms-auto">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link notification-badge" href="/Account/Inbox">
+                                <i class="fas fa-envelope"></i>
+                                <span class="badge" id="messageCount" style="display:none;">0</span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle"></i> @User.Identity.Name
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-custom dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/Account/ViewProfile"><i class="fas fa-id-card"></i> Profile</a></li>
+                                <li><a class="dropdown-item" href="/Account/EditProfile"><i class="fas fa-edit"></i> Edit Profile</a></li>
+                                <li><a class="dropdown-item" href="/Account/ChangePassword"><i class="fas fa-key"></i> Change Password</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" action="/Account/Logout">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Account/Login">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
 
+    <!-- Main Content -->
+    <div class="container main-content">
+        <!-- Alert Messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert-custom alert-success">
+                <i class="fas fa-check-circle fa-2x"></i>
+                <div>
+                    <strong>Success!</strong>
+                    <p class="mb-0">@TempData["SuccessMessage"]</p>
+                </div>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert-custom alert-danger">
+                <i class="fas fa-exclamation-circle fa-2x"></i>
+                <div>
+                    <strong>Error!</strong>
+                    <p class="mb-0">@TempData["ErrorMessage"]</p>
+                </div>
+            </div>
+        }
+        @if (TempData["InfoMessage"] != null)
+        {
+            <div class="alert-custom alert-info">
+                <i class="fas fa-info-circle fa-2x"></i>
+                <div>
+                    <strong>Info!</strong>
+                    <p class="mb-0">@TempData["InfoMessage"]</p>
+                </div>
+            </div>
+        }
 
+        @RenderBody()
+    </div>
 
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="container text-center">
+            <p class="mb-2">&copy; 2024 SchoolHub - Assessment Management System</p>
+            <p class="mb-0">
+                <a href="/Home/Privacy" style="color: rgba(255,255,255,0.8); text-decoration: none;">Privacy Policy</a>
+            </p>
+        </div>
+    </footer>
 
-
-    <!-- Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script>
+        // Check unread messages
+        @if (User.Identity.IsAuthenticated)
+        {
+            <text>
+            $(document).ready(function() {
+                function checkUnreadMessages() {
+                    $.get('/Account/GetUnreadCount', function(count) {
+                        if (count > 0) {
+                            $('#messageCount').text(count).show();
+                        } else {
+                            $('#messageCount').hide();
+                        }
+                    });
+                }
+                
+                checkUnreadMessages();
+                setInterval(checkUnreadMessages, 30000); // Check every 30 seconds
+            });
+            </text>
+        }
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            $('.alert-custom').fadeOut('slow');
+        }, 5000);
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
-
-
-
-
-
-
-
-   
-
 </body>
 </html>

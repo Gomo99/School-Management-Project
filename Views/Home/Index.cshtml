@@ -1,1 +1,302 @@
-﻿
+@{
+    ViewData["Title"] = "Home";
+}
+
+<style>
+    .hero-section {
+        text-align: center;
+        padding: 4rem 0;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        animation: fadeInUp 1s ease;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        animation: fadeInUp 1s ease 0.2s backwards;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        animation: fadeInUp 1s ease 0.4s backwards;
+    }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .features-section {
+        padding: 4rem 0;
+    }
+
+    .feature-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        height: 100%;
+        transition: all 0.3s ease;
+        animation: fadeInUp 1s ease backwards;
+    }
+
+    .feature-card:nth-child(1) { animation-delay: 0.1s; }
+    .feature-card:nth-child(2) { animation-delay: 0.2s; }
+    .feature-card:nth-child(3) { animation-delay: 0.3s; }
+    .feature-card:nth-child(4) { animation-delay: 0.4s; }
+    .feature-card:nth-child(5) { animation-delay: 0.5s; }
+    .feature-card:nth-child(6) { animation-delay: 0.6s; }
+
+    .feature-card:hover {
+        transform: translateY(-10px) scale(1.05);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-icon {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .feature-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .feature-description {
+        opacity: 0.9;
+        line-height: 1.6;
+    }
+
+    .stats-section {
+        padding: 3rem 0;
+        text-align: center;
+    }
+
+    .stat-card {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+        font-size: 1.2rem;
+        opacity: 0.9;
+    }
+
+    .cta-section {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 4rem 2rem;
+        text-align: center;
+        color: white;
+        margin: 3rem 0;
+    }
+
+    .cta-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .cta-description {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+</style>
+
+@if (User.Identity.IsAuthenticated)
+{
+    <!-- Authenticated User View -->
+    <div class="hero-section">
+        <h1 class="hero-title">Welcome back, @User.Identity.Name! 👋</h1>
+        <p class="hero-subtitle">Ready to manage your assessments?</p>
+        <div class="hero-buttons">
+            @if (User.IsInRole("Administrator"))
+            {
+                <a href="/Admin/Dashboard" class="btn btn-primary-custom btn-lg">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+            }
+            else if (User.IsInRole("Lecturer"))
+            {
+                <a href="/Lecturer/Dashboard" class="btn btn-primary-custom btn-lg">
+                    <i class="fas fa-chalkboard-teacher"></i> Go to Dashboard
+                </a>
+            }
+            else if (User.IsInRole("Student"))
+            {
+                <a href="/Student/Dashboard" class="btn btn-primary-custom btn-lg">
+                    <i class="fas fa-graduation-cap"></i> View My Modules
+                </a>
+            }
+            <a href="/Account/ViewProfile" class="btn btn-secondary-custom btn-lg">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-section">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-number"><i class="fas fa-clock"></i></div>
+                    <div class="stat-label">Logged In</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-number"><i class="fas fa-shield-alt"></i></div>
+                    <div class="stat-label">Secure Account</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-number"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-label">Active Status</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Guest User View -->
+    <div class="hero-section">
+        <h1 class="hero-title">Welcome to SchoolHub 🎓</h1>
+        <p class="hero-subtitle">Your Complete Assessment Management Solution</p>
+        <div class="hero-buttons">
+            <a href="/Account/Login" class="btn btn-primary-custom btn-lg">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features-section">
+        <h2 class="text-center text-white mb-5" style="font-size: 2.5rem; font-weight: 700;">
+            Powerful Features for Everyone
+        </h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3 class="feature-title">Admin Control</h3>
+                    <p class="feature-description">
+                        Full system management including users, modules, and assignments with comprehensive reporting.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3 class="feature-title">Lecturer Tools</h3>
+                    <p class="feature-description">
+                        Create and manage assessments, track student progress, and generate detailed reports.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3 class="feature-title">Student Portal</h3>
+                    <p class="feature-description">
+                        View enrolled modules, track assessments, and manage submission status with ease.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 class="feature-title">Secure Authentication</h3>
+                    <p class="feature-description">
+                        Two-factor authentication, password encryption, and secure session management.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="feature-title">Real-time Notifications</h3>
+                    <p class="feature-description">
+                        Stay updated with instant notifications for new assessments and important updates.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="feature-title">Analytics & Reports</h3>
+                    <p class="feature-description">
+                        Generate comprehensive reports on users, modules, and assessment performance.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="cta-section">
+        <h2 class="cta-title">Ready to Get Started?</h2>
+        <p class="cta-description">
+            Join SchoolHub today and experience seamless assessment management
+        </p>
+        <a href="/Account/Login" class="btn btn-primary-custom btn-lg">
+            <i class="fas fa-rocket"></i> Login Now
+        </a>
+    </div>
+}

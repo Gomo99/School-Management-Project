@@ -271,9 +271,13 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a href="/Account/Logout">
-                <i class="bi bi-box-arrow-left"></i> Sign Out
-            </a>
+            <form asp-action="Logout" asp-controller="Account" method="post" style="display: inline;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-link p-0 border-0"
+                        style="color: var(--sidebar-text); font-size: 14px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                    <i class="bi bi-box-arrow-left"></i> Sign Out
+                </button>
+            </form>
         </div>
     </aside>
 
@@ -314,18 +318,8 @@
         </header>
 
         <div class="page-body fade-in">
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert-custom alert-success-custom">
-                    <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
-                </div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert-custom alert-error-custom">
-                    <i class="bi bi-exclamation-circle-fill"></i> @TempData["ErrorMessage"]
-                </div>
-            }
+            <partial name="_NotificationPartial" />
+
             @RenderBody()
         </div>
     </div>

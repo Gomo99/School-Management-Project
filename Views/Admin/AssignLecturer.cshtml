@@ -1,6 +1,6 @@
 @model SchoolProject.ViewModel.AssignLecturerModulesViewModel
 @{
-    ViewData["Title"] = "Assign Lecturer to Module";
+    ViewData["Title"] = "Assign Lecturer to Modules";
     Layout = "~/Views/Admin/_AdminLayout.cshtml";
 }
 
@@ -12,8 +12,8 @@
             <a href="/Admin/ManageLecturerModules">Lecturer Modules</a>
             <span>/</span> Assign
         </div>
-        <h1>Assign Lecturer to Module</h1>
-        <p>Select a lecturer and the modules to assign. Max 3 active modules per lecturer.</p>
+        <h1>Assign Lecturer to Modules</h1>
+        <p>Select a lecturer and tick the modules to assign. Multiple modules can be chosen.</p>
     </div>
     <a href="/Admin/ManageLecturerModules" class="btn-secondary-custom">
         <i class="bi bi-arrow-left"></i> Back
@@ -26,41 +26,39 @@
             <h5><i class="bi bi-person-workspace me-2" style="color:var(--primary);"></i>Assignment Details</h5>
         </div>
         <div class="card-body-custom">
-            <form asp-action="AddLecturerModule" method="post">
+            <form asp-action="AssignLecturer" method="post">
                 @Html.AntiForgeryToken()
 
                 <div class="form-group-custom">
                     <label class="form-label-custom">Lecturer <span style="color:var(--danger);">*</span></label>
-                    <select asp-for="UserID" asp-items="ViewBag.Lecturers" class="form-control-custom form-select-custom">
+                    <select name="userId" class="form-control-custom form-select-custom" asp-items="ViewBag.Lecturers">
                         <option value="">-- Select Lecturer --</option>
                     </select>
-                    <div class="form-hint">Only lecturers with fewer than 3 active modules are shown.</div>
-                    <span asp-validation-for="UserID" class="form-error"></span>
                 </div>
 
                 <div class="form-group-custom">
                     <label class="form-label-custom">Modules <span style="color:var(--danger);">*</span></label>
                     <div style="border:1.5px solid var(--border); border-radius:8px; padding:4px; max-height:220px; overflow-y:auto;">
-                        @if (ViewBag.Modules != null)
+                        @if (ViewBag.Modules is List<SchoolProject.Models.Module> moduleList)
                         {
-                            @foreach (Microsoft.AspNetCore.Mvc.Rendering.SelectListItem item in ViewBag.Modules)
+                            @foreach (var module in moduleList)
                             {
                                 <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-radius:6px;transition:background .15s;" onmouseover="this.style.background='#f0f4f9'" onmouseout="this.style.background='transparent'">
-                                    <input type="checkbox" name="SelectedModuleIDs" value="@item.Value"
+                                    <input type="checkbox" name="moduleIds" value="@module.ModuleID"
+                                           @(Model.SelectedModuleIDs?.Contains(module.ModuleID) == true ? "checked" : "")
                                            style="width:16px;height:16px;accent-color:var(--primary);" />
-                                    <span style="font-size:14px;">@item.Text</span>
+                                    <span style="font-size:14px;">@module.ModuleName</span>
                                 </label>
                             }
                         }
                     </div>
-                    <div class="form-hint">Hold Ctrl / ⌘ or tick multiple checkboxes to assign several modules at once.</div>
+                    <div class="form-hint">Tick one or more modules to assign them to the selected lecturer.</div>
                 </div>
 
                 <div class="form-group-custom">
-                    <label asp-for="AssignedDate" class="form-label-custom">Assignment Date <span style="color:var(--danger);">*</span></label>
-                    <input asp-for="AssignedDate" type="date" class="form-control-custom"
-                           value="@DateTime.Now.ToString("yyyy-MM-dd")" />
-                    <span asp-validation-for="AssignedDate" class="form-error"></span>
+                    <label class="form-label-custom">Assignment Date <span style="color:var(--danger);">*</span></label>
+                    <input name="assignedDate" type="date" class="form-control-custom"
+                           value="@Model.AssignedDate.ToString("yyyy-MM-dd")" />
                 </div>
 
                 <div class="d-flex gap-2 mt-2">

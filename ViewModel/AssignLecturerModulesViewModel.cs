@@ -1,13 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
-using System.ComponentModel.DataAnnotations;
-
-namespace SchoolProject.ViewModel
+﻿namespace SchoolProject.ViewModel
 {
     public class AssignLecturerModulesViewModel
     {
-        public List<int> SelectedModuleIDs { get; set; } = new();
         public int UserID { get; set; }
-        public DateTime AssignedDate { get; set; }
+        public List<int> SelectedModuleIDs { get; set; } = new List<int>();
+        public DateTime AssignedDate { get; set; } = DateTime.Now;
     }
-
 }

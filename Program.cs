@@ -40,8 +40,11 @@ builder.Services.AddAuthentication(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.SlidingExpiration = false;
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
+
+    // ??? NEW / UPDATED ???
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);   // How long the authentication ticket is valid
+    options.SlidingExpiration = true;                // Renew on each request
+    options.Cookie.MaxAge = TimeSpan.FromDays(30);   // How long the browser keeps the cookie
 })
 .AddGoogle(options =>
 {
