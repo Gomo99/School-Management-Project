@@ -1,0 +1,26 @@
+﻿@model IEnumerable<SchoolProject.Models.Assessment>
+@{
+    ViewData["Title"] = "Child's Assessments";
+    var student = ViewBag.Student as SchoolProject.Models.Account;
+}
+<h2>@student?.Name @student?.Surname – @ViewBag.ModuleName</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Due Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model)
+        {
+            <tr>
+                <td>@a.AssessmentType.AssessmentTypeDescription</td>
+                <td>@a.DueDate.ToShortDateString()</td>
+                <td>@a.AssessmentStatus</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SchoolProject.Status;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -29,13 +30,5 @@ namespace SchoolProject.Models
         public Account User { get; set; }
     }
 
-    public enum NotificationType
-    {
-        General,
-        AssessmentCreated,
-        DeadlineReminder,
-        AssessmentMissed,
-        AssessmentCompleted,
-        AssessmentRescheduled
-    }
+   
 }

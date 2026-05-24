@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SchoolProject.Status;
+using System.ComponentModel.DataAnnotations;
 
 namespace SchoolProject.Models
 {
@@ -25,15 +26,5 @@ namespace SchoolProject.Models
         public ICollection<StudentModule>? StudentModules { get; set; }
     }
 
-    public enum ModuleType
-    {
-        Core,
-        Elective
-    }
-
-    public enum ModuleStatus
-    {
-        Active,
-        Inactive
-    }
+    
 }

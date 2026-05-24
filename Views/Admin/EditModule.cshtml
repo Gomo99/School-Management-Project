@@ -49,7 +49,7 @@
                         <div class="form-group-custom">
                             <label asp-for="ModuleType" class="form-label-custom">Module Type <span style="color:var(--danger);">*</span></label>
                             <select asp-for="ModuleType" class="form-control-custom form-select-custom">
-                                @foreach (var type in Enum.GetValues(typeof(SchoolProject.Models.ModuleType)).Cast<SchoolProject.Models.ModuleType>())
+                                @foreach (var type in Enum.GetValues(typeof(SchoolProject.Status.ModuleType)).Cast<SchoolProject.Status.ModuleType>())
                                 {
                                     <option value="@type" selected="@(Model.ModuleType == type)">@type</option>
                                 }

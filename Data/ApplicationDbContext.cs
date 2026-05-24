@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SchoolProject.Models;
+using SchoolProject.Status;
 
 namespace SchoolProject.Data
 {
@@ -22,7 +23,7 @@ namespace SchoolProject.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
-
+        public DbSet<StudentParentLink> StudentParentLinks { get; set; }
 
 
 
@@ -90,6 +91,19 @@ namespace SchoolProject.Data
                 .HasOne(m => m.Receiver)
                 .WithMany()
                 .HasForeignKey(m => m.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<StudentParentLink>()
+    .HasOne(s => s.Parent)
+    .WithMany()
+    .HasForeignKey(s => s.ParentUserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StudentParentLink>()
+                .HasOne(s => s.Student)
+                .WithMany()
+                .HasForeignKey(s => s.StudentUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // === Seeding Accounts ===

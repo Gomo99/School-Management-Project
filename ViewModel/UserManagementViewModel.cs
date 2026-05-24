@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using SchoolProject.Models;
+using SchoolProject.Status;
 
 namespace SchoolProject.ViewModel
 {

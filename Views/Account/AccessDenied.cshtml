@@ -4,13 +4,36 @@
 
 <partial name="_NotificationPartial" />
 
-
-
 @section Sidebar {
     @await Html.PartialAsync("_SidebarPartial")
 }
+
 <div class="container text-center mt-5">
     <h1 class="display-4 text-danger">Access Denied</h1>
     <p class="lead">You do not have permission to access this page.</p>
-    <a href="~/Account/Login" class="btn btn-primary mt-3">Return to Login</a>
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        // Determine the correct dashboard based on the user's role claim
+        string dashboardUrl = Url.Action("Dashboard", "Student"); // fallback
+
+        if (User.IsInRole("Administrator"))
+        {
+            dashboardUrl = Url.Action("Dashboard", "Admin");
+        }
+        else if (User.IsInRole("Lecturer"))
+        {
+            dashboardUrl = Url.Action("Dashboard", "Lecturer");
+        }
+        else if (User.IsInRole("Student"))
+        {
+            dashboardUrl = Url.Action("Dashboard", "Student");
+        }
+
+        <a href="@dashboardUrl" class="btn btn-primary mt-3">Go to my Dashboard</a>
+    }
+    else
+    {
+        <a href="~/Account/Login" class="btn btn-primary mt-3">Return to Login</a>
+    }
 </div>

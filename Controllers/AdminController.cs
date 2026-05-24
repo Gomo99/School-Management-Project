@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SchoolProject.Data;
 using SchoolProject.Models;
 using SchoolProject.Service;
+using SchoolProject.Status;
 using SchoolProject.ViewModel;
 using System.Security.Claims;
 
@@ -790,5 +791,75 @@ namespace SchoolProject.Controllers
 
             return View(assessments);
         }
+
+
+
+        // GET: Admin/ManageParentLinks
+        public async Task<IActionResult> ManageParentLinks()
+        {
+            var links = await _context.StudentParentLinks
+                .Include(l => l.Parent)
+                .Include(l => l.Student)
+                .ToListAsync();
+            return View(links);
+        }
+
+        // GET: Admin/AddParentLink
+        public IActionResult AddParentLink()
+        {
+            ViewBag.Parents = new SelectList(
+                _context.Accounts.Where(u => u.Role == UserRole.Parent && u.UserStatus == UserStatus.Active),
+                "UserID", "Name");
+            ViewBag.Students = new SelectList(
+                _context.Accounts.Where(u => u.Role == UserRole.Student && u.UserStatus == UserStatus.Active),
+                "UserID", "Name");
+            return View();
+        }
+
+        // POST: Admin/AddParentLink
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddParentLink(int parentUserId, int studentUserId)
+        {
+            if (parentUserId == 0 || studentUserId == 0)
+            {
+                TempData["ErrorMessage"] = "Both parent and student must be selected.";
+                return RedirectToAction(nameof(AddParentLink));
+            }
+
+            bool exists = await _context.StudentParentLinks.AnyAsync(l =>
+                l.ParentUserId == parentUserId && l.StudentUserId == studentUserId);
+            if (!exists)
+            {
+                var link = new StudentParentLink
+                {
+                    ParentUserId = parentUserId,
+                    StudentUserId = studentUserId
+                };
+                _context.StudentParentLinks.Add(link);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Link created.";
+            }
+            else
+            {
+                TempData["ErrorMessage"] = "This link already exists.";
+            }
+            return RedirectToAction(nameof(ManageParentLinks));
+        }
+
+        // POST: Admin/DeleteParentLink/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteParentLink(int id)
+        {
+            var link = await _context.StudentParentLinks.FindAsync(id);
+            if (link != null)
+            {
+                _context.StudentParentLinks.Remove(link);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(ManageParentLinks));
+        }
+
     }
 }

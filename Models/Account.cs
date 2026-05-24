@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SchoolProject.Status;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SchoolProject.Models
@@ -68,17 +69,5 @@ namespace SchoolProject.Models
         public ICollection<StudentModule> StudentModules { get; set; }
     }
 
-    public enum UserRole
-    {
-        Administrator,
-        Lecturer,
-        Student
-    }
-
-    public enum UserStatus
-    {
-        Active,
-        Inactive,
-        Suspended
-    }
+   
 }

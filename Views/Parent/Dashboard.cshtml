@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "Parent Dashboard";
+}
+<h2>My Children</h2>
+
+@if (ViewBag.Children == null || ViewBag.Children.Count == 0)
+{
+    <p>No children linked to your account.</p>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var child in ViewBag.Children)
+        {
+            <a asp-action="ChildModules" asp-route-studentId="@child.UserID" class="list-group-item list-group-item-action">
+                @child.Title @child.Name @child.Surname
+            </a>
+        }
+    </div>
+}

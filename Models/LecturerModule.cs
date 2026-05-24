@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using SchoolProject.Status;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SchoolProject.Models
@@ -26,9 +27,5 @@ namespace SchoolProject.Models
         public ModLecturerStatus ModLecturerStatus { get; set; }
     }
 
-    public enum ModLecturerStatus
-    {
-        Active,
-        Inactive
-    }
+   
 }

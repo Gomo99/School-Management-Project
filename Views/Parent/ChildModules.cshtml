@@ -1,0 +1,28 @@
+﻿@model IEnumerable<SchoolProject.Models.StudentModule>
+@{
+    ViewData["Title"] = "Child's Modules";
+    var student = ViewBag.Student as SchoolProject.Models.Account;
+}
+<h2>@student?.Name @student?.Surname's Modules</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Module</th>
+            <th>Lecturer</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var sm in Model)
+        {
+            <tr>
+                <td>@sm.LecturerModule.Module.ModuleName</td>
+                <td>@sm.LecturerModule.Lecturer.Title @sm.LecturerModule.Lecturer.Name @sm.LecturerModule.Lecturer.Surname</td>
+                <td>
+                    <a asp-action="ChildAssessments" asp-route-studentId="@student.UserID" asp-route-studentModuleId="@sm.StudentModuleID" class="btn btn-primary btn-sm">View Assessments</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

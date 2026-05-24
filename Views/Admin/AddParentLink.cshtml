@@ -1,0 +1,50 @@
+﻿@{
+    ViewData["Title"] = "Add Parent‑Student Link";
+    var parents = ViewBag.Parents as SelectList;
+    var students = ViewBag.Students as SelectList;
+}
+
+<partial name="_NotificationPartial" />
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="AddParentLink" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="form-group row mb-3">
+        <label for="parentUserId" class="col-sm-2 col-form-label">Parent</label>
+        <div class="col-sm-10">
+            <select id="parentUserId" name="parentUserId" class="form-select" required>
+                <option value="">-- Select Parent --</option>
+                @if (parents != null)
+                {
+                    foreach (var item in parents)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group row mb-3">
+        <label for="studentUserId" class="col-sm-2 col-form-label">Student</label>
+        <div class="col-sm-10">
+            <select id="studentUserId" name="studentUserId" class="form-select" required>
+                <option value="">-- Select Student --</option>
+                @if (students != null)
+                {
+                    foreach (var item in students)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Create Link</button>
+        <a asp-action="ManageParentLinks" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using SchoolProject.Data;
 using SchoolProject.Models;
 using Microsoft.EntityFrameworkCore;
+using SchoolProject.Status;
 
 namespace SchoolProject.Service
 {

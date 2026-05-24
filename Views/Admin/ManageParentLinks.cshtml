@@ -1,0 +1,47 @@
+﻿@model List<SchoolProject.Models.StudentParentLink>
+@{
+    ViewData["Title"] = "Manage Parent‑Student Links";
+}
+
+<partial name="_NotificationPartial" />
+
+<h2>@ViewData["Title"]</h2>
+
+<p>
+    <a asp-action="AddParentLink" class="btn btn-success">Add New Link</a>
+</p>
+
+@if (Model == null || !Model.Any())
+{
+    <div class="alert alert-info">No parent‑student links found.</div>
+}
+else
+{
+    <table class="table table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Parent</th>
+                <th>Student</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var link = Model[i];
+                <tr>
+                    <td>@link.Id</td>
+                    <td>@link.Parent?.Title @link.Parent?.Name @link.Parent?.Surname (@link.Parent?.Email)</td>
+                    <td>@link.Student?.Title @link.Student?.Name @link.Student?.Surname (@link.Student?.Email)</td>
+                    <td>
+                        <form asp-action="DeleteParentLink" asp-route-id="@link.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to remove this link?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

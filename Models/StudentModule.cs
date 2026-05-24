@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SchoolProject.Status;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -35,10 +36,5 @@ namespace SchoolProject.Models
     }
 
     // Enum for enrollment status
-    public enum StudModStatus
-    {
-        Active,
-        Inactive,
-        Completed
-    }
+   
 }
