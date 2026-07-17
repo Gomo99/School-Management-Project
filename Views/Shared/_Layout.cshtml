@@ -53,10 +53,21 @@
         }
 
         @@keyframes float {
-            0%, 100% { transform: translateY(0) translateX(0); }
-            25% { transform: translateY(-100px) translateX(50px); }
-            50% { transform: translateY(-200px) translateX(-50px); }
-            75% { transform: translateY(-100px) translateX(100px); }
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+            }
+
+            25% {
+                transform: translateY(-100px) translateX(50px);
+            }
+
+            50% {
+                transform: translateY(-200px) translateX(-50px);
+            }
+
+            75% {
+                transform: translateY(-100px) translateX(100px);
+            }
         }
 
         /* Navbar */
@@ -80,12 +91,12 @@
             gap: 0.5rem;
         }
 
-        .navbar-brand i {
-            font-size: 2rem;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+            .navbar-brand i {
+                font-size: 2rem;
+                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
 
         .nav-link {
             color: rgba(255, 255, 255, 0.9) !important;
@@ -97,14 +108,14 @@
             position: relative;
         }
 
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-        }
+            .nav-link:hover {
+                background: rgba(255, 255, 255, 0.2);
+                transform: translateY(-2px);
+            }
 
-        .nav-link.active {
-            background: rgba(255, 255, 255, 0.25);
-        }
+            .nav-link.active {
+                background: rgba(255, 255, 255, 0.25);
+            }
 
         /* Notification Badge */
         .notification-badge {
@@ -112,21 +123,26 @@
             cursor: pointer;
         }
 
-        .notification-badge .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #f5576c;
-            color: white;
-            border-radius: 50%;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.7rem;
-            animation: pulse 2s infinite;
-        }
+            .notification-badge .badge {
+                position: absolute;
+                top: -5px;
+                right: -5px;
+                background: #f5576c;
+                color: white;
+                border-radius: 50%;
+                padding: 0.25rem 0.5rem;
+                font-size: 0.7rem;
+                animation: pulse 2s infinite;
+            }
 
         @@keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            0%, 100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
         }
 
         /* Main Content */
@@ -148,10 +164,10 @@
             transition: all 0.3s ease;
         }
 
-        .glass-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
-        }
+            .glass-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+            }
 
         /* Alert Messages */
         .alert-custom {
@@ -172,15 +188,24 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
 
-        .alert-success { border-left: 4px solid #4facfe; }
-        .alert-danger { border-left: 4px solid #f5576c; }
-        .alert-info { border-left: 4px solid #667eea; }
+        .alert-success {
+            border-left: 4px solid #4facfe;
+        }
+
+        .alert-danger {
+            border-left: 4px solid #f5576c;
+        }
+
+        .alert-info {
+            border-left: 4px solid #667eea;
+        }
 
         /* Buttons */
         .btn-primary-custom {
@@ -194,10 +219,10 @@
             box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.5);
         }
 
-        .btn-primary-custom:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.7);
-        }
+            .btn-primary-custom:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.7);
+            }
 
         .btn-secondary-custom {
             background: var(--secondary-gradient);
@@ -235,10 +260,10 @@
             transition: all 0.3s ease;
         }
 
-        .dropdown-item:hover {
-            background: var(--primary-gradient);
-            color: white;
-        }
+            .dropdown-item:hover {
+                background: var(--primary-gradient);
+                color: white;
+            }
 
         /* Loading Spinner */
         .loading-spinner {
@@ -259,8 +284,56 @@
         }
 
         @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Connection status notification */
+        .connection-status {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 40px;
+            padding: 10px 25px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+            .connection-status.show {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .connection-status i {
+                font-size: 1.2rem;
+            }
+
+        .status-offline {
+            background: rgba(245, 87, 108, 0.9);
+            border-color: #f5576c;
+        }
+
+        .status-online {
+            background: rgba(79, 172, 254, 0.9);
+            border-color: #4facfe;
         }
     </style>
 </head>
@@ -443,36 +516,75 @@
         </div>
     </footer>
 
+    <!-- Connection Status Notification -->
+    <div id="connectionStatus" class="connection-status">
+        <i id="connectionIcon"></i>
+        <span id="connectionText"></span>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    
+
     <script>
         // Check unread messages
         @if (User.Identity.IsAuthenticated)
         {
-            <text>
-            $(document).ready(function() {
-                function checkUnreadMessages() {
-                    $.get('/Account/GetUnreadCount', function(count) {
-                        if (count > 0) {
-                            $('#messageCount').text(count).show();
-                        } else {
-                            $('#messageCount').hide();
-                        }
-                    });
-                }
-                
-                checkUnreadMessages();
-                setInterval(checkUnreadMessages, 30000); // Check every 30 seconds
-            });
-            </text>
+                <text>
+                $(document).ready(function() {
+                    function checkUnreadMessages() {
+                        $.get('/Account/GetUnreadCount', function(count) {
+                            if (count > 0) {
+                                $('#messageCount').text(count).show();
+                            } else {
+                                $('#messageCount').hide();
+                            }
+                        });
+                    }
+
+                    checkUnreadMessages();
+                    setInterval(checkUnreadMessages, 30000); // Check every 30 seconds
+                });
+                </text>
         }
 
         // Auto-hide alerts after 5 seconds
         setTimeout(function() {
             $('.alert-custom').fadeOut('slow');
         }, 5000);
+
+        // Online/Offline notification logic
+        (function() {
+            const statusDiv = document.getElementById('connectionStatus');
+            const iconEl = document.getElementById('connectionIcon');
+            const textEl = document.getElementById('connectionText');
+
+            function showStatus(online) {
+                if (online) {
+                    statusDiv.className = 'connection-status status-online show';
+                    iconEl.className = 'fas fa-wifi';
+                    textEl.textContent = 'You are back online';
+                } else {
+                    statusDiv.className = 'connection-status status-offline show';
+                    iconEl.className = 'fas fa-exclamation-triangle';
+                    textEl.textContent = 'You are offline. Check your connection.';
+                }
+
+                // Auto-hide after 4 seconds
+                clearTimeout(statusDiv.hideTimer);
+                statusDiv.hideTimer = setTimeout(() => {
+                    statusDiv.classList.remove('show');
+                }, 4000);
+            }
+
+            window.addEventListener('online', () => showStatus(true));
+            window.addEventListener('offline', () => showStatus(false));
+
+            // Initial check when page loads
+            if (!navigator.onLine) {
+                showStatus(false);
+            }
+        })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
